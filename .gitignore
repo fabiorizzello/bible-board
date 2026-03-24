@@ -1,0 +1,36 @@
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Windows alternate data streams
+*:Zone.Identifier
+
+# Editors and local tooling
+.codex/
+.idea/
+.vscode/
+.specify/init-options.json
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.cache/
+tmp/
+
+# Common build artifacts
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
