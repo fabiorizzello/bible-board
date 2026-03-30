@@ -1,10 +1,12 @@
-import { co } from "jazz-tools";
+import { co, z } from "jazz-tools";
 import { useWorkspaceAccount } from "@/features/workspace/workspace.adapter";
 import type { ElementoError } from "@/features/elemento/elemento.errors";
 import { FonteSchema, ElementoSchema } from "@/features/elemento/elemento.schema";
 import { normalizeElementoInput, type ElementoInput } from "@/features/elemento/elemento.rules";
-import { asElementoId, type ElementoId } from "@/features/shared/newtypes";
-import { err, ok, type Result } from "@/features/shared/result";
+import { ensureTagsInRegistry } from "@/features/workspace/workspace.rules";
+import { parseElementoId, type ElementoId } from "@/features/shared/newtypes";
+import { TagRegistrationSchema } from "@/features/workspace/workspace.schema";
+import { err, ok, type Result } from "neverthrow";
 import type { DataTemporale } from "@/features/shared/value-objects";
 
 export interface CreateElementoInput extends ElementoInput {}
@@ -97,6 +99,8 @@ export function createElementoInWorkspace(
 
   const normalized = normalizedResult.value;
 
+  syncTagsToRegistry(workspace, normalized.tags, account);
+
   const elemento = ElementoSchema.create(
     {
       titolo: normalized.titolo,
@@ -109,12 +113,13 @@ export function createElementoInWorkspace(
         ? serializeHistoricalDate(normalized.morte)
         : undefined,
       tipo: normalized.tipo,
+      tags: co.list(z.string()).create([...normalized.tags], account),
       fonti: co.list(FonteSchema).create([], account)
     },
     account
   );
 
-  workspace.elementi.$jazz.push(elemento);
+  workspace.elementi.push(elemento);
 
   return ok(elemento);
 }
@@ -141,45 +146,58 @@ export function updateWorkspaceElemento(
 
   const normalized = normalizedResult.value;
 
-  elemento.$jazz.set("titolo", normalized.titolo);
-  elemento.$jazz.set("note", normalized.note);
-  elemento.$jazz.set("tipo", normalized.tipo);
+  elemento.titolo = normalized.titolo;
+  elemento.note = normalized.note;
+  elemento.tipo = normalized.tipo;
 
   if (normalized.date) {
     const serializedDate = serializeDataTemporale(normalized.date);
-    elemento.$jazz.set("dateKind", serializedDate.dateKind);
+    elemento.dateKind = serializedDate.dateKind;
     if (serializedDate.data) {
-      elemento.$jazz.set("data", serializedDate.data);
+      elemento.data = serializedDate.data;
     } else {
-      elemento.$jazz.delete("data");
+      elemento.data = undefined;
     }
     if (serializedDate.inizio) {
-      elemento.$jazz.set("inizio", serializedDate.inizio);
+      elemento.inizio = serializedDate.inizio;
     } else {
-      elemento.$jazz.delete("inizio");
+      elemento.inizio = undefined;
     }
     if (serializedDate.fine) {
-      elemento.$jazz.set("fine", serializedDate.fine);
+      elemento.fine = serializedDate.fine;
     } else {
-      elemento.$jazz.delete("fine");
+      elemento.fine = undefined;
     }
   } else {
-    elemento.$jazz.delete("dateKind");
-    elemento.$jazz.delete("data");
-    elemento.$jazz.delete("inizio");
-    elemento.$jazz.delete("fine");
+    elemento.dateKind = undefined;
+    elemento.data = undefined;
+    elemento.inizio = undefined;
+    elemento.fine = undefined;
   }
 
   if (normalized.nascita) {
-    elemento.$jazz.set("nascita", normalized.nascita);
+    elemento.nascita = normalized.nascita;
   } else {
-    elemento.$jazz.delete("nascita");
+    elemento.nascita = undefined;
   }
 
   if (normalized.morte) {
-    elemento.$jazz.set("morte", normalized.morte);
+    elemento.morte = normalized.morte;
   } else {
-    elemento.$jazz.delete("morte");
+    elemento.morte = undefined;
+  }
+
+  syncTagsToRegistry(workspace, normalized.tags, account);
+
+  if (elemento.tags) {
+    while (elemento.tags.length > 0) {
+      elemento.tags.splice(0, 1);
+    }
+    for (const tag of normalized.tags) {
+      elemento.tags.push(tag);
+    }
+  } else {
+    elemento.tags = co.list(z.string()).create([...normalized.tags], account);
   }
 
   return ok(elemento);
@@ -199,7 +217,7 @@ export function deleteWorkspaceElemento(
     return err({ type: "elemento_non_trovato" });
   }
 
-  const removed = workspace.elementi.$jazz.remove(index)[0];
+  const removed = workspace.elementi.splice(index, 1)[0];
   if (!removed) {
     return err({ type: "elemento_non_trovato" });
   }
@@ -216,7 +234,7 @@ export function restoreWorkspaceElemento(
     throw new Error("Workspace non disponibile.");
   }
 
-  workspace.elementi.$jazz.splice(payload.index, 0, payload.elemento);
+  workspace.elementi.splice(payload.index, 0, payload.elemento);
 
   return ok(payload.elemento);
 }
@@ -229,9 +247,12 @@ export function findWorkspaceElementoById(
     return null;
   }
 
-  const normalizedId = asElementoId(elementoId);
+  const parsed = parseElementoId(elementoId);
+  if (parsed.isErr()) {
+    return null;
+  }
 
-  return workspace.elementi?.find((elemento) => elemento?.id === normalizedId) ?? null;
+  return workspace.elementi?.find((elemento) => elemento?.id === parsed.value) ?? null;
 }
 
 export interface ImageUploadResult {
@@ -241,6 +262,46 @@ export interface ImageUploadResult {
   readonly dimensioneBytes: number;
 }
 
+function syncTagsToRegistry(workspace: any, tags: readonly string[], account: any) {
+  if (!workspace.tagRegistry || tags.length === 0) return;
+
+  const currentRegistry = Array.from(workspace.tagRegistry).filter(Boolean).map((entry: any) => ({
+    tag: entry.tag,
+    colore: entry.colore,
+    elementoDescrittivoId: entry.elementoDescrittivoId
+  }));
+
+  const result = ensureTagsInRegistry(currentRegistry, [...tags]);
+  if (result.isOk() && result.value.length > currentRegistry.length) {
+    const newEntries = result.value.slice(currentRegistry.length);
+    for (const entry of newEntries) {
+      const registration = TagRegistrationSchema.create(
+        { tag: entry.tag, colore: entry.colore, elementoDescrittivoId: entry.elementoDescrittivoId },
+        account
+      );
+      workspace.tagRegistry.push(registration);
+    }
+  }
+}
+
 export async function uploadWorkspaceImage(_file: File): Promise<ImageUploadResult> {
   throw new Error("Upload immagini non ancora implementato in questa tranche.");
+}
+
+export function computeWorkspaceMediaUsage(workspace: any): { totalBytes: number; imageCount: number } {
+  let totalBytes = 0;
+  let imageCount = 0;
+
+  if (!workspace?.elementi) return { totalBytes, imageCount };
+
+  for (const elemento of workspace.elementi) {
+    if (!elemento?.media) continue;
+    for (const media of elemento.media) {
+      if (!media) continue;
+      totalBytes += media.dimensioneBytes ?? 0;
+      imageCount += 1;
+    }
+  }
+
+  return { totalBytes, imageCount };
 }

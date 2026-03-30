@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap");
+@import "@heroui/styles";
 @import "@/styles/tokens.css";
 @import "tailwindcss";
 
@@ -21,4 +22,35 @@ textarea,
 select {
   font: inherit;
   touch-action: manipulation;
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 9999;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.25rem;
+  background: var(--board-color-primary);
+  color: white;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Ensure readable focus for select elements */
+select:focus-visible {
+  outline: 2px solid var(--board-color-primary);
+  outline-offset: 2px;
 }

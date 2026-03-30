@@ -1,5 +1,11 @@
 import { co, z } from "jazz-tools";
 
+export const MediaImmagineSchema = co.map({
+  nomeFile: z.string(),
+  mimeType: z.string(),
+  dimensioneBytes: z.number(),
+});
+
 export const FonteSchema = co.map({
   tipo: z.enum(["scrittura", "articolo", "altro"]),
   valore: z.string(),
@@ -41,5 +47,7 @@ export const ElementoSchema = co.map({
     "luogo",
     "evento"
   ]),
-  fonti: co.list(FonteSchema)
+  tags: co.list(z.string()),
+  fonti: co.list(FonteSchema),
+  media: co.list(MediaImmagineSchema)
 });

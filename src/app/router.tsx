@@ -1,71 +1,5 @@
-import { createBrowserRouter, matchRoutes } from "react-router";
-import { AuthGate } from "@/ui/auth-gate/AuthGate";
-import { ElementoDetailPage } from "@/ui/elemento-detail/ElementoDetailPage";
-import { ElementoEditorPage } from "@/ui/elemento-editor/ElementoEditorPage";
-import { WorkspaceHomePage } from "@/ui/workspace-home/WorkspaceHomePage";
-
-const BOARD_VIEWS = ["timeline", "lista", "grafo", "genealogia"] as const;
-
-export type BoardView = (typeof BOARD_VIEWS)[number];
-
-export function normalizeBoardViewParam(view: string | null | undefined): BoardView {
-  if (view && BOARD_VIEWS.includes(view as BoardView)) {
-    return view as BoardView;
-  }
-
-  return "timeline";
-}
-
-export function normalizeBoardQueryParam(query: string | null | undefined) {
-  const trimmed = query?.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-function RootRoute() {
-  return (
-    <AuthGate>
-      <WorkspaceHomePage />
-    </AuthGate>
-  );
-}
-
-function BoardRoute() {
-  return (
-    <AuthGate>
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-4 px-6 py-8">
-        <h1 className="font-heading text-2xl text-ink">Board</h1>
-        <p className="text-ink/80">
-          Shell iniziale del board. Le viste timeline, lista, grafo e genealogia
-          verranno implementate nelle fasi successive.
-        </p>
-      </div>
-    </AuthGate>
-  );
-}
-
-function ElementoRoute() {
-  return (
-    <AuthGate>
-      <ElementoDetailPage />
-    </AuthGate>
-  );
-}
-
-function NuovoElementoRoute() {
-  return (
-    <AuthGate>
-      <ElementoEditorPage />
-    </AuthGate>
-  );
-}
-
-function ModificaElementoRoute() {
-  return (
-    <AuthGate>
-      <ElementoEditorPage />
-    </AuthGate>
-  );
-}
+import { createBrowserRouter } from "react-router";
+import { WorkspacePreviewPage } from "@/ui/workspace-home/WorkspacePreviewPage";
 
 function NotFoundRoute() {
   return (
@@ -80,17 +14,8 @@ function NotFoundRoute() {
   );
 }
 
-export const appRoutes = [
-  { path: "/", Component: RootRoute },
-  { path: "/board/:boardId", Component: BoardRoute },
-  { path: "/elemento/nuovo", Component: NuovoElementoRoute },
-  { path: "/elemento/:elementoId/modifica", Component: ModificaElementoRoute },
-  { path: "/elemento/:elementoId", Component: ElementoRoute },
-  { path: "*", Component: NotFoundRoute }
-] as const;
-
-export const appRouter = createBrowserRouter(appRoutes as unknown as Parameters<typeof createBrowserRouter>[0]);
-
-export function matchAppRoutes(pathname: string) {
-  return matchRoutes(appRoutes as unknown as Parameters<typeof matchRoutes>[0], pathname);
-}
+export const appRouter = createBrowserRouter([
+  { path: "/", Component: WorkspacePreviewPage },
+  { path: "/workspace-v4", Component: WorkspacePreviewPage },
+  { path: "*", Component: NotFoundRoute },
+]);

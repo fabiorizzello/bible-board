@@ -1,4 +1,4 @@
-import { err, ok, type Result } from "@/features/shared/result";
+import { err, ok, type Result } from "neverthrow";
 
 const BOOK_MAP: Record<string, number> = {
   genesi: 1,

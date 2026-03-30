@@ -7,9 +7,9 @@ export function useWorkspaceAccount() {
     resolve: {
       root: {
         workspace: {
-          tagRegistry: true,
+          tagRegistry: { $each: true },
           boardIds: true,
-          elementi: true
+          elementi: { $each: { tags: true, fonti: true } }
         }
       },
       profile: true
