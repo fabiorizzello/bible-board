@@ -54,3 +54,9 @@ select:focus-visible {
   outline: 2px solid var(--board-color-primary);
   outline-offset: 2px;
 }
+
+/* Fix HeroUI chip/tag text vertical centering — default line-height is too large for small text */
+[data-slot="chip-label"],
+.tag {
+  line-height: 1 !important;
+}

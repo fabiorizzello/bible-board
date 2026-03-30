@@ -1,13 +1,21 @@
 import { useState, useCallback } from "react";
 import {
+  Avatar,
   Button,
+  Card,
   Chip,
   Dropdown,
+  EmptyState,
   Kbd,
   Label,
+  Link,
+  ListBox,
   ScrollShadow,
   SearchField,
   Separator,
+  Tag,
+  TagGroup,
+  Text,
   Toolbar,
   Tooltip,
 } from "@heroui/react";
@@ -28,6 +36,7 @@ import {
   Check,
   Ellipsis,
 } from "lucide-react";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 // ── Types ──
 
@@ -144,7 +153,9 @@ export function WorkspacePreviewPage() {
   }, [currentView, filterText, activeTipo]);
 
   const currentElements = isElementView ? getElementsForView() : [];
-  const selectedElement = ELEMENTI.find((e) => e.id === selectedElementId) ?? BOARD_PATRIARCHI_ELEMENTI.find((e) => e.id === selectedElementId) ?? null;
+  const selectedElement = ELEMENTI.find((e) => e.id === selectedElementId)
+    ?? BOARD_PATRIARCHI_ELEMENTI.find((e) => e.id === selectedElementId)
+    ?? null;
 
   function handleNavChange(viewId: ViewId) {
     setCurrentView(viewId);
@@ -158,32 +169,26 @@ export function WorkspacePreviewPage() {
     if (sidebarOpen) setSidebarOpen(false);
   }
 
-  function handleExitFullscreen() {
-    setFullscreen(false);
-  }
-
   const viewLabel = currentView === "recenti" ? "Recenti"
     : currentView === "tutti" ? "Tutti gli elementi"
     : BOARDS.find((b) => b.viewId === currentView)?.nome ?? currentView;
 
   const listCount = isRecentiView ? RECENTI.length : currentElements.length;
 
-  // ── Shared detail content renderer ──
-  function renderDetailBody(el: Elemento, fullscreenMode: boolean) {
-    const sectionGap = fullscreenMode ? "mb-6" : "mb-4";
-    const headingClass = "mb-1 text-[12px] font-bold uppercase tracking-wider text-slate-500";
-    const textSize = fullscreenMode ? "text-[14px]" : "text-[13px]";
-    const chipGap = fullscreenMode ? "gap-1.5" : "gap-1";
-    const chipMinH = fullscreenMode ? "min-h-[34px]" : "min-h-[30px]";
-    const chipPx = fullscreenMode ? "px-2.5 py-1.5" : "px-2 py-1";
-    const chipText = fullscreenMode ? "text-[12px]" : "text-[11px]";
+  // ── Detail body sections (Card-based) ──
+  function renderDetailBody(el: Elemento, isFs: boolean) {
+    const section = isFs ? "mb-6" : "mb-4";
+    const heading = "p-0 pb-1";
+    const title = "text-[12px] font-bold uppercase tracking-wider text-ink-lo";
+    const bodyText = isFs ? "text-[14px]" : "text-[13px]";
+    const gap = isFs ? "gap-1.5" : "gap-1";
 
     return (
       <>
-        {fullscreenMode && el.tags.length > 0 && (
+        {isFs && el.tags.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
             {el.tags.map((tag) => (
-              <Chip key={tag} size="sm" className="bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+              <Chip key={tag} size="sm" className="bg-chip-bg px-2 py-0.5 text-[11px] font-medium text-ink-lo">
                 {tag}
               </Chip>
             ))}
@@ -191,79 +196,95 @@ export function WorkspacePreviewPage() {
         )}
 
         {el.note && (
-          <section className={sectionGap}>
-            <h2 className={headingClass}>Note</h2>
-            <p className={`${textSize} leading-relaxed text-slate-700`}>{el.note}</p>
-          </section>
+          <Card className={`border-none shadow-none bg-transparent ${section}`}>
+            <Card.Header className={heading}>
+              <Card.Title className={title}>Note</Card.Title>
+            </Card.Header>
+            <Card.Content className="p-0">
+              <Text className={`${bodyText} leading-relaxed text-ink-md`}>{el.note}</Text>
+            </Card.Content>
+          </Card>
         )}
 
         {el.collegamenti && el.collegamenti.length > 0 && (
-          <section className={sectionGap}>
-            <h2 className={headingClass}>Collegamenti</h2>
-            <div className={`flex flex-wrap ${chipGap}`}>
-              {el.collegamenti.map((c) => (
-                <Chip key={c.titolo} size="sm" className={`border border-teal-600/10 ${chipPx} ${chipText} cursor-pointer hover:bg-teal-600/6 ${chipMinH}`}>
-                  {c.titolo} <span className="text-[9px] text-slate-400">{c.tipo}</span>
-                </Chip>
-              ))}
-            </div>
-          </section>
+          <Card className={`border-none shadow-none bg-transparent ${section}`}>
+            <Card.Header className={heading}>
+              <Card.Title className={title}>Collegamenti</Card.Title>
+            </Card.Header>
+            <Card.Content className="p-0">
+              <div className={`flex flex-wrap ${gap}`}>
+                {el.collegamenti.map((c) => (
+                  <Chip key={c.titolo} size="sm" className="border border-primary/10 px-2 py-1 text-[11px] cursor-pointer hover:bg-primary/6">
+                    {c.titolo} <Text className="text-[9px] text-ink-dim ml-1">{c.tipo}</Text>
+                  </Chip>
+                ))}
+              </div>
+            </Card.Content>
+          </Card>
         )}
 
         {el.fonti && el.fonti.length > 0 && (
-          <section className={sectionGap}>
-            <h2 className={headingClass}>Fonti</h2>
-            <div className="flex flex-wrap gap-2">
-              {el.fonti.map((f) => (
-                <span key={f} className={`${fullscreenMode ? "text-[13px]" : "text-xs"} text-teal-700 underline underline-offset-2 cursor-pointer hover:text-teal-900 transition-colors`}>
-                  {f}
-                </span>
-              ))}
-            </div>
-          </section>
+          <Card className={`border-none shadow-none bg-transparent ${section}`}>
+            <Card.Header className={heading}>
+              <Card.Title className={title}>Fonti</Card.Title>
+            </Card.Header>
+            <Card.Content className="p-0">
+              <div className="flex flex-wrap gap-2">
+                {el.fonti.map((f) => (
+                  <Link key={f} className={`${isFs ? "text-[13px]" : "text-xs"} text-primary underline underline-offset-2 cursor-pointer hover:text-ink transition-colors`}>
+                    {f}
+                  </Link>
+                ))}
+              </div>
+            </Card.Content>
+          </Card>
         )}
 
         {el.boards && el.boards.length > 0 && (
-          <section className={sectionGap}>
-            <h2 className={headingClass}>Board</h2>
-            <div className={`flex flex-wrap ${chipGap}`}>
-              {el.boards.map((b) => (
-                <Chip key={b} size="sm" className={`border border-orange-500/15 ${chipPx} ${chipText} text-orange-600 cursor-pointer hover:bg-orange-50 ${chipMinH}`}>
-                  <LayoutGrid className="h-2.5 w-2.5" /> {b}
-                </Chip>
-              ))}
-            </div>
-          </section>
+          <Card className={`border-none shadow-none bg-transparent ${section}`}>
+            <Card.Header className={heading}>
+              <Card.Title className={title}>Board</Card.Title>
+            </Card.Header>
+            <Card.Content className="p-0">
+              <div className={`flex flex-wrap ${gap}`}>
+                {el.boards.map((b) => (
+                  <Chip key={b} size="sm" className="border border-accent/15 px-2 py-1 text-[11px] text-accent cursor-pointer hover:bg-accent/5">
+                    <LayoutGrid className="h-2.5 w-2.5" /> {b}
+                  </Chip>
+                ))}
+              </div>
+            </Card.Content>
+          </Card>
         )}
       </>
     );
   }
 
-  // ── Shared toolbar renderer ──
-  function renderToolbar(fullscreenMode: boolean) {
-    const btnSize = fullscreenMode ? "min-h-[34px] px-3 py-1.5 text-[12px]" : "min-h-[30px] px-2.5 py-1 text-[11px]";
-    const iconSize = fullscreenMode ? "h-3.5 w-3.5" : "h-3 w-3";
-    const overflowSize = fullscreenMode ? "h-[34px] w-[34px]" : "h-[30px] w-[30px]";
+  // ── Action toolbar ──
+  function renderToolbar(isFs: boolean) {
+    const btn = isFs ? "min-h-[34px] px-3 py-1.5 text-[12px]" : "min-h-[30px] px-2.5 py-1 text-[11px]";
+    const ico = isFs ? "h-3.5 w-3.5" : "h-3 w-3";
+    const overflow = isFs ? "h-[34px] w-[34px]" : "h-[30px] w-[30px]";
 
     return (
-      <Toolbar className="flex items-center gap-1 border-b border-teal-600/6 bg-slate-50/50 px-4 py-1.5">
-        <Button variant="primary" className={`gap-1 rounded-lg font-semibold ${btnSize}`}>
-          <Pencil className={iconSize} /> Modifica
+      <Toolbar className="flex w-full items-center gap-1 border-b border-primary/6 bg-chrome px-4 py-1.5">
+        <Button variant="primary" className={`gap-1 rounded-lg font-semibold ${btn}`}>
+          <Pencil className={ico} /> Modifica
         </Button>
-        <Button variant="outline" className={`gap-1 rounded-lg border-teal-600/10 font-medium text-slate-600 hover:bg-teal-600/6 ${btnSize}`}>
-          <Link2 className={iconSize} /> Link
+        <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
+          <Link2 className={ico} /> Link
         </Button>
-        <Button variant="outline" className={`gap-1 rounded-lg border-teal-600/10 font-medium text-slate-600 hover:bg-teal-600/6 ${btnSize}`}>
-          <BookOpen className={iconSize} /> Fonte
+        <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
+          <BookOpen className={ico} /> Fonte
         </Button>
-        <Button variant="outline" className={`gap-1 rounded-lg border-teal-600/10 font-medium text-slate-600 hover:bg-teal-600/6 ${btnSize}`}>
-          <LayoutGrid className={iconSize} /> Board
+        <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
+          <LayoutGrid className={ico} /> Board
         </Button>
         <div className="flex-1" />
         <Dropdown>
-            <Button variant="outline" isIconOnly className={`${overflowSize} rounded-lg border-slate-200 text-slate-400 hover:bg-slate-100`} aria-label="Altre azioni">
-              <Ellipsis className="h-4 w-4" />
-            </Button>
+          <Button variant="outline" isIconOnly className={`${overflow} rounded-lg border-edge text-ink-dim hover:bg-chip-bg`} aria-label="Altre azioni">
+            <Ellipsis className="h-4 w-4" />
+          </Button>
           <Dropdown.Popover>
             <Dropdown.Menu onAction={() => {}}>
               <Dropdown.Item id="duplicate" textValue="Duplica">
@@ -280,55 +301,55 @@ export function WorkspacePreviewPage() {
     );
   }
 
-  // ── 3-pane layout + fullscreen overlay ──
+  // ── 3-pane layout ──
   return (
-    <div className="flex h-screen bg-white" style={{ fontFamily: "'Fira Sans', sans-serif" }}>
+    <div className="flex h-screen bg-panel font-body">
 
       {/* ── NAV SIDEBAR ── */}
       <nav
-        className={`flex flex-col border-r border-teal-600/10 bg-slate-50/60 transition-all duration-200 ease-in-out overflow-hidden ${
+        className={`flex flex-col border-r border-primary/10 bg-chrome transition-all duration-200 ease-in-out overflow-hidden ${
           sidebarOpen ? "w-[220px] min-w-[220px]" : "w-0 min-w-0"
         }`}
         aria-label="Navigazione workspace"
       >
-        {/* Workspace switcher — HeroUI Dropdown */}
+        {/* Workspace switcher — Dropdown + Avatar */}
         <div className="px-2 pt-2 pb-1">
           <Dropdown>
-              <Button
-                variant="ghost"
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 min-h-[44px] text-left hover:bg-teal-600/6 cursor-pointer"
-              >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-600 text-[11px] font-bold text-white flex-shrink-0">
-                  W
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span style={{ fontFamily: "'Fira Code', monospace" }} className="block text-[13px] font-semibold text-slate-800 truncate">
-                    Il mio workspace
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] text-slate-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-                    Sincronizzato
-                  </span>
-                </div>
-                <ChevronDown className="h-3 w-3 text-slate-400 flex-shrink-0" />
-              </Button>
+            <Button
+              variant="ghost"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 min-h-[44px] text-left hover:bg-primary/6 cursor-pointer"
+            >
+              <Avatar size="sm" className="h-7 w-7 flex-shrink-0">
+                <Avatar.Fallback className="bg-primary text-[11px] font-bold text-white">W</Avatar.Fallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <Text className="block font-heading text-[13px] font-semibold text-ink-hi truncate">
+                  Il mio workspace
+                </Text>
+                <Text className="flex items-center gap-1 text-[10px] text-ink-dim">
+                  <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
+                  Sincronizzato
+                </Text>
+              </div>
+              <ChevronDown className="h-3 w-3 text-ink-dim flex-shrink-0" />
+            </Button>
             <Dropdown.Popover placement="bottom start" className="min-w-[200px]">
               <Dropdown.Menu onAction={() => {}}>
                 <Dropdown.Section>
                   <Dropdown.Item id="current" textValue="Il mio workspace">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-700">
-                      <Check className="h-3.5 w-3.5 text-teal-600" />
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-ink-md">
+                      <Check className="h-3.5 w-3.5 text-primary" />
                       <Label>Il mio workspace</Label>
                     </div>
                   </Dropdown.Item>
                   <Dropdown.Item id="marco" textValue="Workspace di Marco">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-ink-lo">
                       <span className="w-3.5" />
                       <Label>Workspace di Marco</Label>
                     </div>
                   </Dropdown.Item>
                   <Dropdown.Item id="gruppo" textValue="Studio gruppo">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-ink-lo">
                       <span className="w-3.5" />
                       <Label>Studio gruppo</Label>
                     </div>
@@ -337,7 +358,7 @@ export function WorkspacePreviewPage() {
                 <Separator />
                 <Dropdown.Section>
                   <Dropdown.Item id="new" textValue="Nuovo workspace">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-teal-600">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-primary">
                       <Plus className="h-3.5 w-3.5" />
                       <Label>Nuovo workspace</Label>
                     </div>
@@ -348,89 +369,103 @@ export function WorkspacePreviewPage() {
           </Dropdown>
         </div>
 
-        <Separator className="mx-3 my-1 border-teal-600/6" />
+        <Separator className="mx-3 my-1 border-primary/6" />
 
-        {/* Nav items */}
-        <div className="flex-1 overflow-y-auto px-1.5">
-          <Button
-            variant="ghost"
-            onPress={() => handleNavChange("recenti")}
-            className={`w-full justify-start gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium ${
-              currentView === "recenti"
-                ? "bg-teal-600/10 text-teal-700 font-semibold"
-                : "text-slate-600 hover:bg-teal-600/6"
-            }`}
+        {/* Nav ListBox — keyboard-navigable selection */}
+        <ScrollShadow className="flex-1 overflow-y-auto px-1.5">
+          <ListBox
+            aria-label="Navigazione principale"
+            selectionMode="single"
+            disallowEmptySelection
+            selectedKeys={!currentView.startsWith("board-") ? new Set([currentView]) : new Set()}
+            onSelectionChange={(keys) => {
+              if (keys !== "all" && keys.size > 0) {
+                handleNavChange(String([...keys][0]) as ViewId);
+              }
+            }}
+            className="border-none p-0 outline-none"
           >
-            <Clock className="h-4 w-4 flex-shrink-0" />
-            Recenti
-          </Button>
-          <Button
-            variant="ghost"
-            onPress={() => handleNavChange("tutti")}
-            className={`w-full justify-start gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium ${
-              currentView === "tutti"
-                ? "bg-teal-600/10 text-teal-700 font-semibold"
-                : "text-slate-600 hover:bg-teal-600/6"
-            }`}
-          >
-            <List className="h-4 w-4 flex-shrink-0" />
-            Tutti gli elementi
-          </Button>
+            <ListBox.Item
+              id="recenti"
+              textValue="Recenti"
+              className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
+            >
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <Label>Recenti</Label>
+            </ListBox.Item>
+            <ListBox.Item
+              id="tutti"
+              textValue="Tutti gli elementi"
+              className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
+            >
+              <List className="h-4 w-4 flex-shrink-0" />
+              <Label>Tutti gli elementi</Label>
+            </ListBox.Item>
+          </ListBox>
 
-          {/* Board section */}
+          {/* Board section header */}
           <div className="mt-4 mb-1 flex items-center justify-between px-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Board</span>
+            <Text className="text-[10px] font-bold uppercase tracking-wider text-ink-dim">Board</Text>
             <Tooltip>
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  className="h-[24px] w-[24px] rounded text-slate-400 hover:bg-teal-600/6 hover:text-orange-500"
-                  aria-label="Nuovo board"
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-[24px] w-[24px] rounded text-ink-dim hover:bg-primary/6 hover:text-accent"
+                aria-label="Nuovo board"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
               <Tooltip.Content>Nuovo board</Tooltip.Content>
             </Tooltip>
           </div>
-          {BOARDS.map((board) => (
-            <Button
-              key={board.id}
-              variant="ghost"
-              title={board.nome}
-              onPress={() => handleNavChange(board.viewId)}
-              className={`w-full justify-start gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium ${
-                currentView === board.viewId
-                  ? "bg-orange-500/10 text-orange-600 font-semibold"
-                  : "text-slate-600 hover:bg-teal-600/6"
-              }`}
-            >
-              <LayoutGrid className={`h-4 w-4 flex-shrink-0 ${currentView === board.viewId ? "text-orange-500" : "text-slate-400"}`} />
-              <span className="flex-1 truncate">{board.nome}</span>
-              <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-[10px] text-slate-400">{board.count}</span>
-            </Button>
-          ))}
-        </div>
+
+          {/* Board ListBox — separate to keep orange selection styling */}
+          <ListBox
+            aria-label="Board"
+            selectionMode="single"
+            selectedKeys={currentView.startsWith("board-") ? new Set([currentView]) : new Set()}
+            onSelectionChange={(keys) => {
+              if (keys !== "all" && keys.size > 0) {
+                handleNavChange(String([...keys][0]) as ViewId);
+              }
+            }}
+            className="border-none p-0 outline-none"
+          >
+            {BOARDS.map((board) => (
+              <ListBox.Item
+                key={board.id}
+                id={board.viewId}
+                textValue={board.nome}
+                className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-accent/10 data-[selected]:text-accent data-[selected]:font-semibold"
+              >
+                <LayoutGrid className="h-4 w-4 flex-shrink-0 text-ink-dim" />
+                <Text className="flex-1 truncate">{board.nome}</Text>
+                <Text className="font-heading text-[10px] text-ink-dim">{board.count}</Text>
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </ScrollShadow>
 
         {/* Settings footer */}
-        <div className="border-t border-teal-600/6 px-1.5 py-1.5">
+        <div className="border-t border-primary/6 px-1.5 py-1.5">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              className="flex-1 justify-start gap-2 rounded-lg px-2.5 min-h-[36px] text-[13px] font-medium text-slate-500 hover:bg-teal-600/6"
+              className="flex-1 justify-start gap-2 rounded-lg px-2.5 min-h-[36px] text-[13px] font-medium text-ink-lo hover:bg-primary/6"
             >
               <Settings className="h-4 w-4" />
               Impostazioni
             </Button>
             <Tooltip>
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  className="h-[36px] w-[36px] rounded-lg text-slate-400 hover:bg-teal-600/6"
-                  onPress={() => setSidebarOpen(false)}
-                  aria-label="Chiudi navigazione"
-                >
-                  <PanelLeft className="h-3.5 w-3.5" />
-                </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-[36px] w-[36px] rounded-lg text-ink-dim hover:bg-primary/6"
+                onPress={() => setSidebarOpen(false)}
+                aria-label="Chiudi navigazione"
+              >
+                <PanelLeft className="h-3.5 w-3.5" />
+              </Button>
               <Tooltip.Content>Chiudi navigazione</Tooltip.Content>
             </Tooltip>
           </div>
@@ -439,253 +474,295 @@ export function WorkspacePreviewPage() {
 
       {/* ── LIST PANE ── */}
       <div
-        className={`flex flex-col border-r border-teal-600/10 transition-all duration-200 ease-in-out overflow-hidden ${
+        className={`flex flex-col border-r border-primary/10 transition-all duration-200 ease-in-out overflow-hidden ${
           fullscreen ? "w-0 min-w-0" : "w-[300px] min-w-[300px]"
         }`}
       >
         {/* List header */}
-        <div className="flex items-center gap-1.5 border-b border-teal-600/6 px-3 min-h-[44px]">
+        <div className="flex items-center gap-1.5 border-b border-primary/6 px-3 min-h-[44px]">
           {!sidebarOpen && (
             <Tooltip>
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  className="h-[30px] w-[30px] rounded-md text-slate-400 hover:bg-teal-600/6 mr-1"
-                  onPress={() => setSidebarOpen(true)}
-                  aria-label="Apri navigazione"
-                >
-                  <PanelLeft className="h-3.5 w-3.5" />
-                </Button>
-              <Tooltip.Content>Apri navigazione</Tooltip.Content>
-            </Tooltip>
-          )}
-          <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-xs font-semibold text-slate-700 truncate">
-            {viewLabel}
-          </span>
-          <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-[11px] text-slate-400">
-            {listCount}
-          </span>
-          <div className="flex-1" />
-          <Tooltip>
               <Button
                 variant="ghost"
                 isIconOnly
-                className="h-[30px] w-[30px] rounded-md border border-dashed border-orange-400/30 text-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:border-solid"
-                aria-label="Nuovo elemento"
+                className="h-[30px] w-[30px] rounded-md text-ink-dim hover:bg-primary/6 mr-1"
+                onPress={() => setSidebarOpen(true)}
+                aria-label="Apri navigazione"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <PanelLeft className="h-3.5 w-3.5" />
               </Button>
+              <Tooltip.Content>Apri navigazione</Tooltip.Content>
+            </Tooltip>
+          )}
+          <Text className="font-heading text-xs font-semibold text-ink-md truncate">
+            {viewLabel}
+          </Text>
+          <Text className="font-heading text-[11px] text-ink-dim">
+            {listCount}
+          </Text>
+          <div className="flex-1" />
+          <Tooltip>
+            <Button
+              variant="ghost"
+              isIconOnly
+              className="h-[30px] w-[30px] rounded-md border border-dashed border-accent/30 text-accent hover:bg-accent/5 hover:border-accent hover:border-solid"
+              aria-label="Nuovo elemento"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
             <Tooltip.Content>Nuovo elemento</Tooltip.Content>
           </Tooltip>
         </div>
 
-        {/* Search bar */}
-        <div className="border-b border-teal-600/6 px-3 py-1.5">
+        {/* Search bar — HeroUI SearchField */}
+        <div className="border-b border-primary/6 px-3 py-1.5">
           <SearchField value={filterText} onChange={setFilterText} aria-label="Cerca">
             <SearchField.Group className="flex items-center gap-1.5">
-              <SearchField.SearchIcon className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+              <SearchField.SearchIcon className="h-3.5 w-3.5 text-ink-dim flex-shrink-0" />
               <SearchField.Input
                 placeholder={isElementView ? "Filtra elementi..." : "Cerca ovunque..."}
-                className="flex-1 bg-transparent text-xs outline-none placeholder:text-slate-300"
+                className="flex-1 bg-transparent text-xs outline-none placeholder:text-ink-ghost"
               />
-              {!isElementView && <Kbd className="text-[10px] text-slate-300">/</Kbd>}
+              {!isElementView && <Kbd className="text-[10px] text-ink-ghost">/</Kbd>}
             </SearchField.Group>
           </SearchField>
         </div>
 
-        {/* Tipo chips (only for "tutti" view) */}
+        {/* Tipo filters — TagGroup with single selection */}
         {currentView === "tutti" && (
-          <div className="flex gap-1 border-b border-teal-600/6 px-3 py-1.5 flex-wrap">
-            {TIPO_FILTERS.map((tipo) => (
-              <Button
-                key={tipo}
-                variant="ghost"
-                onPress={() => setActiveTipo(tipo)}
-                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium min-h-[28px] ${
-                  activeTipo === tipo
-                    ? "border-teal-600/15 bg-teal-600/10 text-teal-700"
-                    : "border-slate-200 text-slate-500 hover:bg-teal-600/6"
-                }`}
-              >
-                {tipo}
-              </Button>
-            ))}
+          <div className="border-b border-primary/6 px-3 py-1.5">
+            <TagGroup
+              aria-label="Filtra per tipo"
+              selectionMode="single"
+              disallowEmptySelection
+              selectedKeys={new Set([activeTipo])}
+              onSelectionChange={(keys) => {
+                if (keys !== "all" && keys.size > 0) {
+                  setActiveTipo(String([...keys][0]));
+                }
+              }}
+            >
+              <TagGroup.List className="flex flex-wrap gap-1">
+                {TIPO_FILTERS.map((tipo) => (
+                  <Tag
+                    key={tipo}
+                    id={tipo}
+                    className="inline-flex items-center rounded-full border px-2.5 text-[10px] font-medium min-h-[28px] leading-none cursor-pointer border-edge text-ink-lo data-[selected]:border-primary/15 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[hovered]:bg-primary/6"
+                  >
+                    {tipo}
+                  </Tag>
+                ))}
+              </TagGroup.List>
+            </TagGroup>
           </div>
         )}
 
-        {/* List items */}
+        {/* List items — ListBox with keyboard navigation */}
         <ScrollShadow className="flex-1 overflow-y-auto">
-          {isRecentiView && RECENTI.map((rec) => (
-            <Button
-              key={`${rec.tipo}-${rec.id}`}
-              variant="ghost"
-              onPress={() => { if (rec.tipo === "elemento") handleSelectElement(rec.id); }}
-              className={`w-full justify-start gap-2 px-3 min-h-[44px] rounded-none ${
-                rec.tipo === "elemento" && selectedElementId === rec.id
-                  ? "bg-teal-600/10 border-l-[3px] border-l-teal-600 pl-[9px]"
-                  : "hover:bg-teal-600/6"
-              }`}
+          {/* Recenti view */}
+          {isRecentiView && (
+            <ListBox
+              aria-label="Elementi recenti"
+              selectionMode="single"
+              selectedKeys={selectedElementId ? new Set([`elemento-${selectedElementId}`]) : new Set()}
+              onSelectionChange={(keys) => {
+                if (keys === "all" || keys.size === 0) return;
+                const compositeKey = String([...keys][0]);
+                const dashIdx = compositeKey.indexOf("-");
+                const tipo = compositeKey.substring(0, dashIdx);
+                const id = compositeKey.substring(dashIdx + 1);
+                if (tipo === "elemento") handleSelectElement(id);
+                else if (tipo === "board") {
+                  const board = BOARDS.find((b) => b.id === id);
+                  if (board) handleNavChange(board.viewId);
+                }
+              }}
+              className="border-none p-0 outline-none"
             >
-              <Chip size="sm" className={`px-1.5 py-px text-[9px] font-semibold flex-shrink-0 ${
-                rec.tipo === "board"
-                  ? "bg-orange-500/10 text-orange-500 uppercase tracking-wider"
-                  : "bg-teal-600/10 text-teal-700"
-              }`}>
-                {rec.badge}
-              </Chip>
-              <span className="flex-1 truncate text-xs font-medium text-slate-700">{rec.titolo}</span>
-              <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-[9px] text-slate-400 flex-shrink-0">
-                {rec.tempo}
-              </span>
-            </Button>
-          ))}
+              {RECENTI.map((rec) => (
+                <ListBox.Item
+                  key={`${rec.tipo}-${rec.id}`}
+                  id={`${rec.tipo}-${rec.id}`}
+                  textValue={rec.titolo}
+                  className="flex items-center gap-2 rounded-none px-3 min-h-[44px] cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:border-l-[3px] data-[selected]:border-l-primary data-[selected]:pl-[9px]"
+                >
+                  <Chip size="sm" className={`px-1.5 py-px text-[9px] font-semibold flex-shrink-0 ${
+                    rec.tipo === "board"
+                      ? "bg-accent/10 text-accent uppercase tracking-wider"
+                      : "bg-primary/10 text-primary"
+                  }`}>
+                    {rec.badge}
+                  </Chip>
+                  <Text className="flex-1 truncate text-xs font-medium text-ink-md">{rec.titolo}</Text>
+                  <Text className="font-heading text-[9px] text-ink-dim flex-shrink-0">
+                    {rec.tempo}
+                  </Text>
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          )}
 
-          {isElementView && currentElements.map((el) => (
-            <Button
-              key={el.id}
-              variant="ghost"
-              onPress={() => handleSelectElement(el.id)}
-              className={`w-full justify-start gap-2 px-3 min-h-[44px] rounded-none ${
-                selectedElementId === el.id
-                  ? "bg-teal-600/10 border-l-[3px] border-l-teal-600 pl-[9px]"
-                  : "hover:bg-teal-600/6"
-              }`}
+          {/* Element view */}
+          {isElementView && currentElements.length > 0 && (
+            <ListBox
+              aria-label="Elementi"
+              selectionMode="single"
+              selectedKeys={selectedElementId ? new Set([selectedElementId]) : new Set()}
+              onSelectionChange={(keys) => {
+                if (keys !== "all" && keys.size > 0) {
+                  handleSelectElement(String([...keys][0]));
+                }
+              }}
+              className="border-none p-0 outline-none"
             >
-              <span className="flex-1 truncate text-xs font-medium text-slate-700">{el.titolo}</span>
-              <Chip size="sm" className="bg-teal-600/10 px-1.5 py-px text-[10px] font-semibold text-teal-700 flex-shrink-0">
-                {TIPO_ABBREV[el.tipo] ?? el.tipo}
-              </Chip>
-              {el.data && (
-                <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-[9px] text-slate-400 flex-shrink-0">
-                  {el.data}
-                </span>
-              )}
-            </Button>
-          ))}
+              {currentElements.map((el) => (
+                <ListBox.Item
+                  key={el.id}
+                  id={el.id}
+                  textValue={el.titolo}
+                  className="flex items-center gap-2 rounded-none px-3 min-h-[44px] cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:border-l-[3px] data-[selected]:border-l-primary data-[selected]:pl-[9px]"
+                >
+                  <Text className="flex-1 truncate text-xs font-medium text-ink-md">{el.titolo}</Text>
+                  <Chip size="sm" className="bg-primary/10 px-1.5 py-px text-[10px] font-semibold text-primary flex-shrink-0">
+                    {TIPO_ABBREV[el.tipo] ?? el.tipo}
+                  </Chip>
+                  {el.data && (
+                    <Text className="font-heading text-[9px] text-ink-dim flex-shrink-0">
+                      {el.data}
+                    </Text>
+                  )}
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          )}
 
+          {/* Empty state */}
           {isElementView && currentElements.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-              <p className="text-xs text-slate-500 mb-3">Nessun risultato.</p>
+            <EmptyState className="flex flex-col items-center justify-center py-16 px-4">
+              <Text className="text-xs text-ink-lo mb-3">Nessun risultato.</Text>
               {filterText && (
                 <Button
                   variant="ghost"
                   onPress={() => { setFilterText(""); setActiveTipo("Tutti"); }}
-                  className="text-xs text-teal-600 underline"
+                  className="text-xs text-primary underline"
                 >
                   Resetta filtri
                 </Button>
               )}
-            </div>
+            </EmptyState>
           )}
         </ScrollShadow>
       </div>
 
       {/* ── DETAIL PANE ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
-
         {selectedElement ? (
           <>
-            {/* Detail header */}
-            <div className="border-b border-teal-600/6 px-4 pt-3 pb-2">
-              <div className="flex items-start justify-between">
-                <h1 style={{ fontFamily: "'Fira Code', monospace" }} className="text-lg font-semibold text-slate-800">
-                  {selectedElement.titolo}
-                </h1>
-                <Tooltip>
+            {/* Detail header — Card structure */}
+            <Card className="border-none shadow-none rounded-none border-b border-primary/6 bg-transparent">
+              <Card.Header className="px-4 pt-3 pb-2">
+                <div className="flex items-start justify-between">
+                  <Card.Title className="font-heading text-lg font-semibold text-ink-hi">
+                    {selectedElement.titolo}
+                  </Card.Title>
+                  <Tooltip>
                     <Button
                       variant="ghost"
                       isIconOnly
-                      className="h-[30px] w-[30px] rounded-md text-slate-400 hover:bg-teal-600/6"
+                      className="h-[30px] w-[30px] rounded-md text-ink-dim hover:bg-primary/6"
                       onPress={() => setFullscreen(true)}
                       aria-label="Schermo intero"
                     >
                       <Maximize2 className="h-3.5 w-3.5" />
                     </Button>
-                  <Tooltip.Content>Schermo intero</Tooltip.Content>
-                </Tooltip>
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                <Chip size="sm" className="bg-teal-600/10 px-1.5 py-px text-[10px] font-semibold text-teal-700">
-                  {selectedElement.tipo}
-                </Chip>
-                {selectedElement.tags.map((tag) => (
-                  <Chip key={tag} size="sm" className="bg-slate-100 px-1.5 py-px text-[10px] font-medium text-slate-500">
-                    {tag}
+                    <Tooltip.Content>Schermo intero</Tooltip.Content>
+                  </Tooltip>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                  <Chip size="sm" className="bg-primary/10 px-1.5 py-px text-[10px] font-semibold text-primary">
+                    {selectedElement.tipo}
                   </Chip>
-                ))}
-                {selectedElement.data && (
-                  <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-[11px] text-slate-400">
-                    {selectedElement.data}
-                  </span>
-                )}
-              </div>
-            </div>
+                  {selectedElement.tags.map((tag) => (
+                    <Chip key={tag} size="sm" className="bg-chip-bg px-1.5 py-px text-[10px] font-medium text-ink-lo">
+                      {tag}
+                    </Chip>
+                  ))}
+                  {selectedElement.data && (
+                    <Text className="font-heading text-[11px] text-ink-dim">
+                      {selectedElement.data}
+                    </Text>
+                  )}
+                </div>
+              </Card.Header>
+            </Card>
 
-            {/* Toolbar */}
+            {/* Action toolbar */}
             {renderToolbar(false)}
 
-            {/* Body */}
+            {/* Detail body */}
             <ScrollShadow className="flex-1 overflow-y-auto px-4 py-3">
               {renderDetailBody(selectedElement, false)}
             </ScrollShadow>
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2">
-            <p className="text-base font-semibold text-slate-700">Seleziona un elemento</p>
-            <p className="text-sm text-slate-400">Scegli dalla lista per visualizzarne i dettagli.</p>
-            <p className="mt-3 text-[11px] text-slate-300">
-              Premi{" "}
-              <Kbd className="text-[10px]">/</Kbd>
-              {" "}per cercare
-            </p>
-          </div>
+          /* Empty detail state */
+          <EmptyState className="flex flex-1 flex-col items-center justify-center gap-2">
+            <Text className="text-base font-semibold text-ink-md">Seleziona un elemento</Text>
+            <Text className="text-sm text-ink-dim">Scegli dalla lista per visualizzarne i dettagli.</Text>
+            <Text className="mt-3 text-[11px] text-ink-ghost">
+              Premi <Kbd className="text-[10px]">/</Kbd> per cercare
+            </Text>
+          </EmptyState>
         )}
       </div>
+
+      {/* ── THEME SWITCHER (temporary prototype tool) ── */}
+      <ThemeSwitcher />
 
       {/* ── FULLSCREEN OVERLAY ── */}
       {selectedElement && (
         <div
-          className={`fixed inset-0 z-40 flex flex-col bg-white transition-all duration-300 ease-in-out ${
+          className={`fixed inset-0 z-40 flex flex-col bg-panel transition-all duration-300 ease-in-out ${
             fullscreen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
           }`}
         >
-          <header className="flex items-center gap-3 border-b border-teal-600/10 px-4 min-h-[48px]">
+          <header className="flex items-center gap-3 border-b border-primary/10 px-4 min-h-[48px]">
             <Tooltip>
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  className="h-[36px] w-[36px] rounded-lg text-slate-500 hover:bg-teal-600/6"
-                  onPress={handleExitFullscreen}
-                  aria-label="Torna alla lista"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-[36px] w-[36px] rounded-lg text-ink-lo hover:bg-primary/6"
+                onPress={() => setFullscreen(false)}
+                aria-label="Torna alla lista"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <Tooltip.Content>Torna alla lista</Tooltip.Content>
             </Tooltip>
-            <h1 style={{ fontFamily: "'Fira Code', monospace" }} className="text-base font-semibold text-slate-800 truncate">
+            <Text className="font-heading text-base font-semibold text-ink-hi truncate">
               {selectedElement.titolo}
-            </h1>
+            </Text>
             <div className="flex items-center gap-1.5">
-              <Chip size="sm" className="bg-teal-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-teal-700">
+              <Chip size="sm" className="bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                 {selectedElement.tipo}
               </Chip>
               {selectedElement.data && (
-                <span style={{ fontFamily: "'Fira Code', monospace" }} className="text-[11px] text-slate-400">
+                <Text className="font-heading text-[11px] text-ink-dim">
                   {selectedElement.data}
-                </span>
+                </Text>
               )}
             </div>
             <div className="flex-1" />
             <Tooltip>
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  className="h-[36px] w-[36px] rounded-lg text-slate-500 hover:bg-teal-600/6"
-                  onPress={handleExitFullscreen}
-                  aria-label="Esci da schermo intero"
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-[36px] w-[36px] rounded-lg text-ink-lo hover:bg-primary/6"
+                onPress={() => setFullscreen(false)}
+                aria-label="Esci da schermo intero"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </Button>
               <Tooltip.Content>Esci da schermo intero</Tooltip.Content>
             </Tooltip>
           </header>
