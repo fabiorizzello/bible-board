@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { DemoAuthPage } from "@/ui/auth/DemoAuthPage";
+import { WorkspaceHomePage } from "@/ui/workspace-home/WorkspaceHomePage";
 import { useAuth } from "@/app/auth-context";
 
 /**
@@ -22,30 +23,6 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;
-}
-
-/**
- * Placeholder home — will be replaced by WorkspaceHomePage in T03.
- */
-function WorkspaceHomePlaceholder() {
-  const { nome, logout } = useAuth();
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-surface gap-4">
-      <h1 className="font-heading text-xl text-ink">
-        Ciao, {nome}
-      </h1>
-      <p className="text-sm text-ink-md">
-        Workspace Home — in costruzione (T03)
-      </p>
-      <button
-        type="button"
-        onClick={logout}
-        className="text-sm text-accent underline"
-      >
-        Esci
-      </button>
-    </div>
-  );
 }
 
 function NotFoundRoute() {
@@ -74,7 +51,7 @@ export const appRouter = createBrowserRouter([
     path: "/",
     element: (
       <RequireAuth>
-        <WorkspaceHomePlaceholder />
+        <WorkspaceHomePage />
       </RequireAuth>
     ),
   },
