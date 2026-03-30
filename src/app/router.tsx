@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { DemoAuthPage } from "@/ui/auth/DemoAuthPage";
 import { WorkspaceHomePage } from "@/ui/workspace-home/WorkspaceHomePage";
+import { WorkspaceLayout } from "@/ui/workspace-layout/WorkspaceLayout";
 import { useAuth } from "@/app/auth-context";
 
 /**
@@ -54,6 +55,20 @@ export const appRouter = createBrowserRouter([
         <WorkspaceHomePage />
       </RequireAuth>
     ),
+  },
+  {
+    path: "/workspace",
+    element: (
+      <RequireAuth>
+        <WorkspaceLayout />
+      </RequireAuth>
+    ),
+    children: [
+      { index: true, element: null },
+      { path: "tutti", element: null },
+      { path: "elemento/:elementoId", element: null },
+      { path: "board/:boardId", element: null },
+    ],
   },
   { path: "*", Component: NotFoundRoute },
 ]);
