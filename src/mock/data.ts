@@ -327,7 +327,7 @@ export const BOARDS: readonly Board[] = [
       tags: [TAGS.messianico as string],
       tipi: ["profezia" as const],
     } satisfies SelezioneElementi,
-    ultimaVista: "lista",
+    ultimaVista: "timeline",
   },
 ];
 

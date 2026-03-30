@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { Button, Chip, ListBox } from "@heroui/react";
 import { Plus, Circle } from "lucide-react";
 import { useAuth } from "@/app/auth-context";
@@ -133,6 +133,7 @@ function PopulatedWorkspaceState({
   userName: string | null;
   onLogout: () => void;
 }) {
+  const navigate = useNavigate();
   const tagCount = workspace.tagRegistry.length;
   const boardCount = workspace.boardIds.length;
   const elementCount = ELEMENTI.length;
@@ -194,7 +195,13 @@ function PopulatedWorkspaceState({
               onSelectionChange={(keys) => {
                 if (keys === "all" || keys.size === 0) return;
                 const key = String([...keys][0]);
-                console.log("[WorkspaceHome] Navigate to:", key);
+                const rec = recenti.find((r) => r.id === key);
+                if (!rec) return;
+                if (rec.tipo === "board") {
+                  navigate(`/workspace/board/${rec.id}`);
+                } else {
+                  navigate(`/workspace/elemento/${rec.id}`);
+                }
               }}
               className="border-none p-0 outline-none"
             >
