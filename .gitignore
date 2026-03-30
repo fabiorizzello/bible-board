@@ -10,10 +10,6 @@ Desktop.ini
 .codex/
 .idea/
 .vscode/
-# GSD state (DB, browser state, etc.)
-.gsd/gsd.db
-.gsd/browser-state/
-.gsd/browser-baselines/
 
 # Logs and temp files
 *.log
@@ -38,7 +34,7 @@ coverage/
 .env.*
 !.env.example
 
-# ── GSD baseline (auto-generated) ──
+# ── GSD (symlink to external project state) ──
 .gsd
 *.code-workspace
 __pycache__/
