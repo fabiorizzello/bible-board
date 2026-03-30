@@ -1,4 +1,5 @@
 :root {
+  /* ── Project design tokens ── */
   --board-color-primary: #0d9488;
   --board-color-secondary: #14b8a6;
   --board-color-accent: #f97316;
@@ -19,6 +20,37 @@
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+
+  /* ── HeroUI semantic variable overrides (teal/orange palette) ── */
+  --background: #f0fdfa;
+  --foreground: #134e4a;
+  --accent: #0d9488;
+  --accent-foreground: #ffffff;
+  --focus: #0d9488;
+  --link: #0d9488;
+
+  --surface: #ffffff;
+  --surface-foreground: #134e4a;
+  --surface-secondary: #f0fdfa;
+  --surface-secondary-foreground: #134e4a;
+  --surface-tertiary: #ccfbf1;
+  --surface-tertiary-foreground: #134e4a;
+
+  --overlay: #ffffff;
+  --overlay-foreground: #134e4a;
+
+  --muted: #64748b;
+  --scrollbar: #94a3b8;
+
+  --default: #e2e8f0;
+  --default-foreground: #134e4a;
+
+  --field-background: #ffffff;
+  --field-foreground: #134e4a;
+  --field-placeholder: #94a3b8;
+
+  --border: #e2e8f0;
+  --separator: #e2e8f0;
 }
 
 @theme {

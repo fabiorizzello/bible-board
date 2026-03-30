@@ -19,7 +19,14 @@ body {
 button,
 input,
 textarea,
-select {
+select,
+a,
+[role="button"],
+[role="tab"],
+[role="option"],
+[role="menuitem"],
+[role="link"],
+[data-slot] {
   font: inherit;
   touch-action: manipulation;
 }
