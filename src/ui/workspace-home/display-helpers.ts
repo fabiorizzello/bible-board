@@ -1,0 +1,229 @@
+/**
+ * Display helpers — bridge between domain-typed mock data and UI components.
+ *
+ * Functions here adapt Elemento (branded IDs, DataStorica, ElementoLink)
+ * to the display shapes the UI needs (formatted dates, resolved names, etc.).
+ */
+
+import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model";
+import type { Board } from "@/features/board/board.model";
+import { formatHistoricalEra } from "@/features/shared/value-objects";
+import type { DataStorica } from "@/features/shared/value-objects";
+import { ELEMENTI, BOARDS, ELEMENTI_MAP, ELEMENTO_IDS } from "@/mock/data";
+
+import type { ViewId } from "./workspace-ui-store";
+
+// Re-export ViewId for convenience — single import point for UI modules
+export type { ViewId };
+
+// ── Constants ──
+
+/** Filter labels shown in the tipo filter bar. */
+export const TIPO_FILTERS = [
+  "Tutti",
+  "Personaggi",
+  "Eventi",
+  "Luoghi",
+  "Profezie",
+] as const;
+
+export type TipoFilter = (typeof TIPO_FILTERS)[number];
+
+/** Abbreviated tipo labels for compact display (badges, list items). */
+export const TIPO_ABBREV: Record<string, string> = {
+  personaggio: "pers.",
+  evento: "evento",
+  luogo: "luogo",
+  profezia: "prof.",
+  regno: "regno",
+  periodo: "periodo",
+  guerra: "guerra",
+  annotazione: "nota",
+};
+
+/** Maps filter UI labels to domain ElementoTipo values. */
+const tipoFilterMap: Record<string, ElementoTipo> = {
+  Personaggi: "personaggio",
+  Eventi: "evento",
+  Luoghi: "luogo",
+  Profezie: "profezia",
+};
+
+// ── Date formatting ──
+
+/** Format a DataStorica to a display string like "2018 a.e.v." or "~732 a.e.v." */
+function formatDataStorica(d: DataStorica): string {
+  const prefix = d.precisione === "circa" ? "~" : "";
+  return `${prefix}${d.anno} ${formatHistoricalEra(d.era)}`;
+}
+
+/**
+ * Extract the primary display date from an Elemento.
+ *
+ * Priority: nascita → date (puntuale: single date, range: inizio) → undefined
+ */
+export function formatElementDate(el: Elemento): string | undefined {
+  if (el.nascita) {
+    return formatDataStorica(el.nascita);
+  }
+  if (el.date) {
+    if (el.date.kind === "puntuale") {
+      return formatDataStorica(el.date.data);
+    }
+    // range — show start date
+    return formatDataStorica(el.date.inizio);
+  }
+  return undefined;
+}
+
+// ── Element filtering ──
+
+/**
+ * Get the elements for a board based on its selezione criteria.
+ * For "fissa" boards: filter ELEMENTI by IDs in the selection.
+ * For "dinamica" boards: filter ELEMENTI by tags/tipi.
+ */
+function getBoardElements(board: Board): Elemento[] {
+  if (board.selezione.kind === "fissa") {
+    const idSet = new Set(board.selezione.elementiIds);
+    return ELEMENTI.filter((el) => idSet.has(el.id as string));
+  }
+  // dinamica
+  return ELEMENTI.filter((el) => {
+    const matchesTag =
+      !board.selezione.tags?.length ||
+      el.tags.some((t) => board.selezione.tags!.includes(t));
+    const matchesTipo =
+      !board.selezione.tipi?.length ||
+      board.selezione.tipi.includes(el.tipo);
+    return matchesTag || matchesTipo;
+  });
+}
+
+/**
+ * Get filtered elements for a given view, search text, and tipo filter.
+ *
+ * Replaces the monolith's useCallback-wrapped getElementsForView.
+ */
+export function getElementsForView(
+  viewId: ViewId,
+  filterText: string,
+  activeTipo: string,
+): Elemento[] {
+  let items: Elemento[];
+
+  switch (viewId) {
+    case "recenti":
+      // recenti view doesn't show the element list
+      return [];
+
+    case "tutti":
+      items = [...ELEMENTI];
+      break;
+
+    default: {
+      // board-patriarchi → find matching board
+      const board = BOARDS.find((b) => {
+        if (viewId === "board-patriarchi") return b.nome === "Patriarchi e Giudici";
+        if (viewId === "board-profeti") return b.nome === "Profeti di Israele";
+        return false;
+      });
+      items = board ? getBoardElements(board) : [];
+      break;
+    }
+  }
+
+  // Text search filter
+  if (filterText) {
+    const q = filterText.toLowerCase();
+    items = items.filter((el) => el.titolo.toLowerCase().includes(q));
+  }
+
+  // Tipo filter
+  if (activeTipo !== "Tutti") {
+    const mappedTipo = tipoFilterMap[activeTipo];
+    if (mappedTipo) {
+      items = items.filter((el) => el.tipo === mappedTipo);
+    }
+  }
+
+  return items;
+}
+
+// ── Link resolution ──
+
+/** Resolved link for display — titolo and tipo instead of raw targetId. */
+export interface ResolvedLink {
+  readonly titolo: string;
+  readonly tipo: string;
+}
+
+/**
+ * Resolve an Elemento's link targetIds to display names.
+ * Falls back to the raw targetId if the target isn't found.
+ */
+export function resolveCollegamenti(el: Elemento): ResolvedLink[] {
+  return el.link.map((link) => {
+    const target = ELEMENTI_MAP.get(link.targetId);
+    return {
+      titolo: target?.titolo ?? link.targetId,
+      tipo: link.tipo,
+    };
+  });
+}
+
+// ── Board resolution ──
+
+/**
+ * Find which boards contain a given element.
+ * Returns board names for display.
+ */
+export function resolveBoardsForElement(el: Elemento): string[] {
+  return BOARDS.filter((board) => {
+    if (board.selezione.kind === "fissa") {
+      return board.selezione.elementiIds.includes(el.id as string);
+    }
+    // dinamica
+    const matchesTag =
+      board.selezione.tags?.some((t) => el.tags.includes(t)) ?? false;
+    const matchesTipo =
+      board.selezione.tipi?.includes(el.tipo) ?? false;
+    return matchesTag || matchesTipo;
+  }).map((b) => b.nome);
+}
+
+// ── Fonti ──
+
+/**
+ * Mock fonti data — only Abraamo has fonti in the preview.
+ * Keyed by ElementoId string value.
+ */
+export const MOCK_FONTI: ReadonlyMap<string, readonly string[]> = new Map([
+  [
+    ELEMENTO_IDS.abraamo as string,
+    [
+      "Genesi 12:1-3",
+      "Genesi 15:5-6",
+      "Genesi 22:1-18",
+      "Ebrei 11:8-10",
+    ],
+  ],
+]);
+
+/**
+ * Get fonti references for an elemento.
+ * Returns empty array if no fonti are registered.
+ */
+export function getFontiForElement(el: Elemento): readonly string[] {
+  return MOCK_FONTI.get(el.id as string) ?? [];
+}
+
+// ── Element lookup ──
+
+/**
+ * Find an element by ID across all data sources (ELEMENTI).
+ * Used by the detail pane to resolve the selected element.
+ */
+export function findElementById(id: string): Elemento | undefined {
+  return ELEMENTI_MAP.get(id);
+}

@@ -99,7 +99,7 @@ export function matchDynamicSelection(
 interface SearchableElemento {
   readonly id: string;
   readonly titolo: string;
-  readonly note: string;
+  readonly descrizione: string;
   readonly tags: readonly string[];
 }
 
@@ -112,7 +112,7 @@ export function searchBoardElementi(
 
   return elementi.filter((el) => {
     if (el.titolo.toLowerCase().includes(trimmed)) return true;
-    if (el.note.toLowerCase().includes(trimmed)) return true;
+    if (el.descrizione.toLowerCase().includes(trimmed)) return true;
     if (el.tags.some((t) => t.toLowerCase().includes(trimmed))) return true;
     return false;
   });

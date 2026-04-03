@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router";
-import { Button, Input } from "@heroui/react";
+import { Button, FieldError, Input, Label, TextField } from "@heroui/react";
 import { useAuth } from "@/app/auth-context";
 
 /**
  * DemoAuth — full-page login screen.
  * Single-field name entry for mock authentication (R001 placeholder).
+ *
+ * Uses HeroUI v3 TextField composition: TextField > Label + Input + FieldError
  */
 export function DemoAuthPage() {
   const { login } = useAuth();
@@ -37,7 +40,9 @@ export function DemoAuthPage() {
       inputRef.current?.focus();
       return;
     }
-    login(nome.trim());
+    // flushSync ensures the auth state is committed before navigation triggers
+    // RequireAuth guards — otherwise React batching defers the update.
+    flushSync(() => login(nome.trim()));
     navigate("/", { replace: true });
   }
 
@@ -68,24 +73,24 @@ export function DemoAuthPage() {
         </p>
 
         <div className="mt-8">
-          <Input
-            ref={inputRef}
-            label="Il tuo nome"
-            placeholder="es. Marco"
+          <TextField
             value={nome}
-            onValueChange={handleChange}
-            onBlur={handleBlur}
+            onChange={handleChange}
             isRequired
             isInvalid={touched && !!errore}
-            errorMessage={touched ? errore : undefined}
-            variant="bordered"
-            size="sm"
             autoComplete="name"
-            classNames={{
-              inputWrapper: "min-h-[44px]",
-              label: "font-body",
-            }}
-          />
+          >
+            <Label className="font-body text-sm text-ink-md">Il tuo nome</Label>
+            <Input
+              ref={inputRef}
+              placeholder="es. Marco"
+              onBlur={handleBlur}
+              className="min-h-[44px]"
+            />
+            {touched && errore && (
+              <FieldError className="mt-1 text-xs text-red-600">{errore}</FieldError>
+            )}
+          </TextField>
         </div>
 
         <Button

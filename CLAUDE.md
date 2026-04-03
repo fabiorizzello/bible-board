@@ -32,7 +32,7 @@ UI con HeroUI + Tailwind CSS + lucide-react. Componenti WCAG 2.1 AA, ottimizzati
 - **lucide-react** per tutte le icone — no emojis come icone UI.
 - Tutti gli elementi interattivi DEVONO essere navigabili da tastiera.
 - Form inputs DEVONO avere label e stati di errore.
-- Touch target minimo 48x48px con gap 8px.
+- Touch target minimo 44x44px con gap 8px.
 - `prefers-reduced-motion` DEVE essere rispettato.
 - `touch-action: manipulation` su tutte le aree interattive.
 
@@ -107,9 +107,7 @@ src/
       value-objects.ts
   ui/
     workspace-home/
-    board-view/
-    elemento-editor/
-    elemento-detail/
+    auth/
 ```
 
 ### VII. Testing Strategy
@@ -159,8 +157,9 @@ Scelte fisse, NON sostituibili senza emendamento alla constitution:
 | Auth | Jazz built-in auth |
 | Error Handling | neverthrow |
 | Branded Types | Zod `.brand()` via jazz-tools `z` |
+| Forms | TanStack Form (headless, type-safe) |
 | Validation | Zod (schema validation) |
-| State (UI) | Legend State (if needed) |
+| State (UI) | Legend State (@legendapp/state) |
 | Testing | Vitest |
 | PWA | vite-plugin-pwa (Workbox) |
 | Deployment | Static build, zero server |

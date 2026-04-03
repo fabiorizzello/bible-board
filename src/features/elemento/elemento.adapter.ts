@@ -104,7 +104,7 @@ export function createElementoInWorkspace(
   const elemento = ElementoSchema.create(
     {
       titolo: normalized.titolo,
-      note: normalized.note,
+      descrizione: normalized.descrizione,
       ...serializeDataTemporale(normalized.date),
       nascita: normalized.nascita
         ? serializeHistoricalDate(normalized.nascita)
@@ -147,7 +147,7 @@ export function updateWorkspaceElemento(
   const normalized = normalizedResult.value;
 
   elemento.titolo = normalized.titolo;
-  elemento.note = normalized.note;
+  elemento.descrizione = normalized.descrizione;
   elemento.tipo = normalized.tipo;
 
   if (normalized.date) {

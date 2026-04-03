@@ -31,7 +31,7 @@ const DataStoricaSchema = z
 
 export const ElementoSchema = co.map({
   titolo: z.string(),
-  note: z.string(),
+  descrizione: z.string(),
   dateKind: z.enum(["puntuale", "range"]).optional(),
   data: DataStoricaSchema.optional(),
   inizio: DataStoricaSchema.optional(),
@@ -45,7 +45,8 @@ export const ElementoSchema = co.map({
     "regno",
     "periodo",
     "luogo",
-    "evento"
+    "evento",
+    "annotazione"
   ]),
   tags: co.list(z.string()),
   fonti: co.list(FonteSchema),

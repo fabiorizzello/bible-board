@@ -48,7 +48,7 @@ interface Elemento {
   tipo: string;
   data?: string;
   tags: string[];
-  note?: string;
+  descrizione?: string;
   collegamenti?: { titolo: string; tipo: string }[];
   fonti?: string[];
   boards?: string[];
@@ -72,7 +72,7 @@ interface Recente {
 // ── Mock data ──
 
 const ELEMENTI: Elemento[] = [
-  { id: "1", titolo: "Abraamo", tipo: "personaggio", data: "2018 a.e.v.", tags: ["patriarchi"], note: "Patriarca di Israele. Abraamo lascio Ur dei Caldei per la Terra Promessa. Padre di Isacco attraverso Sara e di Ismaele attraverso Agar. La promessa divina di una discendenza numerosa come le stelle del cielo e la sabbia del mare.", collegamenti: [{ titolo: "Isacco", tipo: "parentela" }, { titolo: "Sara", tipo: "parentela" }, { titolo: "Ur dei Caldei", tipo: "localizzazione" }, { titolo: "Ismaele", tipo: "parentela" }], fonti: ["Genesi 12:1-3", "Genesi 15:5-6", "Genesi 22:1-18", "Ebrei 11:8-10"], boards: ["Patriarchi e Giudici"] },
+  { id: "1", titolo: "Abraamo", tipo: "personaggio", data: "2018 a.e.v.", tags: ["patriarchi"], descrizione: "Patriarca di Israele. Abraamo lascio Ur dei Caldei per la Terra Promessa. Padre di Isacco attraverso Sara e di Ismaele attraverso Agar. La promessa divina di una discendenza numerosa come le stelle del cielo e la sabbia del mare.", collegamenti: [{ titolo: "Isacco", tipo: "parentela" }, { titolo: "Sara", tipo: "parentela" }, { titolo: "Ur dei Caldei", tipo: "localizzazione" }, { titolo: "Ismaele", tipo: "parentela" }], fonti: ["Genesi 12:1-3", "Genesi 15:5-6", "Genesi 22:1-18", "Ebrei 11:8-10"], boards: ["Patriarchi e Giudici"] },
   { id: "2", titolo: "Babilonia", tipo: "luogo", tags: ["esilio"] },
   { id: "3", titolo: "Diluvio universale", tipo: "evento", data: "2370 a.e.v.", tags: [] },
   { id: "4", titolo: "Esodo dall'Egitto", tipo: "evento", data: "1513 a.e.v.", tags: ["liberazione"] },
@@ -119,6 +119,10 @@ const TIPO_ABBREV: Record<string, string> = {
   evento: "evento",
   luogo: "luogo",
   profezia: "prof.",
+  regno: "regno",
+  periodo: "periodo",
+  guerra: "guerra",
+  annotazione: "nota",
 };
 
 // ── Component ──
@@ -195,13 +199,13 @@ export function WorkspacePreviewPage() {
           </div>
         )}
 
-        {el.note && (
+        {el.descrizione && (
           <Card className={`border-none shadow-none bg-transparent ${section}`}>
             <Card.Header className={heading}>
-              <Card.Title className={title}>Note</Card.Title>
+              <Card.Title className={title}>Descrizione</Card.Title>
             </Card.Header>
             <Card.Content className="p-0">
-              <Text className={`${bodyText} leading-relaxed text-ink-md`}>{el.note}</Text>
+              <Text className={`${bodyText} leading-relaxed text-ink-md`}>{el.descrizione}</Text>
             </Card.Content>
           </Card>
         )}

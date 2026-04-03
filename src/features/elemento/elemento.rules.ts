@@ -7,7 +7,7 @@ import type { ElementoLink, ElementoTipo, RuoloLink, TipoLink } from "@/features
 
 export interface ElementoInput {
   readonly titolo: string;
-  readonly note?: string;
+  readonly descrizione?: string;
   readonly date?: DataTemporale;
   readonly nascita?: DataStorica;
   readonly morte?: DataStorica;
@@ -17,7 +17,7 @@ export interface ElementoInput {
 
 export interface NormalizedElementoInput {
   readonly titolo: string;
-  readonly note: string;
+  readonly descrizione: string;
   readonly date?: DataTemporale;
   readonly nascita?: DataStorica;
   readonly morte?: DataStorica;
@@ -125,7 +125,7 @@ export function normalizeElementoInput(
 
   return ok({
     titolo: titoloResult.value,
-    note: input.note?.trim() || "",
+    descrizione: input.descrizione?.trim() || "",
     date: input.date,
     nascita: input.nascita,
     morte: input.morte,

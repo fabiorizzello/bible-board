@@ -90,6 +90,10 @@ export const ELEMENTO_IDS = {
   giuseppe: eid("elem-giuseppe"),
   giosue: eid("elem-giosue"),
   gedeone: eid("elem-gedeone"),
+  conquistaCanaan: eid("elem-conquista-canaan"),
+  annotazioneAbraamo: eid("elem-annotazione-abraamo"),
+  annotazioneEsodo: eid("elem-annotazione-esodo"),
+  annotazioneIsaia53: eid("elem-annotazione-isaia53"),
 } as const;
 
 export const BOARD_IDS = {
@@ -107,6 +111,7 @@ const TAGS = {
   liberazione: tag("liberazione"),
   legge: tag("legge"),
   messianico: tag("messianico"),
+  conquista: tag("conquista"),
 } as const;
 
 // ── Elementi ──
@@ -128,7 +133,9 @@ export const ELEMENTI: readonly Elemento[] = [
     nascita: ds(2018, "aev"),
     morte: ds(1843, "aev"),
     tags: [TAGS.patriarchi as string],
-    note: "Patriarca di Israele. Abraamo lasciò Ur dei Caldei per la Terra Promessa. Padre di Isacco attraverso Sara e di Ismaele attraverso Agar. La promessa divina di una discendenza numerosa come le stelle del cielo e la sabbia del mare.",
+    descrizione: "Patriarca di Israele. Abraamo lasciò Ur dei Caldei per la Terra Promessa. Padre di Isacco attraverso Sara e di Ismaele attraverso Agar. La promessa divina di una discendenza numerosa come le stelle del cielo e la sabbia del mare.",
+    tribu: "Sem",
+    ruoli: ["patriarca", "profeta"],
     link: [
       makeLink(ELEMENTO_IDS.isacco, "parentela", "padre"),
       makeLink(ELEMENTO_IDS.sara, "parentela", "coniuge"),
@@ -140,7 +147,8 @@ export const ELEMENTI: readonly Elemento[] = [
     titolo: "Babilonia",
     tipo: "luogo",
     tags: [TAGS.esilio as string],
-    note: "",
+    descrizione: "",
+    regione: "Mesopotamia",
     link: [],
   },
   {
@@ -149,7 +157,7 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "evento",
     date: puntuale(2370, "aev"),
     tags: [],
-    note: "",
+    descrizione: "",
     link: [],
   },
   {
@@ -158,7 +166,7 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "evento",
     date: puntuale(1513, "aev"),
     tags: [TAGS.liberazione as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.mose, "correlato"),
       makeLink(ELEMENTO_IDS.monteSinai, "localizzazione"),
@@ -169,7 +177,7 @@ export const ELEMENTI: readonly Elemento[] = [
     titolo: "Gerusalemme",
     tipo: "luogo",
     tags: [],
-    note: "",
+    descrizione: "",
     link: [],
   },
   {
@@ -179,7 +187,7 @@ export const ELEMENTI: readonly Elemento[] = [
     nascita: ds(1918, "aev"),
     morte: ds(1738, "aev"),
     tags: [TAGS.patriarchi as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.abraamo, "parentela", "figlio"),
       makeLink(ELEMENTO_IDS.sara, "parentela", "figlio"),
@@ -191,7 +199,7 @@ export const ELEMENTI: readonly Elemento[] = [
     titolo: "Monte Sinai",
     tipo: "luogo",
     tags: [TAGS.legge as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.esodo, "localizzazione"),
     ],
@@ -203,7 +211,7 @@ export const ELEMENTI: readonly Elemento[] = [
     nascita: ds(1593, "aev"),
     morte: ds(1473, "aev"),
     tags: [TAGS.legge as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.esodo, "correlato"),
       makeLink(ELEMENTO_IDS.monteSinai, "localizzazione"),
@@ -215,7 +223,8 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "profezia",
     date: puntuale(732, "aev", "circa"),
     tags: [TAGS.messianico as string],
-    note: "",
+    descrizione: "",
+    statoProfezia: "adempiuta",
     link: [],
   },
   {
@@ -224,7 +233,8 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "regno",
     date: range(1077, "aev", 1037, "aev"),
     tags: [],
-    note: "",
+    descrizione: "",
+    dettagliRegno: "40 anni di regno unito",
     link: [],
   },
   {
@@ -234,7 +244,7 @@ export const ELEMENTI: readonly Elemento[] = [
     nascita: ds(1919, "aev"),
     morte: ds(1881, "aev"),
     tags: [TAGS.patriarchi as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.abraamo, "parentela", "coniuge"),
       makeLink(ELEMENTO_IDS.isacco, "parentela", "madre"),
@@ -246,7 +256,7 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "evento",
     date: puntuale(2269, "aev", "circa"),
     tags: [],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.babilonia, "localizzazione"),
     ],
@@ -259,7 +269,7 @@ export const ELEMENTI: readonly Elemento[] = [
     nascita: ds(1858, "aev"),
     morte: ds(1711, "aev"),
     tags: [TAGS.patriarchi as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.isacco, "parentela", "figlio"),
       makeLink(ELEMENTO_IDS.giuseppe, "parentela", "padre"),
@@ -272,7 +282,7 @@ export const ELEMENTI: readonly Elemento[] = [
     nascita: ds(1767, "aev"),
     morte: ds(1657, "aev"),
     tags: [TAGS.patriarchi as string],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.giacobbe, "parentela", "figlio"),
     ],
@@ -283,7 +293,7 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "personaggio",
     nascita: ds(1543, "aev", "circa"),
     tags: [],
-    note: "",
+    descrizione: "",
     link: [
       makeLink(ELEMENTO_IDS.mose, "successione"),
     ],
@@ -294,8 +304,56 @@ export const ELEMENTI: readonly Elemento[] = [
     tipo: "personaggio",
     date: puntuale(1210, "aev", "circa"),
     tags: [],
-    note: "",
+    descrizione: "",
     link: [],
+  },
+  // Guerra element
+  {
+    id: ELEMENTO_IDS.conquistaCanaan,
+    titolo: "Conquista di Canaan",
+    tipo: "guerra",
+    date: range(1473, "aev", 1467, "aev"),
+    tags: [TAGS.conquista as string],
+    descrizione: "",
+    fazioni: "Israeliti vs. popoli cananei",
+    esito: "Vittoria israelita, spartizione della terra",
+    link: [
+      makeLink(ELEMENTO_IDS.giosue, "correlato"),
+    ],
+  },
+  // Annotazione elements
+  {
+    id: ELEMENTO_IDS.annotazioneAbraamo,
+    titolo: "Riflessione sulla fede di Abraamo",
+    tipo: "annotazione",
+    tags: [TAGS.patriarchi as string],
+    descrizione: "La fede di Abraamo è un modello per tutti. Lasciare Ur significava abbandonare sicurezza e comfort per una promessa. Ebrei 11:8 sottolinea che 'partì senza sapere dove andava'.",
+    autore: "utente-corrente",
+    link: [
+      makeLink(ELEMENTO_IDS.abraamo, "correlato"),
+    ],
+  },
+  {
+    id: ELEMENTO_IDS.annotazioneEsodo,
+    titolo: "Parallelo tra Esodo e liberazione spirituale",
+    tipo: "annotazione",
+    tags: [TAGS.liberazione as string],
+    descrizione: "L'Esodo dall'Egitto prefigura la liberazione dalla schiavitù spirituale. Il passaggio del Mar Rosso come simbolo di un nuovo inizio.",
+    autore: "utente-altro",
+    link: [
+      makeLink(ELEMENTO_IDS.esodo, "correlato"),
+    ],
+  },
+  {
+    id: ELEMENTO_IDS.annotazioneIsaia53,
+    titolo: "Adempimento messianico di Isaia 53",
+    tipo: "annotazione",
+    tags: [TAGS.messianico as string],
+    descrizione: "Isaia 53 descrive il servo sofferente. I dettagli profetici si adempirono nel primo secolo. Confrontare con Atti 8:32-35.",
+    autore: "utente-corrente",
+    link: [
+      makeLink(ELEMENTO_IDS.profeziaIsaia53, "adempimento"),
+    ],
   },
 ];
 
@@ -339,6 +397,7 @@ const TAG_REGISTRY: readonly TagRegistration[] = [
   { tag: TAGS.liberazione as string, colore: "#16a34a" },
   { tag: TAGS.legge as string, colore: "#7c3aed" },
   { tag: TAGS.messianico as string, colore: "#d97706" },
+  { tag: TAGS.conquista as string, colore: "#b91c1c" },
 ];
 
 // ── Workspace ──
@@ -374,11 +433,11 @@ export interface Recente {
 export const RECENTI: readonly Recente[] = [
   { id: ELEMENTO_IDS.abraamo as string, titolo: "Abraamo", tipo: "elemento", elementoTipo: "personaggio", tempo: "5 min fa" },
   { id: BOARD_IDS.patriarchi as string, titolo: "Patriarchi e Giudici", tipo: "board", tempo: "12 min fa" },
+  { id: ELEMENTO_IDS.annotazioneAbraamo as string, titolo: "Riflessione sulla fede di Abraamo", tipo: "elemento", elementoTipo: "annotazione", tempo: "30 min fa" },
   { id: ELEMENTO_IDS.esodo as string, titolo: "Esodo dall'Egitto", tipo: "elemento", elementoTipo: "evento", tempo: "1h fa" },
   { id: ELEMENTO_IDS.profeziaIsaia53 as string, titolo: "Profezia Isaia 53", tipo: "elemento", elementoTipo: "profezia", tempo: "ieri" },
   { id: ELEMENTO_IDS.isacco as string, titolo: "Isacco", tipo: "elemento", elementoTipo: "personaggio", tempo: "ieri" },
   { id: ELEMENTO_IDS.monteSinai as string, titolo: "Monte Sinai", tipo: "elemento", elementoTipo: "luogo", tempo: "2 gg fa" },
-  { id: ELEMENTO_IDS.sara as string, titolo: "Sara", tipo: "elemento", elementoTipo: "personaggio", tempo: "3 gg fa" },
   { id: BOARD_IDS.profeti as string, titolo: "Profeti di Israele", tipo: "board", tempo: "4 gg fa" },
 ];
 
@@ -406,3 +465,5 @@ export function getAllDataStoriche(): DataStorica[] {
 export const ELEMENTI_MAP: ReadonlyMap<string, Elemento> = new Map(
   ELEMENTI.map((el) => [el.id as string, el]),
 );
+
+

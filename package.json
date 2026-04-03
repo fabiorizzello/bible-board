@@ -14,6 +14,8 @@
   "dependencies": {
     "@heroui/react": "^3.0.1",
     "@heroui/styles": "^3.0.1",
+    "@legendapp/state": "^2.1.15",
+    "@tanstack/react-form": "^1.28.6",
     "d3": "^7.9.0",
     "jazz-react": "^0.14.28",
     "jazz-tools": "^0.14.28",
@@ -32,6 +34,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/d3": "^7.4.3",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

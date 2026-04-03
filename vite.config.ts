@@ -10,9 +10,6 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url))
     }
   },
-  optimizeDeps: {
-    include: ["jazz-tools", "neverthrow"]
-  },
   plugins: [
     react(),
     babel({

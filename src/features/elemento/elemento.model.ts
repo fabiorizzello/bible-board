@@ -8,7 +8,8 @@ export type ElementoTipo =
   | "regno"
   | "periodo"
   | "luogo"
-  | "evento";
+  | "evento"
+  | "annotazione";
 
 export type TipoLink =
   | "adempimento"
@@ -41,7 +42,19 @@ export interface Elemento {
   readonly nascita?: DataStorica;
   readonly morte?: DataStorica;
   readonly tags: readonly string[];
-  readonly note: string;
+  readonly descrizione: string;
   readonly tipo: ElementoTipo;
   readonly link: readonly ElementoLink[];
+
+  // Tipo-specific optional fields
+  readonly tribu?: string;              // personaggio
+  readonly ruoli?: readonly string[];   // personaggio
+  readonly fazioni?: string;            // guerra
+  readonly esito?: string;              // guerra
+  readonly statoProfezia?: string;      // profezia (adempiuta | in corso | futura)
+  readonly dettagliRegno?: string;      // regno
+  readonly regione?: string;            // luogo
+
+  // Annotazione authorship
+  readonly autore?: string;
 }
