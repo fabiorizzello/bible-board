@@ -150,6 +150,34 @@ export function getElementsForView(
   return items;
 }
 
+// ── Board display data ──
+
+/** Display-ready board info for the NavSidebar. */
+export interface BoardDisplayItem {
+  readonly id: string;
+  readonly nome: string;
+  readonly viewId: ViewId;
+  readonly count: number;
+}
+
+/** Map a domain Board to a ViewId (used for nav selection). */
+function boardToViewId(board: Board): ViewId {
+  if (board.nome === "Patriarchi e Giudici") return "board-patriarchi";
+  if (board.nome === "Profeti di Israele") return "board-profeti";
+  // Fallback for unknown boards — shouldn't happen with current mock data
+  return `board-${board.id}` as ViewId;
+}
+
+/** Get display-ready board items with viewId and element count. */
+export function getBoardDisplayItems(): BoardDisplayItem[] {
+  return BOARDS.map((board) => ({
+    id: board.id,
+    nome: board.nome,
+    viewId: boardToViewId(board),
+    count: getBoardElements(board).length,
+  }));
+}
+
 // ── Link resolution ──
 
 /** Resolved link for display — titolo and tipo instead of raw targetId. */
