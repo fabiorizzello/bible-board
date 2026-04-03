@@ -1,5 +1,4 @@
 import babel from "@rolldown/plugin-babel";
-import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
@@ -11,12 +10,14 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url))
     }
   },
+  optimizeDeps: {
+    include: ["jazz-tools", "neverthrow"]
+  },
   plugins: [
     react(),
     babel({
       presets: [reactCompilerPreset()]
     }),
-    tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
