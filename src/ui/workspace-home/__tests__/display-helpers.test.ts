@@ -9,6 +9,8 @@ import {
   MOCK_FONTI,
   getFontiForElement,
   findElementById,
+  getAnnotazioniForElement,
+  CURRENT_AUTORE,
 } from "../display-helpers";
 import { ELEMENTI, ELEMENTO_IDS } from "@/mock/data";
 
@@ -191,6 +193,42 @@ describe("getFontiForElement", () => {
   it("returns empty array for element without fonti", () => {
     const isacco = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.isacco as string))!;
     expect(getFontiForElement(isacco)).toEqual([]);
+  });
+});
+
+// ── Annotazioni ──
+
+describe("CURRENT_AUTORE", () => {
+  it("is the mock current user identity", () => {
+    expect(CURRENT_AUTORE).toBe("utente-corrente");
+  });
+});
+
+describe("getAnnotazioniForElement", () => {
+  it("returns 1 mia annotazione for Abraamo (utente-corrente)", () => {
+    const result = getAnnotazioniForElement(ELEMENTO_IDS.abraamo as string, CURRENT_AUTORE);
+    expect(result.mie).toHaveLength(1);
+    expect(result.mie[0]!.titolo).toBe("Riflessione sulla fede di Abraamo");
+    expect(result.altreCount).toBe(0);
+  });
+
+  it("returns 0 mie and 1 altra for Esodo (annotazione by utente-altro)", () => {
+    const result = getAnnotazioniForElement(ELEMENTO_IDS.esodo as string, CURRENT_AUTORE);
+    expect(result.mie).toHaveLength(0);
+    expect(result.altreCount).toBe(1);
+  });
+
+  it("returns 1 mia annotazione for profeziaIsaia53 (utente-corrente)", () => {
+    const result = getAnnotazioniForElement(ELEMENTO_IDS.profeziaIsaia53 as string, CURRENT_AUTORE);
+    expect(result.mie).toHaveLength(1);
+    expect(result.mie[0]!.titolo).toBe("Adempimento messianico di Isaia 53");
+    expect(result.altreCount).toBe(0);
+  });
+
+  it("returns 0 mie and 0 altre for Isacco (no annotations linked)", () => {
+    const result = getAnnotazioniForElement(ELEMENTO_IDS.isacco as string, CURRENT_AUTORE);
+    expect(result.mie).toHaveLength(0);
+    expect(result.altreCount).toBe(0);
   });
 });
 

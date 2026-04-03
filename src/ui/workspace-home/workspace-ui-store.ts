@@ -1,48 +1,43 @@
 /**
- * Legend State observable store for workspace UI state.
+ * workspace-ui-store — Legend State observable for shared workspace UI state.
  *
- * Module-level singleton — components subscribe via @legendapp/state/react hooks.
- * Replaces the 7 useState calls in the monolith WorkspacePreviewPage.
+ * Module-level singleton (not React context) for fine-grained reactivity across
+ * decomposed workspace components.
  */
 
 import { observable } from "@legendapp/state";
 
-export type ViewId =
-  | "recenti"
-  | "tutti"
-  | "board-patriarchi"
-  | "board-profeti";
+/** View identifier union (recenti, tutti, or board-{id}) */
+export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
 
-export interface WorkspaceUiState {
+/** Workspace UI state shape */
+export interface WorkspaceUIState {
+  /** Current active view */
   currentView: ViewId;
+  /** Selected element ID (null if none selected) */
   selectedElementId: string | null;
+  /** Search/filter text input */
   filterText: string;
+  /** Active tipo filter label */
   activeTipo: string;
+  /** Sidebar open/collapsed state */
   sidebarOpen: boolean;
+  /** Fullscreen detail overlay active */
   fullscreen: boolean;
-  detailFullscreen: boolean;
+  /** Last modified timestamp for cache invalidation */
+  lastModified: number;
 }
 
-export const workspaceUi$ = observable<WorkspaceUiState>({
+/** Initial state */
+const initialState: WorkspaceUIState = {
   currentView: "recenti",
   selectedElementId: null,
   filterText: "",
   activeTipo: "Tutti",
   sidebarOpen: true,
   fullscreen: false,
-  detailFullscreen: false,
-});
+  lastModified: Date.now(),
+};
 
-/** Reset filters and selection when navigating to a new view. */
-export function navigateToView(viewId: ViewId): void {
-  workspaceUi$.currentView.set(viewId);
-  workspaceUi$.selectedElementId.set(null);
-  workspaceUi$.filterText.set("");
-  workspaceUi$.activeTipo.set("Tutti");
-}
-
-/** Select an element and collapse sidebar on small viewports. */
-export function selectElement(id: string): void {
-  workspaceUi$.selectedElementId.set(id);
-  workspaceUi$.sidebarOpen.set(false);
-}
+/** Global observable store */
+export const workspaceUI$ = observable<WorkspaceUIState>(initialState);

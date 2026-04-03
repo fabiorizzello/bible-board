@@ -19,13 +19,15 @@ import {
 } from "lucide-react";
 import { useSelector } from "@legendapp/state/react";
 
-import { workspaceUi$ } from "./workspace-ui-store";
+import { workspaceUi$, startEditing } from "./workspace-ui-store";
 import { findElementById, formatElementDate } from "./display-helpers";
 import { ActionToolbar, DetailBody } from "./DetailPane";
+import { ElementoEditor } from "./ElementoEditor";
 
 export function FullscreenOverlay() {
   const selectedElementId = useSelector(workspaceUi$.selectedElementId);
   const fullscreen = useSelector(workspaceUi$.fullscreen);
+  const isEditing = useSelector(workspaceUi$.isEditing);
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)
@@ -85,11 +87,16 @@ export function FullscreenOverlay() {
         </Tooltip>
       </header>
 
-      <ActionToolbar isFullscreen />
+      {/* Action toolbar — hidden when editing (editor has own Save/Cancel) */}
+      {!isEditing && <ActionToolbar isFullscreen onModifica={startEditing} />}
 
       <ScrollShadow className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-6 py-6">
-          <DetailBody element={selectedElement} isFullscreen />
+          {isEditing ? (
+            <ElementoEditor element={selectedElement} />
+          ) : (
+            <DetailBody element={selectedElement} isFullscreen />
+          )}
         </div>
       </ScrollShadow>
     </div>

@@ -18,6 +18,9 @@ export type { ViewId };
 
 // ── Constants ──
 
+/** Simulated current user identity for the mock prototype. */
+export const CURRENT_AUTORE = "utente-corrente";
+
 /** Filter labels shown in the tipo filter bar. */
 export const TIPO_FILTERS = [
   "Tutti",
@@ -244,6 +247,36 @@ export const MOCK_FONTI: ReadonlyMap<string, readonly string[]> = new Map([
  */
 export function getFontiForElement(el: Elemento): readonly string[] {
   return MOCK_FONTI.get(el.id as string) ?? [];
+}
+
+// ── Annotazioni ──
+
+/** Result of annotation lookup for an element. */
+export interface AnnotazioniResult {
+  readonly mie: readonly Elemento[];
+  readonly altreCount: number;
+}
+
+/**
+ * Get annotations linked to an element, split by authorship.
+ *
+ * Filters ELEMENTI where tipo === "annotazione" AND at least one
+ * link[].targetId matches the given elementId.
+ */
+export function getAnnotazioniForElement(
+  elementId: string,
+  currentAutore: string,
+): AnnotazioniResult {
+  const annotations = ELEMENTI.filter(
+    (el) =>
+      el.tipo === "annotazione" &&
+      el.link.some((l) => l.targetId === elementId),
+  );
+
+  const mie = annotations.filter((a) => a.autore === currentAutore);
+  const altreCount = annotations.filter((a) => a.autore !== currentAutore).length;
+
+  return { mie, altreCount };
 }
 
 // ── Element lookup ──

@@ -264,6 +264,18 @@ Interfaccia densa e compatta, stile Notion/Linear. Info utile visibile senza scr
 - **Incremental Delivery**: Ogni user story DEVE essere testabile e consegnabile indipendentemente.
 - **YAGNI**: Non implementare feature non richieste. Iniziare semplice, aggiungere complessità solo quando giustificata.
 
+### UI/UX Review Gate
+
+Ogni componente UI nuovo o modifica visiva significativa DEVE passare un gate di approvazione umana.
+Dettagli operativi in `.gsd/KNOWLEDGE.md` sezione "UI/UX Review Gate (Human-in-the-Loop)".
+
+- **Skill obbligatoria**: caricare `ui-ux-pro-max` (Skill tool) PRIMA di scrivere codice UI.
+- **Interattivo**: implementa → mostra nel browser (screenshot) → chiedi approvazione → itera fino ad OK.
+- **Auto-mode — Mockup-First**: ogni task UI si divide in due fasi:
+  1. **Mockup**: componente `.tsx` reale in `src/ui/mockups/` con HeroUI + token + Tailwind + dati hardcoded. Montato su route `/dev/mockup-*`. Screenshot nel summary. Niente wiring.
+  2. **Wiring**: dopo approvazione umana, sposta il componente, sostituisce dati hardcoded con logica reale, rimuove route dev.
+  - Il look si valida PRIMA del wiring — zero tempo sprecato su UI non approvata.
+
 ## Verifiche pendenti
 
 - [ ] **Jazz BinaryCoStream**: verificare supporto blob per immagini offline

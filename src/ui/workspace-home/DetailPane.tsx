@@ -27,24 +27,28 @@ import {
   LayoutGrid,
   Link2,
   Maximize2,
+  MessageSquareText,
   Pencil,
 } from "lucide-react";
 import { useSelector } from "@legendapp/state/react";
 
-import { workspaceUi$ } from "./workspace-ui-store";
+import { workspaceUi$, startEditing, stopEditing, selectElement } from "./workspace-ui-store";
 import {
   findElementById,
   formatElementDate,
   resolveCollegamenti,
   resolveBoardsForElement,
   getFontiForElement,
+  getAnnotazioniForElement,
+  CURRENT_AUTORE,
 } from "./display-helpers";
+import { ElementoEditor } from "./ElementoEditor";
 import type { Elemento } from "@/features/elemento/elemento.model";
 
 // ── Shared sub-components (exported for FullscreenOverlay) ──
 
 /** Render the action toolbar: Modifica, Link, Fonte, Board + overflow menu. */
-export function ActionToolbar({ isFullscreen }: { isFullscreen: boolean }) {
+export function ActionToolbar({ isFullscreen, onModifica }: { isFullscreen: boolean; onModifica?: () => void }) {
   const btn = isFullscreen
     ? "min-h-[34px] px-3 py-1.5 text-[12px]"
     : "min-h-[30px] px-2.5 py-1 text-[11px]";
@@ -53,7 +57,7 @@ export function ActionToolbar({ isFullscreen }: { isFullscreen: boolean }) {
 
   return (
     <Toolbar className="flex w-full items-center gap-1 border-b border-primary/6 bg-chrome px-4 py-1.5">
-      <Button variant="primary" className={`gap-1 rounded-lg font-semibold ${btn}`}>
+      <Button variant="primary" className={`gap-1 rounded-lg font-semibold ${btn}`} onPress={onModifica}>
         <Pencil className={ico} /> Modifica
       </Button>
       <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
@@ -107,6 +111,7 @@ export function DetailBody({
 
   const collegamenti = resolveCollegamenti(element);
   const fonti = getFontiForElement(element);
+  const annotazioni = getAnnotazioniForElement(element.id as string, CURRENT_AUTORE);
   const boards = resolveBoardsForElement(element);
 
   return (
@@ -166,6 +171,56 @@ export function DetailBody({
         </Card>
       )}
 
+      {(annotazioni.mie.length > 0 || annotazioni.altreCount > 0) && (
+        <Card className={`border-none shadow-none bg-transparent ${section}`}>
+          <Card.Header className={heading}>
+            <Card.Title className={title}>Annotazioni</Card.Title>
+          </Card.Header>
+          <Card.Content className="p-0">
+            <div className={`flex flex-col ${gap}`}>
+              {annotazioni.mie.map((ann) => (
+                <button
+                  key={ann.id as string}
+                  type="button"
+                  className="flex flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-primary/6"
+                  onClick={() => selectElement(ann.id as string)}
+                >
+                  <span className="flex items-center gap-1.5 text-[12px] font-medium text-primary">
+                    <MessageSquareText className="h-3 w-3 shrink-0" />
+                    {ann.titolo}
+                  </span>
+                  {ann.descrizione && (
+                    <span className="line-clamp-2 pl-[18px] text-[11px] leading-snug text-ink-dim">
+                      {ann.descrizione.length > 80
+                        ? `${ann.descrizione.slice(0, 80)}…`
+                        : ann.descrizione}
+                    </span>
+                  )}
+                </button>
+              ))}
+              {annotazioni.altreCount > 0 && (
+                <span className="px-2 text-[11px] text-ink-ghost">
+                  {annotazioni.altreCount}{" "}
+                  {annotazioni.altreCount === 1
+                    ? "annotazione altrui"
+                    : "annotazioni altrui"}
+                </span>
+              )}
+              {annotazioni.mie.length === 0 && annotazioni.altreCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  isDisabled
+                  className="mt-1 w-fit gap-1 px-2 text-[11px] text-ink-dim"
+                >
+                  + Aggiungi annotazione
+                </Button>
+              )}
+            </div>
+          </Card.Content>
+        </Card>
+      )}
+
       {boards.length > 0 && (
         <Card className={`border-none shadow-none bg-transparent ${section}`}>
           <Card.Header className={heading}>
@@ -190,6 +245,7 @@ export function DetailBody({
 
 export function DetailPane() {
   const selectedElementId = useSelector(workspaceUi$.selectedElementId);
+  const isEditing = useSelector(workspaceUi$.isEditing);
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)
@@ -251,12 +307,16 @@ export function DetailPane() {
         </Card.Header>
       </Card>
 
-      {/* Action toolbar */}
-      <ActionToolbar isFullscreen={false} />
+      {/* Action toolbar — hidden when editing (editor has own Save/Cancel) */}
+      {!isEditing && <ActionToolbar isFullscreen={false} onModifica={startEditing} />}
 
-      {/* Detail body */}
+      {/* Detail body or inline editor */}
       <ScrollShadow className="flex-1 overflow-y-auto px-4 py-3">
-        <DetailBody element={selectedElement} isFullscreen={false} />
+        {isEditing ? (
+          <ElementoEditor element={selectedElement} />
+        ) : (
+          <DetailBody element={selectedElement} isFullscreen={false} />
+        )}
       </ScrollShadow>
     </div>
   );
