@@ -17,7 +17,7 @@ import {
   ArrowLeft,
   Minimize2,
 } from "lucide-react";
-import { useSelector } from "@legendapp/state/react";
+import { useValue } from "@legendapp/state/react";
 
 import { workspaceUi$, startEditing } from "./workspace-ui-store";
 import { findElementById, formatElementDate } from "./display-helpers";
@@ -25,9 +25,9 @@ import { ActionToolbar, DetailBody } from "./DetailPane";
 import { ElementoEditor } from "./ElementoEditor";
 
 export function FullscreenOverlay() {
-  const selectedElementId = useSelector(workspaceUi$.selectedElementId);
-  const fullscreen = useSelector(workspaceUi$.fullscreen);
-  const isEditing = useSelector(workspaceUi$.isEditing);
+  const selectedElementId = useValue(workspaceUi$.selectedElementId);
+  const fullscreen = useValue(workspaceUi$.fullscreen);
+  const isEditing = useValue(workspaceUi$.isEditing);
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)

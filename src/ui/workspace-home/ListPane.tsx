@@ -19,11 +19,10 @@ import {
   Tooltip,
 } from "@heroui/react";
 import {
-  LayoutGrid,
   PanelLeft,
   Plus,
 } from "lucide-react";
-import { useSelector } from "@legendapp/state/react";
+import { useValue } from "@legendapp/state/react";
 
 import { workspaceUi$, navigateToView, selectElement } from "./workspace-ui-store";
 import type { ViewId } from "./workspace-ui-store";
@@ -39,12 +38,12 @@ import { RECENTI } from "@/mock/data";
 const BOARD_ITEMS = getBoardDisplayItems();
 
 export function ListPane() {
-  const currentView = useSelector(workspaceUi$.currentView);
-  const filterText = useSelector(workspaceUi$.filterText);
-  const activeTipo = useSelector(workspaceUi$.activeTipo);
-  const selectedElementId = useSelector(workspaceUi$.selectedElementId);
-  const sidebarOpen = useSelector(workspaceUi$.sidebarOpen);
-  const fullscreen = useSelector(workspaceUi$.fullscreen);
+  const currentView = useValue(workspaceUi$.currentView);
+  const filterText = useValue(workspaceUi$.filterText);
+  const activeTipo = useValue(workspaceUi$.activeTipo);
+  const selectedElementId = useValue(workspaceUi$.selectedElementId);
+  const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
+  const fullscreen = useValue(workspaceUi$.fullscreen);
 
   const isElementView = currentView === "tutti" || currentView.startsWith("board-");
   const isRecentiView = currentView === "recenti";

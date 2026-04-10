@@ -30,9 +30,9 @@ import {
   MessageSquareText,
   Pencil,
 } from "lucide-react";
-import { useSelector } from "@legendapp/state/react";
+import { useValue } from "@legendapp/state/react";
 
-import { workspaceUi$, startEditing, stopEditing, selectElement } from "./workspace-ui-store";
+import { workspaceUi$, startEditing, selectElement } from "./workspace-ui-store";
 import {
   findElementById,
   formatElementDate,
@@ -244,8 +244,8 @@ export function DetailBody({
 // ── Main DetailPane component ──
 
 export function DetailPane() {
-  const selectedElementId = useSelector(workspaceUi$.selectedElementId);
-  const isEditing = useSelector(workspaceUi$.isEditing);
+  const selectedElementId = useValue(workspaceUi$.selectedElementId);
+  const isEditing = useValue(workspaceUi$.isEditing);
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)

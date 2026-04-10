@@ -7,28 +7,19 @@
 
 import { observable } from "@legendapp/state";
 
-/** View identifier union (recenti, tutti, or board-{id}) */
 export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
 
-/** Workspace UI state shape */
 export interface WorkspaceUIState {
-  /** Current active view */
   currentView: ViewId;
-  /** Selected element ID (null if none selected) */
   selectedElementId: string | null;
-  /** Search/filter text input */
   filterText: string;
-  /** Active tipo filter label */
   activeTipo: string;
-  /** Sidebar open/collapsed state */
   sidebarOpen: boolean;
-  /** Fullscreen detail overlay active */
   fullscreen: boolean;
-  /** Last modified timestamp for cache invalidation */
+  isEditing: boolean;
   lastModified: number;
 }
 
-/** Initial state */
 const initialState: WorkspaceUIState = {
   currentView: "recenti",
   selectedElementId: null,
@@ -36,8 +27,24 @@ const initialState: WorkspaceUIState = {
   activeTipo: "Tutti",
   sidebarOpen: true,
   fullscreen: false,
+  isEditing: false,
   lastModified: Date.now(),
 };
 
-/** Global observable store */
-export const workspaceUI$ = observable<WorkspaceUIState>(initialState);
+export const workspaceUi$ = observable<WorkspaceUIState>(initialState);
+
+export function navigateToView(viewId: ViewId): void {
+  workspaceUi$.currentView.set(viewId);
+}
+
+export function selectElement(id: string): void {
+  workspaceUi$.selectedElementId.set(id);
+}
+
+export function startEditing(): void {
+  workspaceUi$.isEditing.set(true);
+}
+
+export function stopEditing(): void {
+  workspaceUi$.isEditing.set(false);
+}

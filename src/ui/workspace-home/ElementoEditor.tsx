@@ -25,7 +25,7 @@ import {
 } from "@heroui/react";
 import { Save, X } from "lucide-react";
 
-import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model";
+import type { Elemento } from "@/features/elemento/elemento.model";
 import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
 import { stopEditing } from "./workspace-ui-store";
 

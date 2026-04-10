@@ -26,7 +26,7 @@ import {
   Plus,
   Settings,
 } from "lucide-react";
-import { useSelector } from "@legendapp/state/react";
+import { useValue } from "@legendapp/state/react";
 
 import { workspaceUi$, navigateToView } from "./workspace-ui-store";
 import type { ViewId } from "./workspace-ui-store";
@@ -35,8 +35,8 @@ import { getBoardDisplayItems } from "./display-helpers";
 const BOARD_ITEMS = getBoardDisplayItems();
 
 export function NavSidebar() {
-  const currentView = useSelector(workspaceUi$.currentView);
-  const sidebarOpen = useSelector(workspaceUi$.sidebarOpen);
+  const currentView = useValue(workspaceUi$.currentView);
+  const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
 
   function handleNavChange(viewId: ViewId) {
     navigateToView(viewId);
