@@ -122,6 +122,67 @@ describe("getElementsForView", () => {
     const result = getElementsForView("tutti", "zzzznonexistent", "Tutti");
     expect(result).toEqual([]);
   });
+
+  it("filters out soft-deleted elements by id", () => {
+    const baseline = getElementsForView("tutti", "", "Tutti");
+    const deletedIds = [ELEMENTO_IDS.abraamo as string];
+    const result = getElementsForView("tutti", "", "Tutti", deletedIds);
+    expect(result.length).toBe(baseline.length - 1);
+    expect(result.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))).toBeUndefined();
+  });
+
+  it("filters out multiple soft-deleted elements", () => {
+    const baseline = getElementsForView("tutti", "", "Tutti");
+    const deletedIds = [
+      ELEMENTO_IDS.abraamo as string,
+      ELEMENTO_IDS.isacco as string,
+    ];
+    const result = getElementsForView("tutti", "", "Tutti", deletedIds);
+    expect(result.length).toBe(baseline.length - 2);
+    expect(result.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))).toBeUndefined();
+    expect(result.find((e) => e.id === (ELEMENTO_IDS.isacco as string))).toBeUndefined();
+  });
+
+  it("ignores deletedIds entries that match no element", () => {
+    const baseline = getElementsForView("tutti", "", "Tutti");
+    const result = getElementsForView("tutti", "", "Tutti", ["nonexistent-id"]);
+    expect(result.length).toBe(baseline.length);
+  });
+
+  it("composes deletedIds with text + tipo filters", () => {
+    // "abr" + Personaggi matches only Abraamo. Deleting Abraamo leaves zero
+    // results, proving the soft-delete filter composes with the others.
+    const baseline = getElementsForView("tutti", "abr", "Personaggi");
+    expect(baseline.map((e) => e.id)).toContain(ELEMENTO_IDS.abraamo as string);
+
+    const result = getElementsForView(
+      "tutti",
+      "abr",
+      "Personaggi",
+      [ELEMENTO_IDS.abraamo as string],
+    );
+    expect(result.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))).toBeUndefined();
+    expect(result.every((e) => e.tipo === "personaggio")).toBe(true);
+    expect(result.every((e) => e.titolo.toLowerCase().includes("abr"))).toBe(true);
+  });
+
+  it("filters soft-deleted elements from board views", () => {
+    const baseline = getElementsForView("board-patriarchi", "", "Tutti");
+    const result = getElementsForView(
+      "board-patriarchi",
+      "",
+      "Tutti",
+      [ELEMENTO_IDS.abraamo as string],
+    );
+    expect(result.length).toBe(baseline.length - 1);
+    expect(result.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))).toBeUndefined();
+  });
+
+  it("treats omitted deletedIds as empty (no filtering)", () => {
+    const withoutArg = getElementsForView("tutti", "", "Tutti");
+    const withEmpty = getElementsForView("tutti", "", "Tutti", []);
+    expect(withoutArg.length).toBe(withEmpty.length);
+  });
 });
 
 // ── Link resolution ──

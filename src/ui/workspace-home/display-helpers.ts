@@ -108,11 +108,16 @@ function getBoardElements(board: Board): Elemento[] {
  * Get filtered elements for a given view, search text, and tipo filter.
  *
  * Replaces the monolith's useCallback-wrapped getElementsForView.
+ *
+ * @param deletedIds Optional list of soft-deleted element ids (string form
+ *   of branded ElementoId). Matching elements are filtered out so they
+ *   disappear from the visible list during the toast undo window.
  */
 export function getElementsForView(
   viewId: ViewId,
   filterText: string,
   activeTipo: string,
+  deletedIds: readonly string[] = [],
 ): Elemento[] {
   let items: Elemento[];
 
@@ -135,6 +140,12 @@ export function getElementsForView(
       items = board ? getBoardElements(board) : [];
       break;
     }
+  }
+
+  // Soft-deleted filter — applied first so it composes with text/tipo filters
+  if (deletedIds.length > 0) {
+    const deletedSet = new Set(deletedIds);
+    items = items.filter((el) => !deletedSet.has(el.id as string));
   }
 
   // Text search filter
