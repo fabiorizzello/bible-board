@@ -13,6 +13,16 @@ export interface ElementoInput {
   readonly morte?: DataStorica;
   readonly tags?: readonly string[];
   readonly tipo: ElementoTipo;
+
+  // Type-specific optional fields — mirror Elemento model.
+  // normalizeElementoInput rejects fields that don't belong to the given tipo.
+  readonly tribu?: string;              // personaggio
+  readonly ruoli?: readonly string[];   // personaggio
+  readonly fazioni?: string;            // guerra
+  readonly esito?: string;              // guerra
+  readonly statoProfezia?: string;      // profezia
+  readonly dettagliRegno?: string;      // regno
+  readonly regione?: string;            // luogo
 }
 
 export interface NormalizedElementoInput {
@@ -23,6 +33,14 @@ export interface NormalizedElementoInput {
   readonly morte?: DataStorica;
   readonly tags: readonly string[];
   readonly tipo: ElementoTipo;
+
+  readonly tribu?: string;
+  readonly ruoli?: readonly string[];
+  readonly fazioni?: string;
+  readonly esito?: string;
+  readonly statoProfezia?: string;
+  readonly dettagliRegno?: string;
+  readonly regione?: string;
 }
 
 export function validateElementoTitle(titolo: string): Result<string, ElementoError> {
@@ -107,10 +125,29 @@ export function normalizeElementoInput(
     return err(titoloResult.error);
   }
 
-  if (input.tipo !== "personaggio" && (input.nascita || input.morte)) {
-    return err({ type: "data_non_valida" });
+  // Tipo↔field consistency — rich domain rule: a field is only valid on its owning tipo.
+  // Keeps the "Parse, don't validate" contract tight so the UI cannot silently persist
+  // stale type-specific data after the user switches tipo.
+  if ((input.nascita || input.morte) && input.tipo !== "personaggio") {
+    return err({ type: "tipo_specifico_non_ammesso" });
+  }
+  if ((input.tribu || input.ruoli) && input.tipo !== "personaggio") {
+    return err({ type: "tipo_specifico_non_ammesso" });
+  }
+  if ((input.fazioni || input.esito) && input.tipo !== "guerra") {
+    return err({ type: "tipo_specifico_non_ammesso" });
+  }
+  if (input.statoProfezia && input.tipo !== "profezia") {
+    return err({ type: "tipo_specifico_non_ammesso" });
+  }
+  if (input.dettagliRegno && input.tipo !== "regno") {
+    return err({ type: "tipo_specifico_non_ammesso" });
+  }
+  if (input.regione && input.tipo !== "luogo") {
+    return err({ type: "tipo_specifico_non_ammesso" });
   }
 
+  // Date shape validation (unchanged from pre-existing behavior).
   if (input.date && validateDataTemporale(input.date).isErr()) {
     return err({ type: "data_non_valida" });
   }
@@ -130,7 +167,14 @@ export function normalizeElementoInput(
     nascita: input.nascita,
     morte: input.morte,
     tags: input.tags?.map((t) => t.trim()).filter(Boolean) ?? [],
-    tipo: input.tipo
+    tipo: input.tipo,
+    tribu: input.tribu?.trim() || undefined,
+    ruoli: input.ruoli?.map((r) => r.trim()).filter(Boolean),
+    fazioni: input.fazioni?.trim() || undefined,
+    esito: input.esito?.trim() || undefined,
+    statoProfezia: input.statoProfezia?.trim() || undefined,
+    dettagliRegno: input.dettagliRegno?.trim() || undefined,
+    regione: input.regione?.trim() || undefined,
   });
 }
 
