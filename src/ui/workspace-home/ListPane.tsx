@@ -44,12 +44,13 @@ export function ListPane() {
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
   const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
   const fullscreen = useValue(workspaceUi$.fullscreen);
+  const deletedElementIds = useValue(workspaceUi$.deletedElementIds);
 
   const isElementView = currentView === "tutti" || currentView.startsWith("board-");
   const isRecentiView = currentView === "recenti";
 
   const currentElements = isElementView
-    ? getElementsForView(currentView, filterText, activeTipo)
+    ? getElementsForView(currentView, filterText, activeTipo, deletedElementIds)
     : [];
 
   const viewLabel = currentView === "recenti" ? "Recenti"
