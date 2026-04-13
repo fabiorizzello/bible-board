@@ -25,8 +25,9 @@ import {
 } from "@heroui/react";
 import { Save, X } from "lucide-react";
 
-import type { Elemento } from "@/features/elemento/elemento.model";
+import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model";
 import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
+import type { DataStorica, DataTemporale } from "@/features/shared/value-objects";
 import { stopEditing } from "./workspace-ui-store";
 
 // ── Local form state ──
@@ -51,9 +52,22 @@ interface EditorState {
   dettagliRegno: string;
   // luogo
   regione: string;
+  // evento — single date (DataTemporale kind="puntuale")
+  eventoAnno: string;
+  eventoEra: "aev" | "ev";
+  // periodo — range (DataTemporale kind="range")
+  periodoInizioAnno: string;
+  periodoInizioEra: "aev" | "ev";
+  periodoFineAnno: string;
+  periodoFineEra: "aev" | "ev";
 }
 
 function initState(el: Elemento): EditorState {
+  // Extract date components for evento and periodo if present.
+  const eventoPuntuale =
+    el.date?.kind === "puntuale" ? el.date.data : undefined;
+  const periodoRange = el.date?.kind === "range" ? el.date : undefined;
+
   return {
     titolo: el.titolo,
     descrizione: el.descrizione,
@@ -69,7 +83,30 @@ function initState(el: Elemento): EditorState {
     statoProfezia: el.statoProfezia ?? "futura",
     dettagliRegno: el.dettagliRegno ?? "",
     regione: el.regione ?? "",
+    eventoAnno: eventoPuntuale?.anno?.toString() ?? "",
+    eventoEra: eventoPuntuale?.era ?? "aev",
+    periodoInizioAnno: periodoRange?.inizio.anno?.toString() ?? "",
+    periodoInizioEra: periodoRange?.inizio.era ?? "aev",
+    periodoFineAnno: periodoRange?.fine.anno?.toString() ?? "",
+    periodoFineEra: periodoRange?.fine.era ?? "aev",
   };
+}
+
+// ── parseDataStorica ──
+// Converts the editor's (annoString, era) pair into a DataStorica, returning
+// undefined when the field is blank (meaning "not set"). Returns a sentinel
+// INVALID_DATA marker when the user typed a non-empty but non-parseable year,
+// so handleSave can distinguish "omit this optional field" from "this field
+// exists but is invalid".
+const INVALID_DATA = Symbol("INVALID_DATA");
+type ParseResult = DataStorica | undefined | typeof INVALID_DATA;
+
+function parseDataStorica(annoStr: string, era: "aev" | "ev"): ParseResult {
+  const trimmed = annoStr.trim();
+  if (!trimmed) return undefined;
+  const anno = Number(trimmed);
+  if (!Number.isInteger(anno) || anno <= 0) return INVALID_DATA;
+  return { anno, era, precisione: "esatta" };
 }
 
 // ── Error messages ──
@@ -77,6 +114,14 @@ function initState(el: Elemento): EditorState {
 const ERROR_MESSAGES: Record<string, string> = {
   titolo_vuoto: "Il titolo è obbligatorio",
   data_non_valida: "Data non valida",
+  tipo_specifico_non_ammesso: "Campo non valido per questo tipo",
+  elemento_non_trovato: "Elemento non trovato",
+  fonte_non_valida: "Fonte non valida",
+  link_non_valido: "Collegamento non valido",
+  link_duplicato: "Collegamento duplicato",
+  link_auto_riferimento: "Un elemento non può riferire se stesso",
+  link_non_trovato: "Collegamento non trovato",
+  ruolo_mancante_per_parentela: "Ruolo parentela mancante",
 };
 
 // ── Section heading ──
@@ -112,6 +157,53 @@ export function ElementoEditor({ element }: { element: Elemento }) {
   );
 
   function handleSave() {
+    const tipo = element.tipo;
+
+    // Parse nascita / morte (only for personaggio)
+    const nascitaParsed =
+      tipo === "personaggio"
+        ? parseDataStorica(state.nascitaAnno, state.nascitaEra)
+        : undefined;
+    const morteParsed =
+      tipo === "personaggio"
+        ? parseDataStorica(state.morteAnno, state.morteEra)
+        : undefined;
+
+    if (nascitaParsed === INVALID_DATA || morteParsed === INVALID_DATA) {
+      setErrors({ _form: ERROR_MESSAGES.data_non_valida });
+      return;
+    }
+
+    // Build DataTemporale for evento / periodo (from local state, not element.date).
+    let date: DataTemporale | undefined;
+    if (tipo === "evento") {
+      const eventoParsed = parseDataStorica(state.eventoAnno, state.eventoEra);
+      if (eventoParsed === INVALID_DATA) {
+        setErrors({ _form: ERROR_MESSAGES.data_non_valida });
+        return;
+      }
+      if (eventoParsed !== undefined) {
+        date = { kind: "puntuale", data: eventoParsed };
+      }
+    } else if (tipo === "periodo") {
+      const inizioParsed = parseDataStorica(
+        state.periodoInizioAnno,
+        state.periodoInizioEra,
+      );
+      const fineParsed = parseDataStorica(
+        state.periodoFineAnno,
+        state.periodoFineEra,
+      );
+      if (inizioParsed === INVALID_DATA || fineParsed === INVALID_DATA) {
+        setErrors({ _form: ERROR_MESSAGES.data_non_valida });
+        return;
+      }
+      // Both present → build range. Partial (one side) → leave date undefined.
+      if (inizioParsed !== undefined && fineParsed !== undefined) {
+        date = { kind: "range", inizio: inizioParsed, fine: fineParsed };
+      }
+    }
+
     const result = normalizeElementoInput({
       titolo: state.titolo,
       descrizione: state.descrizione,
@@ -119,7 +211,25 @@ export function ElementoEditor({ element }: { element: Elemento }) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      tipo: element.tipo,
+      tipo,
+      nascita: tipo === "personaggio" ? nascitaParsed : undefined,
+      morte: tipo === "personaggio" ? morteParsed : undefined,
+      date,
+      tribu: tipo === "personaggio" ? (state.tribu || undefined) : undefined,
+      ruoli:
+        tipo === "personaggio"
+          ? state.ruoli
+              .split(",")
+              .map((r) => r.trim())
+              .filter(Boolean)
+          : undefined,
+      fazioni: tipo === "guerra" ? (state.fazioni || undefined) : undefined,
+      esito: tipo === "guerra" ? (state.esito || undefined) : undefined,
+      statoProfezia:
+        tipo === "profezia" ? (state.statoProfezia || undefined) : undefined,
+      dettagliRegno:
+        tipo === "regno" ? (state.dettagliRegno || undefined) : undefined,
+      regione: tipo === "luogo" ? (state.regione || undefined) : undefined,
     });
 
     result.match(
@@ -182,14 +292,8 @@ export function ElementoEditor({ element }: { element: Elemento }) {
         <Input className="min-h-[44px] text-[13px]" />
       </TextField>
 
-      {/* ── Type-Specific Fields ── */}
-      {tipo === "personaggio" && (
-        <PersonaggioFields state={state} set={set} />
-      )}
-      {tipo === "guerra" && <GuerraFields state={state} set={set} />}
-      {tipo === "profezia" && <ProfeziaFields state={state} set={set} />}
-      {tipo === "regno" && <RegnoFields state={state} set={set} />}
-      {tipo === "luogo" && <LuogoFields state={state} set={set} />}
+      {/* ── Type-Specific Fields (exhaustive over ElementoTipo) ── */}
+      {renderTypeSpecificFields(tipo, state, set)}
 
       {/* ── Form-level error ── */}
       {errors._form && (
@@ -244,9 +348,9 @@ function PersonaggioFields({ state, set }: FieldGroupProps) {
 
         <Select
           selectedKey={state.nascitaEra}
-          onSelectionChange={(key) =>
-            set("nascitaEra", key as "aev" | "ev")
-          }
+          onSelectionChange={(key) => {
+            if (key === "aev" || key === "ev") set("nascitaEra", key);
+          }}
         >
           <Label className="font-body text-[12px] text-ink-lo">Era nascita</Label>
           <Select.Trigger className="min-h-[44px] text-[13px]">
@@ -275,9 +379,9 @@ function PersonaggioFields({ state, set }: FieldGroupProps) {
 
         <Select
           selectedKey={state.morteEra}
-          onSelectionChange={(key) =>
-            set("morteEra", key as "aev" | "ev")
-          }
+          onSelectionChange={(key) => {
+            if (key === "aev" || key === "ev") set("morteEra", key);
+          }}
         >
           <Label className="font-body text-[12px] text-ink-lo">Era morte</Label>
           <Select.Trigger className="min-h-[44px] text-[13px]">
@@ -345,9 +449,11 @@ function ProfeziaFields({ state, set }: FieldGroupProps) {
 
       <Select
         selectedKey={state.statoProfezia}
-        onSelectionChange={(key) =>
-          set("statoProfezia", String(key))
-        }
+        onSelectionChange={(key) => {
+          if (key === "adempiuta" || key === "in corso" || key === "futura") {
+            set("statoProfezia", key);
+          }
+        }}
       >
         <Label className="font-body text-[12px] text-ink-lo">
           Stato profezia
@@ -406,4 +512,155 @@ function LuogoFields({ state, set }: FieldGroupProps) {
       </TextField>
     </>
   );
+}
+
+function EventoFields({ state, set }: FieldGroupProps) {
+  return (
+    <>
+      <SectionHeading>Evento</SectionHeading>
+
+      <div className="grid grid-cols-2 gap-3">
+        <TextField
+          value={state.eventoAnno}
+          onChange={(v: string) => set("eventoAnno", v)}
+        >
+          <Label className="font-body text-[12px] text-ink-lo">Anno</Label>
+          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
+        </TextField>
+
+        <Select
+          selectedKey={state.eventoEra}
+          onSelectionChange={(key) => {
+            if (key === "aev" || key === "ev") set("eventoEra", key);
+          }}
+        >
+          <Label className="font-body text-[12px] text-ink-lo">Era</Label>
+          <Select.Trigger className="min-h-[44px] text-[13px]">
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
+              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      </div>
+    </>
+  );
+}
+
+function PeriodoFields({ state, set }: FieldGroupProps) {
+  return (
+    <>
+      <SectionHeading>Periodo</SectionHeading>
+
+      <div className="grid grid-cols-2 gap-3">
+        <TextField
+          value={state.periodoInizioAnno}
+          onChange={(v: string) => set("periodoInizioAnno", v)}
+        >
+          <Label className="font-body text-[12px] text-ink-lo">
+            Inizio (anno)
+          </Label>
+          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
+        </TextField>
+
+        <Select
+          selectedKey={state.periodoInizioEra}
+          onSelectionChange={(key) => {
+            if (key === "aev" || key === "ev") set("periodoInizioEra", key);
+          }}
+        >
+          <Label className="font-body text-[12px] text-ink-lo">Era inizio</Label>
+          <Select.Trigger className="min-h-[44px] text-[13px]">
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
+              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <TextField
+          value={state.periodoFineAnno}
+          onChange={(v: string) => set("periodoFineAnno", v)}
+        >
+          <Label className="font-body text-[12px] text-ink-lo">
+            Fine (anno)
+          </Label>
+          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
+        </TextField>
+
+        <Select
+          selectedKey={state.periodoFineEra}
+          onSelectionChange={(key) => {
+            if (key === "aev" || key === "ev") set("periodoFineEra", key);
+          }}
+        >
+          <Label className="font-body text-[12px] text-ink-lo">Era fine</Label>
+          <Select.Trigger className="min-h-[44px] text-[13px]">
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
+              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      </div>
+    </>
+  );
+}
+
+function AnnotazioneFields() {
+  return (
+    <>
+      <SectionHeading>Annotazione</SectionHeading>
+      <p className="text-[12px] italic text-ink-lo">
+        (Nessun campo aggiuntivo per questo tipo)
+      </p>
+    </>
+  );
+}
+
+// ── Exhaustive dispatcher over ElementoTipo ──
+// Constitution Principle V-bis (Open/Closed): switch on the discriminated
+// union and end with `const _exhaustive: never = tipo` so the compiler flags
+// any future ElementoTipo variant that is added without an editor branch.
+function renderTypeSpecificFields(
+  tipo: ElementoTipo,
+  state: EditorState,
+  set: <K extends keyof EditorState>(key: K, value: EditorState[K]) => void,
+): JSX.Element | null {
+  switch (tipo) {
+    case "personaggio":
+      return <PersonaggioFields state={state} set={set} />;
+    case "guerra":
+      return <GuerraFields state={state} set={set} />;
+    case "profezia":
+      return <ProfeziaFields state={state} set={set} />;
+    case "regno":
+      return <RegnoFields state={state} set={set} />;
+    case "luogo":
+      return <LuogoFields state={state} set={set} />;
+    case "evento":
+      return <EventoFields state={state} set={set} />;
+    case "periodo":
+      return <PeriodoFields state={state} set={set} />;
+    case "annotazione":
+      return <AnnotazioneFields />;
+    default: {
+      const _exhaustive: never = tipo;
+      throw new Error(`Unhandled ElementoTipo: ${String(_exhaustive)}`);
+    }
+  }
 }
