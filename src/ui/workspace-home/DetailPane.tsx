@@ -18,6 +18,7 @@ import {
   ScrollShadow,
   Separator,
   Text,
+  toast,
   Toolbar,
   Tooltip,
 } from "@heroui/react";
@@ -32,7 +33,13 @@ import {
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
-import { workspaceUi$, startEditing, selectElement } from "./workspace-ui-store";
+import {
+  workspaceUi$,
+  startEditing,
+  selectElement,
+  softDeleteElement,
+  restoreElement,
+} from "./workspace-ui-store";
 import {
   findElementById,
   formatElementDate,
@@ -45,10 +52,39 @@ import {
 import { ElementoEditor } from "./ElementoEditor";
 import type { Elemento } from "@/features/elemento/elemento.model";
 
-// ── Shared sub-components (exported for FullscreenOverlay) ──
+// ── Shared helpers (exported for FullscreenOverlay) ──
+
+/**
+ * Soft-delete an element with a 30-second toast undo window.
+ *
+ * Captures titolo and id before clearing the selection so the toast message
+ * and undo handler keep working after the store mutation. Action label and
+ * placement are tuned for iPad-native bottom-center display.
+ */
+export function handleSoftDelete(element: Elemento): void {
+  const elementId = element.id as string;
+  const titolo = element.titolo;
+  softDeleteElement(elementId);
+  toast(`"${titolo}" eliminato`, {
+    timeout: 30_000,
+    variant: "default",
+    actionProps: {
+      children: "Annulla",
+      onPress: () => restoreElement(elementId),
+    },
+  });
+}
 
 /** Render the action toolbar: Modifica, Link, Fonte, Board + overflow menu. */
-export function ActionToolbar({ isFullscreen, onModifica }: { isFullscreen: boolean; onModifica?: () => void }) {
+export function ActionToolbar({
+  isFullscreen,
+  onModifica,
+  onDelete,
+}: {
+  isFullscreen: boolean;
+  onModifica?: () => void;
+  onDelete?: () => void;
+}) {
   const btn = isFullscreen
     ? "min-h-[34px] px-3 py-1.5 text-[12px]"
     : "min-h-[30px] px-2.5 py-1 text-[11px]";
@@ -80,7 +116,13 @@ export function ActionToolbar({ isFullscreen, onModifica }: { isFullscreen: bool
           <Ellipsis className="h-4 w-4" />
         </Button>
         <Dropdown.Popover>
-          <Dropdown.Menu onAction={() => {}}>
+          <Dropdown.Menu
+            onAction={(key) => {
+              if (key === "delete" && onDelete) {
+                onDelete();
+              }
+            }}
+          >
             <Dropdown.Item id="duplicate" textValue="Duplica">
               <Label>Duplica</Label>
             </Dropdown.Item>
@@ -308,7 +350,13 @@ export function DetailPane() {
       </Card>
 
       {/* Action toolbar — hidden when editing (editor has own Save/Cancel) */}
-      {!isEditing && <ActionToolbar isFullscreen={false} onModifica={startEditing} />}
+      {!isEditing && (
+        <ActionToolbar
+          isFullscreen={false}
+          onModifica={startEditing}
+          onDelete={() => handleSoftDelete(selectedElement)}
+        />
+      )}
 
       {/* Detail body or inline editor */}
       <ScrollShadow className="flex-1 overflow-y-auto px-4 py-3">

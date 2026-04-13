@@ -21,7 +21,7 @@ import { useValue } from "@legendapp/state/react";
 
 import { workspaceUi$, startEditing } from "./workspace-ui-store";
 import { findElementById, formatElementDate } from "./display-helpers";
-import { ActionToolbar, DetailBody } from "./DetailPane";
+import { ActionToolbar, DetailBody, handleSoftDelete } from "./DetailPane";
 import { ElementoEditor } from "./ElementoEditor";
 
 export function FullscreenOverlay() {
@@ -88,7 +88,13 @@ export function FullscreenOverlay() {
       </header>
 
       {/* Action toolbar — hidden when editing (editor has own Save/Cancel) */}
-      {!isEditing && <ActionToolbar isFullscreen onModifica={startEditing} />}
+      {!isEditing && (
+        <ActionToolbar
+          isFullscreen
+          onModifica={startEditing}
+          onDelete={() => handleSoftDelete(selectedElement)}
+        />
+      )}
 
       <ScrollShadow className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-6 py-6">
