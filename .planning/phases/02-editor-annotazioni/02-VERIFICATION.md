@@ -1,162 +1,292 @@
 ---
-phase: 02-editor-annotazioni
-goal: "Click Modifica → editor inline con campi tipo-specifici. Annotazioni mie/altrui nel detail. Soft delete con toast Annulla 30s."
-verified: 2026-04-13T12:05:00Z
-verified_at: 2026-04-13T12:05:00Z
-status: gaps_found
-score: 2/3 must-haves verified
-must_haves_total: 3
-must_haves_verified: 2
+phase: "02-editor-annotazioni"
+verifier: gsd-verifier
+timestamp: 2026-04-13T13:20:00Z
+status: verified
+truths_total: 3
+truths_verified: 3
+truths_partial: 0
+truths_failed: 0
+gaps_found: 0
 overrides_applied: 0
-re_verification: null
-gaps:
-  - truth: "Click Modifica → editor inline con campi tipo-specifici (per ogni ElementoTipo, con persistenza del dato digitato)"
-    status: partial
-    reason: |
-      Il pulsante Modifica si aggancia correttamente a startEditing e DetailPane/FullscreenOverlay
-      mostrano ElementoEditor inline, ma l'editor (1) non renderizza alcun campo tipo-specifico per
-      evento, periodo, annotazione (3 delle 8 varianti di ElementoTipo) e (2) per le 5 varianti che
-      hanno campi tipo-specifici, handleSave costruisce l'input di normalizeElementoInput usando solo
-      titolo/descrizione/tags/tipo: tutti i campi tipo-specifici presenti nello stato locale
-      (nascitaAnno, nascitaEra, morteAnno, morteEra, tribu, ruoli, fazioni, esito, statoProfezia,
-      dettagliRegno, regione) vengono silenziosamente scartati alla pressione di Salva. Anche se la
-      slice è mock-data e non persiste nulla, normalizeElementoInput è l'unico punto di
-      validazione/contratto per questi campi, quindi non riceverli rompe il contratto
-      "editor con campi tipo-specifici": il form accetta input che vengono buttati via, senza
-      segnalazione all'utente. Per di più le due date (nascitaAnno, morteAnno) non vengono mai
-      parsate in DataStorica, quindi un anno invalido come "abc" non produce mai l'errore
-      data_non_valida che il registro ERROR_MESSAGES dell'editor registra — ulteriore prova che
-      il ramo "campi tipo-specifici" non è esercitato end-to-end.
-    artifacts:
-      - path: "src/ui/workspace-home/ElementoEditor.tsx"
-        issue: "handleSave passa a normalizeElementoInput solo titolo/descrizione/tags/tipo; i rami per evento/periodo/annotazione non esistono (no EventoFields, no PeriodoFields, no AnnotazioneFields)"
-    missing:
-      - "Branch evento/periodo/annotazione in ElementoEditor con campi data (DataTemporale puntuale o range) o fallback esplicito '(Nessun campo aggiuntivo per questo tipo)' con exhaustiveness-check su ElementoTipo"
-      - "handleSave che costruisce e passa a normalizeElementoInput anche nascita/morte (per personaggio) via parser DataStorica, coprendo il ramo data_non_valida"
-      - "Decisione esplicita su come rappresentare tribu, ruoli, fazioni, esito, statoProfezia, dettagliRegno, regione nel contratto input dell'editor: o estendere ElementoInput con questi campi, o documentare nel codice che il prototipo volutamente li ignora (commento TODO + link a S-futuro/FUTURE.md) così da non silenziare dati utente senza segnali"
+re_verification:
+  previous_status: gaps_found
+  previous_score: 2/3
+  gaps_closed:
+    - "Click Modifica → editor inline con campi tipo-specifici (per ogni ElementoTipo, con persistenza del dato digitato)"
+  gaps_remaining: []
+  regressions: []
 deferred: []
 human_verification: []
 ---
 
-# Phase 02: Editor inline, annotazioni, soft delete — Verification Report
+# Phase 02: Editor inline, annotazioni, soft delete — Verification Report (Re-verification after gap closure 02-02)
 
-**Phase Goal:** Click Modifica → editor inline con campi tipo-specifici. Annotazioni mie/altrui nel detail. Soft delete con toast Annulla 30s.
-**Verified:** 2026-04-13T12:05:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Phase Goal (from ROADMAP.md):** Click Modifica → editor inline con campi tipo-specifici. Annotazioni mie/altrui nel detail. Soft delete con toast Annulla 30s.
 
-## Goal Achievement
+**Verified:** 2026-04-13T13:20:00Z
+**Status:** verified (3/3 truths)
+**Re-verification:** Yes — after gap closure plan 02-02 landed on HEAD
 
-The phase goal has three independent properties; each is treated as an observable truth to verify against the code.
+## Summary
 
-### Observable Truths
+La prima verifica (`02-VERIFICATION.md` v1, 2026-04-13T12:05:00Z) aveva registrato 2/3 must-have: annotazioni mie/altrui e soft-delete verificate, ma la prima goal property ("editor inline con campi tipo-specifici") era marcata FAILED perché (a) `ElementoEditor` non aveva rami per `evento`/`periodo`/`annotazione`, (b) `handleSave` scartava tutti i campi tipo-specifici prima di chiamare `normalizeElementoInput`, (c) `ElementoInput` non aveva nemmeno le colonne per ospitare quei campi. Il plan 02-02 ha chiuso tutti e tre i punti.
+
+La re-verifica qui sotto parte dal goal e scende all'implementazione (goal-backward). Il risultato: **3/3 must-have verificate**. Le due proprietà già passate (annotazioni, soft delete) non hanno regressioni; la proprietà precedentemente fallita è ora completamente soddisfatta, inclusa la clausola "anni invalidi → `data_non_valida` esposto in UI" che era il giudizio più severo del gap originale.
+
+Due cose meritano di essere segnalate separatamente da "goal verificato" (vedi sezione "Known gaps (non blocking)"):
+1. Il `02-02-SUMMARY.md` dichiara "123 tests passing"; la misurazione diretta qui restituisce **68 tests passing, 3 test files, exit 0**. Il conteggio dichiarato era stale ma non cambia l'esito: tutti i test passano e i 13 nuovi casi di `elemento.rules.test.ts` pinano il contratto nuovo.
+2. Il `02-REVIEW.md` v2 ha flaggato tre warning (WR-01 `date` senza gate tipo-owner nel layer dominio; WR-02 `initState` auto-stampa `statoProfezia = "futura"`; WR-03 coverage di test per rejection incompleta). Nessuno di questi è un fallimento della goal property: WR-01 è unreachable dal path editor (l'UI è costruttiva), WR-02 è un data-contamination pattern ma il prototipo mock non persiste nulla, WR-03 è un pin-the-contract gap non un correctness gap. Sono segnalati alla closure della milestone, non al blocco della phase.
+
+## Observable Truths
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Click Modifica → editor inline con campi tipo-specifici per ogni ElementoTipo (con persistenza/validazione del dato digitato) | FAILED (partial) | Editor si monta inline, ma copre solo 5/8 tipi e scarta silenziosamente tutti i campi tipo-specifici al Salva |
-| 2 | Annotazioni mie/altrui nel detail | VERIFIED | DetailBody mostra una sezione Annotazioni con le annotazioni dell'utente corrente (click-to-navigate) e il count di annotazioni altrui, con CTA "+ Aggiungi annotazione" disabilitato quando solo altrui |
-| 3 | Soft delete con toast Annulla 30s | VERIFIED | Elimina → softDeleteElement + toast con timeout 30_000 + actionProps "Annulla" → restoreElement; Toast.Provider montato in WorkspacePreviewPage; getElementsForView filtra deletedIds; DetailPane e FullscreenOverlay condividono l'helper handleSoftDelete |
+| 1 | Click Modifica → editor inline mostra campi tipo-specifici per ogni ElementoTipo (8/8 varianti con exhaustiveness-check); handleSave forwarda i campi type-specific a normalizeElementoInput; anni invalidi producono l'errore data_non_valida e lo espongono in UI | VERIFIED | Switch esaustivo su 8/8 varianti + `const _exhaustive: never = tipo` + handleSave forwarda 10 campi tipo-specifici + parseDataStorica restituisce INVALID_DATA → handleSave setta `_form: ERROR_MESSAGES.data_non_valida` → rendered come `<p role="alert">{errors._form}</p>` |
+| 2 | Annotazioni mie/altrui visibili nel detail (mie cliccabili, count altrui, CTA disabilitato quando solo altrui) | VERIFIED | `getAnnotazioniForElement` invariato da 02-01; DetailBody monta la sezione Annotazioni con 4 branch (mie list, altreCount con singolare/plurale, CTA "+ Aggiungi annotazione" disabled quando mie=0 e altreCount>0, hidden quando entrambi 0). Nessuna regressione dopo 02-02. |
+| 3 | Soft delete con toast Annulla 30s (click Elimina → toast con timeout 30s → click Annulla ripristina e riseleziona l'elemento) | VERIFIED | `handleSoftDelete` in DetailPane chiama `softDeleteElement` poi `toast(..., { timeout: 30_000, actionProps: { children: "Annulla", onPress: () => restoreElement(elementId) } })`; Toast.Provider montato in WorkspacePreviewPage; ListPane filtra `deletedElementIds` via `getElementsForView`. FullscreenOverlay riusa lo stesso helper. Nessuna regressione dopo 02-02. |
 
-**Score:** 2/3 truths verified
+**Score:** 3/3 must-haves verified. Gap precedente chiuso; nessuna nuova regressione.
 
-### Deferred Items
+## Truth 1 — Editor inline con campi tipo-specifici (the previously failing one)
 
-Nessun item rinviato a una slice successiva: S03 (Fonti e link editor inline) riguarda fonti/link, non completa l'editor tipo-specifico. L'unico punto di chiusura naturale per WR-01/WR-02 resta dentro S02 stesso o una slice di re-planning dedicata.
+Questo è l'obiettivo critico. Lo verifico contro ciascuna delle 3 sub-clausole che il plan 02-02 ha dichiarato di soddisfare.
 
-### Required Artifacts
+### Sub-claim (a): 8/8 ElementoTipo hanno un ramo con exhaustiveness-check
 
-| Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `src/ui/workspace-home/ElementoEditor.tsx` | Inline editor con shared + type-specific fields per 8 ElementoTipo, che persiste/valida i campi tipo-specifici tramite normalizeElementoInput | STUB (partial) | File esiste (410 righe, sostanziale), monta shared fields, renderizza 5 gruppi tipo-specifici (PersonaggioFields, GuerraFields, ProfeziaFields, RegnoFields, LuogoFields), ma handleSave passa solo 4 campi a normalizeElementoInput e 3 rami tipo mancano del tutto (evento, periodo, annotazione) |
-| `src/ui/workspace-home/workspace-ui-store.ts` | isEditing + startEditing/stopEditing + deletedElementIds + softDeleteElement/restoreElement/finalizeDelete | VERIFIED | Tutti i field + 5 azioni presenti; softDeleteElement esce da edit/fullscreen; restoreElement re-seleziona l'id |
-| `src/ui/workspace-home/display-helpers.ts` | CURRENT_AUTORE + getAnnotazioniForElement + getElementsForView con parametro opzionale deletedIds | VERIFIED | Funzione + costante esportate, getElementsForView accetta `deletedIds: readonly string[] = []` e filtra prima di testo/tipo |
-| `src/ui/workspace-home/DetailPane.tsx` | Conditional ElementoEditor vs DetailBody, Annotazioni section, ActionToolbar.onDelete, exported handleSoftDelete helper | VERIFIED | DetailPane mostra ElementoEditor quando isEditing, nasconde ActionToolbar in edit mode, aggancia handleSoftDelete a onDelete del dropdown; DetailBody include la sezione Annotazioni tra Fonti e Board |
-| `src/ui/workspace-home/FullscreenOverlay.tsx` | Edit mode mirror + shared handleSoftDelete | VERIFIED | Importa handleSoftDelete da DetailPane, mostra ElementoEditor in edit mode, passa onDelete all'ActionToolbar |
-| `src/ui/workspace-home/ListPane.tsx` | Filtra deletedElementIds da getElementsForView | VERIFIED | Legge `deletedElementIds` dallo store e lo passa come 4° argomento a getElementsForView |
-| `src/ui/workspace-home/WorkspacePreviewPage.tsx` | Toast.Provider montato al livello composition shell | VERIFIED | `<Toast.Provider placement="bottom" />` è l'ultimo figlio della shell — corretto per l'API HeroUI v3 (il plan diceva "bottom-center" ma quel literal non esiste nei tipi HeroUI v3; la deviazione è documentata nel SUMMARY ed è semanticamente equivalente) |
-| `src/ui/workspace-home/__tests__/display-helpers.test.ts` | Test per getAnnotazioniForElement + soft-delete filter | VERIFIED | 4 test annotazioni + 6 test soft-delete, tutti passano (55 test totali) |
+**Expected:** `ElementoEditor` rende campi tipo-specifici per tutte le 8 varianti di `ElementoTipo`; il compilatore impedisce di aggiungerne una nuova senza un ramo (discriminated-union con `const _exhaustive: never = tipo`).
 
-### Key Link Verification
+**Evidence (file:line):**
+- `src/features/elemento/elemento.model.ts:4-12` — definizione `ElementoTipo` con 8 variant: `personaggio | guerra | profezia | regno | periodo | luogo | evento | annotazione`.
+- `src/ui/workspace-home/ElementoEditor.tsx:639-666` — funzione `renderTypeSpecificFields(tipo, state, set)` con uno switch che copre esplicitamente tutte le 8 variant:
+  - L645 `case "personaggio"` → `<PersonaggioFields …/>`
+  - L647 `case "guerra"` → `<GuerraFields …/>`
+  - L649 `case "profezia"` → `<ProfeziaFields …/>`
+  - L651 `case "regno"` → `<RegnoFields …/>`
+  - L653 `case "luogo"` → `<LuogoFields …/>`
+  - L655 `case "evento"` → `<EventoFields …/>` (era 0/3 mancanti prima)
+  - L657 `case "periodo"` → `<PeriodoFields …/>` (era 0/3 mancanti prima)
+  - L659 `case "annotazione"` → `<AnnotazioneFields />` (placeholder "(Nessun campo aggiuntivo per questo tipo)") (era 0/3 mancanti prima)
+  - L661-664 `default: { const _exhaustive: never = tipo; throw new Error(…) }` — compile-time guarantee che una futura ElementoTipo variant non possa landare senza un branch.
+- `ElementoEditor.tsx:296` — il render principale chiama `{renderTypeSpecificFields(tipo, state, set)}`, quindi il dispatcher è effettivamente cablato sul render path.
+- I 3 nuovi sub-componenti esistono: `EventoFields` (L517-552, rende anno+era con 1 TextField e 1 Select), `PeriodoFields` (L554-622, rende inizio/fine con 2 TextField + 2 Select), `AnnotazioneFields` (L624-633, placeholder `<p className="italic">(Nessun campo aggiuntivo per questo tipo)</p>`).
 
-| From | To | Via | Status | Details |
-|------|----|----|--------|---------|
-| `DetailPane.ActionToolbar` (Modifica button) | `workspace-ui-store.startEditing` | `onPress={startEditing}` in DetailPane.tsx:356 | WIRED | `isEditing` osservato da useValue → conditional render ElementoEditor |
-| `FullscreenOverlay.ActionToolbar` (Modifica button) | `workspace-ui-store.startEditing` | `onModifica={startEditing}` in FullscreenOverlay.tsx:94 | WIRED | Mirror identico a DetailPane |
-| `ElementoEditor.handleSave` | `normalizeElementoInput` | import + `.match(() => stopEditing(), (error) => setErrors(...))` | WIRED (shared only) | Chiama normalize correttamente ma NON forwarda nascita/morte/tribu/ruoli/fazioni/esito/statoProfezia/dettagliRegno/regione → la wiring è presente ma il payload è incompleto (vedi gap #1) |
-| `DetailBody` (Annotazioni section) | `getAnnotazioniForElement` + `selectElement` | import + call + button onClick → selectElement(ann.id) | WIRED | Click su annotazione naviga via selectElement → detail mostra l'annotazione |
-| `ActionToolbar` dropdown "delete" | `handleSoftDelete` → `softDeleteElement` + `toast` | Dropdown.Menu onAction → onDelete → handleSoftDelete(element) in DetailPane.tsx:64-76 | WIRED | Cattura titolo+id PRIMA di chiamare softDeleteElement (evita null durante closure) |
-| `handleSoftDelete` toast action "Annulla" | `restoreElement` | `actionProps.onPress: () => restoreElement(elementId)` | WIRED | restoreElement rimuove l'id da deletedElementIds e riseleziona l'elemento |
-| `ListPane` rendering | `deletedElementIds` filter | `getElementsForView(currentView, filterText, activeTipo, deletedElementIds)` | WIRED | Tests deterministici confermano baseline-minus-1 dopo soft delete |
-| `WorkspacePreviewPage` | `Toast.Provider` | `<Toast.Provider placement="bottom" />` ultimo figlio della shell | WIRED | Garantisce che toast() imperative da qualsiasi pane renderizzi nel region condiviso |
+**Grep confirmation:** `case "(evento|periodo|annotazione)":` match su L655/657/659; `_exhaustive: never = tipo` match su L662 (+ comment L637).
 
-### Data-Flow Trace (Level 4)
+**Verdict:** VERIFIED. ✓
 
-| Artifact | Data Variable | Source | Produces Real Data | Status |
-|----------|---------------|--------|---------------------|--------|
-| DetailBody Annotazioni section | `annotazioni` (AnnotazioniResult) | `getAnnotazioniForElement(element.id, CURRENT_AUTORE)` → filtra `ELEMENTI` mock | Sì — i dati mock contengono 3 elementi di tipo annotazione con autore utente-corrente/utente-altro e link verso Abraamo/Esodo/profeziaIsaia53 | FLOWING |
-| ElementoEditor (shared fields) | `state` (EditorState) | `useState(() => initState(element))` inizializzato dai campi dell'Elemento mock | Sì — initState legge tutti i campi; UI mostra i valori | FLOWING (read-only) |
-| ElementoEditor (type-specific fields) | `state.nascitaAnno`, `state.tribu`, `state.fazioni`, … | `useState` iniziale + input onChange che aggiornano lo state locale | Sì in ingresso (UI → state) ma l'output di handleSave ignora tutti questi field — la "presa" esiste ma non porta a nulla | HOLLOW (input raccolto, output scartato) |
-| ListPane element list | `currentElements` | `getElementsForView(...)` che legge `ELEMENTI` filtrando deletedIds | Sì — 9 elementi mock, filtri reali | FLOWING |
-| Toast "undo" | `elementId` + `titolo` catturati prima di softDeleteElement | closure locale in handleSoftDelete | Sì — il test T03 ha verificato che restoreElement riporta l'elemento nel list | FLOWING |
+### Sub-claim (b): handleSave forwarda i campi type-specific a normalizeElementoInput
+
+**Expected:** Il payload passato a `normalizeElementoInput` include tutti i 10 campi tipo-specifici (`nascita`, `morte`, `date`, `tribu`, `ruoli`, `fazioni`, `esito`, `statoProfezia`, `dettagliRegno`, `regione`), gated per `tipo === "<owner>"` in modo che il dominio non riceva un campo da un tipo sbagliato.
+
+**Evidence (file:line):**
+- `ElementoEditor.tsx:159-233` — corpo di `handleSave`:
+  - L163-170: parsing di `nascita`/`morte` via `parseDataStorica`, gated su `tipo === "personaggio"`.
+  - L178-205: costruzione di `date` (`DataTemporale`) via `parseDataStorica` per `tipo === "evento"` (puntuale) o `tipo === "periodo"` (range). Una sola convenzione: se un lato del range è parsed ma l'altro no, il range **non** viene costruito (L202 `if (inizioParsed !== undefined && fineParsed !== undefined)`), evitando di inviare range parziali al domain.
+  - L207-233: chiamata `normalizeElementoInput(...)` con payload completo:
+    - L215 `nascita: tipo === "personaggio" ? nascitaParsed : undefined`
+    - L216 `morte: tipo === "personaggio" ? morteParsed : undefined`
+    - L217 `date,` (costruito sopra solo per evento/periodo; undefined altrimenti)
+    - L218 `tribu: tipo === "personaggio" ? (state.tribu || undefined) : undefined`
+    - L219-225 `ruoli: tipo === "personaggio" ? split+trim+filter : undefined`
+    - L226 `fazioni: tipo === "guerra" ? ... : undefined`
+    - L227 `esito: tipo === "guerra" ? ... : undefined`
+    - L228-229 `statoProfezia: tipo === "profezia" ? ... : undefined`
+    - L230-231 `dettagliRegno: tipo === "regno" ? ... : undefined`
+    - L232 `regione: tipo === "luogo" ? ... : undefined`
+- `elemento.rules.ts:8-26` — `ElementoInput` ora ha le 7 colonne tipo-specifiche + `nascita`/`morte`/`date` (già esistenti); è letteralmente possibile passare ogni campo che lo state editor cattura.
+- `elemento.rules.ts:28-44` — `NormalizedElementoInput` mirrored (le 10 colonne esistono anche nel tipo di ritorno).
+- `elemento.rules.ts:163-178` — il corpo di `normalizeElementoInput` forwarda tutti e 10 i campi nell'output (trimmando le stringhe; `""` → `undefined`).
+
+**Domain-side defensive gate:** le 6 consistency branches in `elemento.rules.ts:131-148` rifiutano i campi tipo-specifici su tipi sbagliati via `{ type: "tipo_specifico_non_ammesso" }`. Questo chiude il goal anche sul lato domain: anche se una futura wiring bypassasse il gate UI, il domain blocca.
+
+**Verdict:** VERIFIED. ✓
+
+### Sub-claim (c): anni invalidi → `data_non_valida` esposto in UI
+
+Questo era il punto più severo del gap originale ("ulteriore prova che il ramo 'campi tipo-specifici' non è esercitato end-to-end").
+
+**Expected:** Se l'utente digita un anno non parsabile (es. "abc", "-1", "0", "1.5") in uno dei campi anno dell'editor, il risultato deve essere `data_non_valida` visibile nell'UI (non silenziosamente ignorato).
+
+**Evidence (file:line):**
+- `ElementoEditor.tsx:101-110` — `parseDataStorica(annoStr, era)`:
+  - L105 trim dell'input
+  - L106 stringa vuota → `undefined` (significa "campo non impostato", non invalido — corretto per campi opzionali)
+  - L107 `Number(trimmed)` → `L108 if (!Number.isInteger(anno) || anno <= 0) return INVALID_DATA` — rigetta NaN, decimali, zero, negativi
+  - L109 caso valido → `{ anno, era, precisione: "esatta" }`
+- `ElementoEditor.tsx:101-102` — sentinel `const INVALID_DATA = Symbol("INVALID_DATA")` + `type ParseResult = DataStorica | undefined | typeof INVALID_DATA` — 3 stati distinti (absent, valid, invalid-user-input) per distinguere "campo non compilato" da "valore inseribile ma invalido".
+- `ElementoEditor.tsx:172-175` — se `nascitaParsed === INVALID_DATA || morteParsed === INVALID_DATA`, `handleSave` setta `errors._form = ERROR_MESSAGES.data_non_valida` e **ritorna subito** (non chiama `normalizeElementoInput`). Stesso pattern a L181-184 per `eventoAnno`/`eventoEra` e L197-200 per `periodoInizio/Fine`.
+- `ElementoEditor.tsx:114-125` — `ERROR_MESSAGES.data_non_valida = "Data non valida"` (copre tutte e 10 le variant di `ElementoError`).
+- `ElementoEditor.tsx:298-303` — il branch di rendering del form error: `{errors._form && (<p className="text-xs text-red-600" role="alert">{errors._form}</p>)}`. L'`role="alert"` assicura che lo screen reader annunci l'errore; il `className="text-red-600"` lo rende visivamente evidente.
+- **Domain fallback test:** anche se `parseDataStorica` fosse bypassato e `handleSave` inviasse una `DataStorica` con `anno: NaN` direttamente a `normalizeElementoInput`, il domain ritorna `err({ type: "data_non_valida" })` (verificato da `elemento.rules.ts:155-161` + `validateDataStorica` in `value-objects.ts:32-50`). L'`else`-case a `ElementoEditor.tsx:240-247` gestisce il ritorno dominio mappando `error.type` → messaggio e settando `errors._form`, quindi il branch dominio è comunque reachable dall'UI.
+
+**Test pinning this behavior:** `elemento.rules.test.ts:115-123` — `"rejects a personaggio with an invalid nascita year (NaN) as data_non_valida"`:
+```ts
+const result = normalizeElementoInput({
+  titolo: "Abraamo",
+  tipo: "personaggio",
+  nascita: { anno: Number.NaN, era: "aev", precisione: "esatta" },
+});
+expect(result.isErr()).toBe(true);
+if (result.isErr()) expect(result.error.type).toBe("data_non_valida");
+```
++ rules.test.ts:145-158 pin anche il `range_order` case per `periodo`.
+
+**Verdict:** VERIFIED. ✓
+
+### Artifacts Level 1-4 (from 02-02 must_haves)
+
+| Artifact | Expected shape | Level 1 (exists) | Level 2 (substantive) | Level 3 (wired) | Level 4 (data flows) | Status |
+|----------|----------------|------------------|----------------------|-----------------|---------------------|--------|
+| `src/features/elemento/elemento.rules.ts` | ElementoInput/NormalizedElementoInput estesi + 6 consistency check + forwarding | ✓ (277 righe) | ✓ (tribu?+ruoli?+fazioni?+esito?+statoProfezia?+dettagliRegno?+regione? presenti L19-25) | ✓ (importato da ElementoEditor.tsx L29) | ✓ (13 test su normalizeElementoInput coprono happy + rejection + date validation) | VERIFIED |
+| `src/features/elemento/elemento.errors.ts` | `tipo_specifico_non_ammesso` variant aggiunta | ✓ (12 righe) | ✓ (variant presente L11) | ✓ (usato in elemento.rules.ts L132/135/138/141/144/147 e in ElementoEditor.tsx L117 ERROR_MESSAGES) | ✓ (pinned da 6/6 rules-test rejection branches) | VERIFIED |
+| `src/ui/workspace-home/ElementoEditor.tsx` | Switch esaustivo 8/8 + sub-componenti EventoFields/PeriodoFields/AnnotazioneFields + parseDataStorica + handleSave completo + ERROR_MESSAGES completo | ✓ (667 righe) | ✓ (tutti i sub-componenti + dispatcher + INVALID_DATA sentinel presenti) | ✓ (importato da DetailPane.tsx L52 e FullscreenOverlay.tsx L25; montato condizionalmente in entrambi) | ✓ (state flows UI→handleSave→normalizeElementoInput; prototipo mock non persiste ma il contratto chiama il domain con payload completo) | VERIFIED |
+| `src/features/elemento/__tests__/elemento.rules.test.ts` | ≥8 test Vitest | ✓ (159 righe) | ✓ (13 test cases: 2 shared + 7 tipo/field + 4 date validation) | ✓ (importa `normalizeElementoInput` da @/features/elemento/elemento.rules) | ✓ (tutti i 13 test passano, exit 0) | VERIFIED |
+
+### Key Links Verification
+
+| From | To | Via | Status |
+|------|----|----|--------|
+| `ElementoEditor.handleSave` | `normalizeElementoInput` | import L29 + chiamata L207-233 con payload che include tribu/ruoli/fazioni/esito/statoProfezia/dettagliRegno/regione/nascita/morte/date | WIRED (pattern `normalizeElementoInput\([^)]*(tribu\|nascita\|morte\|date\|fazioni\|esito\|statoProfezia\|dettagliRegno\|regione)` matches on L207+L215-232) |
+| `ElementoEditor.renderTypeSpecificFields switch(tipo)` | `const _exhaustive: never = tipo` | switch esaustivo con default branch che assegna `tipo` a `never` | WIRED (match su L662) |
+| `DetailPane` | `ElementoEditor` | import L52 + render condizionale L363-367 `{isEditing ? <ElementoEditor element={selectedElement}/> : <DetailBody .../>}` | WIRED |
+| `FullscreenOverlay` | `ElementoEditor` | import L25 + render condizionale L102 | WIRED |
+| `ActionToolbar` Modifica button | `startEditing` | onPress={startEditing} L356 (DetailPane) e L94 (FullscreenOverlay via onModifica) | WIRED |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| Typecheck del codice modificato | `npx tsc --noEmit` | exit 0 | PASS |
-| Test suite (domain + display helpers) | `npx vitest run` | 2 files, 55 test passati | PASS |
-| Grep: timeout toast 30s | pattern `timeout.*30_?000` | match unico in `DetailPane.tsx:69` | PASS |
-| Grep: ElementoEditor coverage 8/8 tipi | pattern `tipo === "(evento|periodo|annotazione)"` in ElementoEditor.tsx | 0 match | FAIL → contribuisce al gap #1 |
-| Grep: handleSave forwarda nascita/morte | pattern `nascita:` + `morte:` dentro handleSave | 0 match | FAIL → contribuisce al gap #1 |
-| Git commits T03 esistono | `git log 1a06681 7c51f6f 9729291 261f8be 5c7ce57` | tutti presenti con messaggi corretti | PASS |
+| TypeScript compiles cleanly | `npx tsc --noEmit` | exit 0, no output | PASS |
+| Full test suite passes | `npx vitest run` | 3 files, 68 tests passed, exit 0 | PASS |
+| New domain tests pass | `npx vitest run src/features/elemento/__tests__/elemento.rules.test.ts` | 1 file, 13 tests passed, exit 0 | PASS |
+| Grep: 8/8 exhaustive branches on ElementoTipo | `rg 'case "(evento\|periodo\|annotazione)":' ElementoEditor.tsx` | 3 matches (L655, L657, L659) | PASS |
+| Grep: exhaustiveness compile-time guard | `rg '_exhaustive: never = tipo' ElementoEditor.tsx` | 1 code match L662 + 1 comment L637 | PASS |
+| Grep: tipo_specifico_non_ammesso branches in rules | `rg 'tipo_specifico_non_ammesso' elemento.rules.ts` | 6 matches (L132, L135, L138, L141, L144, L147) | PASS |
+| Grep: ElementoInput has type-specific fields | `rg 'tribu\?:' elemento.rules.ts` | 2 matches (L19 input + L37 normalized) | PASS |
+| Grep: handleSave forwards type-specific fields | `rg 'nascita:\|morte:\|tribu:\|fazioni:\|esito:\|statoProfezia:\|dettagliRegno:\|regione:' ElementoEditor.tsx` handleSave body | 10 matches (L215-232) | PASS |
+| Regression: display-helpers annotation tests | `vitest run src/ui/workspace-home/__tests__/display-helpers.test.ts` (as part of full suite) | all pass (50 tests in file, 4 annotation-specific) | PASS |
+| Claimed commits exist | `git log --all --oneline | grep -E 'fe720a6\|ab0c8c7\|...'` | fe720a6, ab0c8c7, 1a06681, 7c51f6f, 9729291, 261f8be, 5c7ce57, 7ad06e7 all present | PASS |
 
-Nota: un'esecuzione visuale nel browser (click Modifica su un evento come "Diluvio" → conferma che l'editor mostra solo titolo/descrizione/tag e nessun date picker, oppure click Modifica su "Abraamo" → digitare una tribù e premere Salva → verificare che il contenuto non è persistito) sarebbe una conferma umana utile, ma WR-01 e WR-02 sono già dimostrati dal codice statico, quindi non sono riportati sotto "Human Verification".
+**Note on test count discrepancy:** `02-02-SUMMARY.md` reports "123 tests passing (110 baseline + 13 new)". Direct measurement here gives **68 tests passing, not 123**. The actual breakdown is:
+- `src/mock/__tests__/data.test.ts` — 5 tests
+- `src/ui/workspace-home/__tests__/display-helpers.test.ts` — 50 tests
+- `src/features/elemento/__tests__/elemento.rules.test.ts` — 13 tests
+- **Total: 68**
 
-### Requirements Coverage
+The 110-baseline figure in the SUMMARY is stale (likely leftover from a different branch state or a mis-recollection). This does **not** affect the goal verdict: tsc=0, vitest=0, all 13 new rules tests pin the new contract, and all regression tests (annotation helpers + soft-delete filter helpers) continue to pass. The count claim should be corrected in a follow-up housekeeping note, but it is not a functional failure.
 
-Nessun requirement ID esplicito è collegato a questa phase (`phase_req_ids: null` e `REQUIREMENTS.md` non mappa nulla a S02 attivamente: i soli ID presenti — R031/032/033/034 — sono tutti `deferred` a M004). Verifica requirement = verifica delle tre goal properties sopra.
+## Truth 2 — Annotazioni mie/altrui nel detail (regression check)
 
-### Anti-Patterns Found
+**Previously passed.** Quick regression check after 02-02 landed.
 
-| File | Linee | Pattern | Severity | Impatto |
-|------|-------|---------|----------|---------|
-| `ElementoEditor.tsx` | 114-139 | handleSave costruisce payload parziale, scarta stato tipo-specifico | Blocker (rispetto alla goal property 1) | Dati utente silenziosamente persi su Salva per 9 campi tipo-specifici |
-| `ElementoEditor.tsx` | 185-192 | Manca branch discriminated-union per 3/8 varianti di ElementoTipo, niente exhaustiveness-check | Blocker (rispetto alla goal property 1) | Editor per evento/periodo/annotazione non mostra alcun campo tipo-specifico |
-| `ElementoEditor.tsx` | 246-280, 346-350 | Cast `as "aev" \| "ev"` / `String(key)` senza guard su null RAC | Warning | Se l'utente cancella la selezione via tastiera, lo store riceve la stringa "null" — bug reale, non bloccante per la goal property ma fragile |
-| `ElementoEditor.tsx` | 77-80 | `ERROR_MESSAGES` copre solo 2 variant di ElementoError su 9 | Warning | Messaggi generici "Errore di validazione" per tutte le altre variant — paper-cut UX |
-| `ElementoEditor.tsx` | 98-112, 194-198 | Branch `_form` error rimane visibile dopo field edit | Info | Minor UX, non blocca il goal |
-| `ElementoEditor.tsx` | 204 | `variant="primary"` non esiste in HeroUI v3 Button variants | Warning | Stile arriva dai className inline (bg-accent); il type-check non lo blocca ma la variant è ignorata |
-| `workspace-ui-store.ts` | 92-97, 28 | `finalizeDelete` dichiarata ma chiamata da nessuno; `lastModified` inizializzato ma mai letto/scritto | Info | Dead code/stub; IN-01 e IN-02 in REVIEW |
-| `ListPane.tsx` | 167-178 | Composite key parser con split su primo `-` | Warning | Fragile con id Jazz (`co_z…` ok oggi, ma senza garanzia) |
-| `display-helpers.ts` | 96-105, 224-237 | OR semantics su tags+tipi nei board dinamici | Warning | Contratto v1 non ancora deciso; fuori scope S02 ma impatta S04 |
+**Evidence (file:line):**
+- `display-helpers.ts:22` — `CURRENT_AUTORE = "utente-corrente"` invariato.
+- `display-helpers.ts:279-293` — `getAnnotazioniForElement(elementId, currentAutore)` invariato, filtra ELEMENTI per `tipo === "annotazione"` + `link.some(l => l.targetId === elementId)`, split `mie` (autore === currentAutore) vs `altreCount`.
+- `DetailPane.tsx:49-50` — import di `getAnnotazioniForElement` + `CURRENT_AUTORE` invariato.
+- `DetailPane.tsx:156` — chiamata `getAnnotazioniForElement(element.id as string, CURRENT_AUTORE)`.
+- `DetailPane.tsx:216-264` — sezione Annotazioni nel `DetailBody` con:
+  - L216 visibile solo se `mie.length > 0 || altreCount > 0` (hidden quando entrambi 0)
+  - L223-242 `mie.map(ann => <button onClick={() => selectElement(ann.id)}>…</button>)` — click-to-navigate
+  - L243-250 `{altreCount > 0 && <span>{altreCount} {altreCount === 1 ? "annotazione altrui" : "annotazioni altrui"}</span>}` — pluralizzazione
+  - L251-260 CTA disabilitato `<Button variant="ghost" isDisabled>+ Aggiungi annotazione</Button>` quando `mie.length === 0 && altreCount > 0`.
+- `display-helpers.test.ts` — i 4 test annotazioni (Abraamo, Esodo, profeziaIsaia53, Isacco) passano tutti (verificato in verbose output sopra).
 
-### Human Verification Required
+**Verdict:** VERIFIED (nessuna regressione rispetto a v1). ✓
 
-Nessun item richiede verifica umana obbligatoria: le due goal property verificate (Annotazioni, Soft delete) sono dimostrate da codice + test, e il gap sulla goal property 1 è determinato da analisi statica (grep + lettura del source). Un'ispezione visuale iPad-native rimane utile ma non cambia l'esito.
+## Truth 3 — Soft delete con toast Annulla 30s (regression check)
 
-### Gaps Summary
+**Previously passed.** Quick regression check after 02-02 landed.
 
-Il phase ha consegnato 2 delle 3 goal properties con qualità alta:
+**Evidence (file:line):**
+- `workspace-ui-store.ts:26-27` — `deletedElementIds: string[]` invariato.
+- `workspace-ui-store.ts:65-73` — `softDeleteElement(id)` invariato: aggiunge id a `deletedElementIds`, clear selection, exit editing + fullscreen.
+- `workspace-ui-store.ts:79-85` — `restoreElement(id)` invariato: rimuove id da `deletedElementIds` + re-seleziona.
+- `DetailPane.tsx:64-76` — `handleSoftDelete(element)` invariato, cattura `titolo + id` **prima** della mutazione, chiama `softDeleteElement`, poi `toast(..., { timeout: 30_000, actionProps: { children: "Annulla", onPress: () => restoreElement(elementId) } })`.
+- `DetailPane.tsx:357` — `ActionToolbar onDelete={() => handleSoftDelete(selectedElement)}` wired.
+- `FullscreenOverlay.tsx:24` — `import { ActionToolbar, DetailBody, handleSoftDelete } from "./DetailPane"` — condivide l'helper.
+- `FullscreenOverlay.tsx:95` — `onDelete={() => handleSoftDelete(selectedElement)}` wired.
+- `WorkspacePreviewPage.tsx:28` — `<Toast.Provider placement="bottom" />` montato al livello shell.
+- `ListPane.tsx:47` — `const deletedElementIds = useValue(workspaceUi$.deletedElementIds)`.
+- `ListPane.tsx:53` — `getElementsForView(currentView, filterText, activeTipo, deletedElementIds)` — filter wired.
+- `display-helpers.ts:116-149` — `getElementsForView` accetta `deletedIds: readonly string[] = []`, filtra prima di text/tipo.
+- `display-helpers.test.ts` — i 6 test soft-delete passano tutti.
 
-- **Annotazioni mie/altrui nel detail** (truth #2) — Completamente consegnato. `getAnnotazioniForElement` è testato con 4 casi (Abraamo = 1 mia, Esodo = 1 altra, profeziaIsaia53 = 1 mia, Isacco = 0/0), DetailBody monta la sezione con click-to-navigate, count singolare/plurale, CTA disabilitato quando solo altrui, sezione nascosta quando zero. Layout coerente con hierarchy Fonti → Annotazioni → Board.
+**Grep confirmation:**
+- `rg 'timeout.*30_?000' DetailPane.tsx` → match unico su L69.
+- `rg '<Toast.Provider' WorkspacePreviewPage.tsx` → match su L28 con `placement="bottom"`.
 
-- **Soft delete con toast Annulla 30s** (truth #3) — Completamente consegnato. Lo store ha `deletedElementIds` + 3 azioni (softDelete/restore/finalize), `getElementsForView` filtra con test di regressione deterministici (6 test nuovi), l'helper condiviso `handleSoftDelete` cattura titolo+id prima della mutazione (evita null durante la closure del toast), il toast ha `timeout: 30_000`, actionProps "Annulla" → restoreElement, e `Toast.Provider` è montato al livello shell. `softDeleteElement` correttamente esce da edit-mode + fullscreen, e `restoreElement` riseleziona l'id per l'UX iPad-native. Deviazione `placement="bottom"` vs "bottom-center" è giustificata dal typing HeroUI v3.
+**Verdict:** VERIFIED (nessuna regressione rispetto a v1). ✓
 
-Il gap è concentrato sulla goal property 1 (editor inline con campi tipo-specifici), dove due warning già tracciati nel REVIEW (WR-01 e WR-02) convergono su una conclusione unica: **il ramo "campi tipo-specifici" dell'editor è renderizzato solo parzialmente e non esercitato end-to-end**.
+## Known gaps (non blocking — not part of goal property 1)
 
-- **Coverage incompleta** (WR-02): `ElementoTipo` ha 8 variant (`personaggio | guerra | profezia | regno | periodo | luogo | evento | annotazione`) ma `ElementoEditor` rende gruppi tipo-specifici solo per 5 di queste (personaggio, guerra, profezia, regno, luogo). Selezionare un `evento` (es. "Diluvio" che è visibilmente presente nella list) e premere Modifica produce un editor con solo titolo/descrizione/tag e nessun modo di editare la data — l'utente vede "editabile" un elemento che di fatto non lo è. Stesso per `periodo` e `annotazione`. Il Principio V-bis della Constitution chiede discriminated-union exhaustive invece di if/else, con compile-time guard `const _exhaustive: never = tipo`.
+Questi sono segnalati dal `02-REVIEW.md` v2 come warning post-plan e confermati qui dalla lettura del codice. **Nessuno di essi è un fallimento della goal property S02**: la goal property 1 chiede che l'editor mostri campi tipo-specifici, forwardi i campi al normalize, e esponga errori di parsing in UI — e tutto questo è verificato. I warning sotto sono difetti di robustezza da chiudere in una milestone successiva (M003 Jazz wiring o M004 polish), non da bloccare la chiusura della phase.
 
-- **Contratto di save dichiarativamente incompleto** (WR-01): anche per le 5 variant che renderizzano campi tipo-specifici, `handleSave` passa a `normalizeElementoInput` solo `titolo`, `descrizione`, `tags`, `tipo`. Tutti gli 11 field aggiuntivi dello `EditorState` (`nascitaAnno`, `nascitaEra`, `morteAnno`, `morteEra`, `tribu`, `ruoli`, `fazioni`, `esito`, `statoProfezia`, `dettagliRegno`, `regione`) sono letti dall'UI ma non passano mai per il normalize. Questo ha due implicazioni:
-  1. Il ramo di errore `data_non_valida` registrato in `ERROR_MESSAGES` non è mai raggiungibile, perché le stringhe nascitaAnno/morteAnno non vengono mai convertite in `DataStorica` né validate.
-  2. L'editor "dice" all'utente che può modificare la tribù di Abraamo, ma il dato tipo-specifico va perso al Save senza nessun segnale — peggiore di un campo `readonly` perché camuffato da campo scrivibile.
+1. **WR-01 (review v2) — `date` non ha tipo-ownership gate nel domain layer.**
+   - File: `elemento.rules.ts:120-178`.
+   - Status: unreachable dall'editor (handleSave costruisce `date` solo per `evento`/`periodo`, vedi L178-205 di ElementoEditor), ma è un buco difensivo: un futuro caller (Jazz adapter, paste flow) potrebbe passare `{ tipo: "personaggio", date: ... }` e il domain accetterebbe. Le altre 6 tipo-ownership branch esistono, `date` è l'eccezione.
+   - Fix raccomandato: aggiungere `if (input.date && input.tipo !== "evento" && input.tipo !== "periodo") return err({ type: "tipo_specifico_non_ammesso" })` come 7ª consistency branch. Opzionalmente un kind↔tipo check (puntuale solo su evento, range solo su periodo).
+   - Impact on goal: nessuno (editor path non lo tocca).
 
-**Valutazione rispetto alla minimum contract del goal**: il ROADMAP parla di "editor inline con campi tipo-specifici", e la slice è esplicitamente mock-data (immutable). Un'interpretazione minima sarebbe *"mostra i campi tipo-specifici"*, e in quell'interpretazione WR-01 potrebbe essere accettato come "persistenza rinviata". Ma WR-02 fa cadere anche quell'interpretazione: per evento/periodo/annotazione non vengono mostrati affatto. L'unione delle due rende la goal property 1 *partial* a qualsiasi soglia ragionevole.
+2. **WR-02 (review v2) — `initState` stampa `statoProfezia = "futura"` anche quando il sorgente è undefined.**
+   - File: `ElementoEditor.tsx:83`.
+   - Status: footgun data-contamination per il futuro wiring M003. Nel prototipo mock-data non persiste, quindi oggi è invisibile. Aprire l'editor su una profezia con `statoProfezia` undefined → `initState` lo seeda a `"futura"` → `handleSave` forwarda `"futura"` a `normalizeElementoInput`. Fatal nel giorno in cui Jazz round-trippa.
+   - Fix raccomandato: `initState` usa `el.statoProfezia ?? ""` e `EditorState.statoProfezia` typed come `"adempiuta" | "in corso" | "futura" | ""`. Il Select HeroUI con `selectedKey=""` non mostra alcuna selezione — UX corretta per un campo non ancora impostato.
+   - Impact on goal: nessuno (il goal chiede "editor mostra campi tipo-specifici", non "editor preserva `undefined` nel round-trip"). Ma è esattamente la stessa classe di bug che 02-02 doveva chiudere, invertita di segno.
 
-Inoltre, il tipo `ElementoInput` in `elemento.rules.ts` non ha i field `tribu/ruoli/fazioni/esito/statoProfezia/dettagliRegno/regione`: il dominio letteralmente non sa come validare questi dati, quindi la slice avrebbe dovuto o (a) estendere il dominio e il rules layer, o (b) chiudere via override/TODO documentato che il prototipo ignora intenzionalmente questi campi. Nessuna delle due è stata fatta, il che lascia un footgun per la futura wiring con Jazz.
+3. **WR-03 (review v2) — `elemento.rules.test.ts` pinna 2/6 rejection branches.**
+   - File: `src/features/elemento/__tests__/elemento.rules.test.ts:34-112`.
+   - Status: il file ha 13 test ma copre il rejection path solo per `nascita on evento` (L59-67) e `tribu on guerra` (L49-57). Le altre 4 rejection branches (`fazioni/esito` on non-guerra, `statoProfezia` on non-profezia, `dettagliRegno` on non-regno, `regione` on non-luogo) sono verificate solo nel happy path.
+   - Fix raccomandato: aggiungere un `it.each` di 6-8 rejection case + 3 boundary-year case (anno 0, anno -1, anno 2.5) + 1 trimming case.
+   - Impact on goal: nessuno (il goal chiede "anni invalidi → data_non_valida"; questo è già pinnato da 1 test NaN + 1 test range_order).
 
-**Consiglio di chiusura**: il gap è meccanicamente piccolo (una patch a `handleSave` + 3 branch tipo mancanti + eventualmente estensione di `ElementoInput` o TODO esplicito con commento) e va chiuso dentro S02 con un plan `--gaps` mirato, oppure documentato in OVERRIDES.md come intentional deviation con motivazione "prototipo mock-data, persistenza type-specific rinviata a S-futuro quando Jazz sarà wired". La scelta è un gate di escalation per l'utente: correggere o accettare esplicitamente.
+4. **Housekeeping — test count nel 02-02-SUMMARY.md è stale (123 vs 68).**
+   - Correzione da fare durante `/gsd-audit-milestone` o una PR di cleanup: aggiornare il SUMMARY a 68 test (5+50+13). Non blocca la phase.
+
+## Requirements Coverage
+
+Nessun requirement ID è mappato esplicitamente a S02 nel REQUIREMENTS.md:
+- `requirements: []` in `02-01-SUMMARY.md` frontmatter
+- `requirements: []` in `02-02-PLAN.md` frontmatter
+- Gli ID presenti in REQUIREMENTS.md (R031-R034) sono tutti `deferred: M004`
+
+Quindi la verifica dei requirements = verifica delle 3 goal properties sopra. Nessun requirement orfano.
+
+## Anti-Patterns Scan (from 02-REVIEW.md v2, categorised for closure priority)
+
+Tutti gli anti-pattern identificati dal review v2 sono stati consultati e classificati sopra sotto "Known gaps (non blocking)". Zero blocker trovati nella re-verifica goal-backward. I 3 warning (WR-01, WR-02, WR-03) sono difetti di robustezza / pin-the-contract gap che non rompono la goal property.
+
+## Human Verification Required
+
+Nessun item richiede verifica umana obbligatoria per chiudere la phase:
+- T1: dimostrato da codice statico + test domain + ispezione dispatcher.
+- T2: invariato da 02-01, già verificato.
+- T3: invariato da 02-01, già verificato.
+
+Un'ispezione visuale iPad-native (click Modifica su "Diluvio" → confermare che appare il TextField "Anno"; digitare "abc" → confermare che appare "Data non valida" in rosso) rimane **raccomandata ma non bloccante**. La verifica statica chiude il goal in modo sufficiente.
+
+## Gaps Summary
+
+**Nessun gap bloccante.** La phase S02 ha consegnato tutte e tre le goal properties end-to-end:
+
+1. **Editor inline con campi tipo-specifici (truth 1)** — coverage completa 8/8 ElementoTipo con exhaustiveness-check compile-time, handleSave forwarda tutti i 10 campi tipo-specifici a `normalizeElementoInput` (gated per tipo owner), anni invalidi producono `data_non_valida` visibile in UI via `errors._form` + `role="alert"`. Il gap originale (3 rami tipo mancanti + handleSave che scarta tutto + ElementoInput che non aveva le colonne) è chiuso su tutti e tre i livelli (UI, contratto input, contratto output, test). Il review v2 ha flaggato 3 warning (WR-01/02/03) ma nessuno è nella critical path della goal property.
+
+2. **Annotazioni mie/altrui (truth 2)** — nessuna regressione da 02-01. La sezione Annotazioni è ancora renderizzata in `DetailBody` con split mie/altrui, click-to-navigate, pluralizzazione, CTA disabilitato quando solo altrui, hidden quando zero.
+
+3. **Soft delete con toast 30s (truth 3)** — nessuna regressione da 02-01. `handleSoftDelete` esportato da `DetailPane`, condiviso con `FullscreenOverlay`, timeout 30_000, Toast.Provider montato in WorkspacePreviewPage, ListPane filtra deletedIds via `getElementsForView`.
+
+## Recommendation
+
+**Status: verified (3/3). Phase S02 può essere chiusa.**
+
+Suggerimenti per M002 closure:
+- I 3 warning (WR-01, WR-02, WR-03) vanno trattati durante `/gsd-plan-milestone-gaps` come "milestone-level polish" — WR-01 è il più importante (chiusura del gate difensivo del domain), WR-02 il più user-visible (data contamination quando M003 wirà Jazz), WR-03 il più mechanico.
+- Housekeeping: correggere il test count nel `02-02-SUMMARY.md` da "123" a "68".
+- Next action: `/gsd-next` dovrebbe routare su S03 (Fonti e link editor inline) che può dipendere sul contratto `ElementoInput` esteso da 02-02 senza fighting.
 
 ---
 
-*Verified: 2026-04-13T12:05:00Z*
+*Verified: 2026-04-13T13:20:00Z*
 *Verifier: Claude (gsd-verifier)*
+*Method: goal-backward, grep + static reading + test execution*
+*Verification commands: `npx tsc --noEmit` (exit 0), `npx vitest run` (exit 0, 68/68 tests passing across 3 files)*
