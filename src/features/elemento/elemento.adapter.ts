@@ -1,7 +1,7 @@
 import { co, z } from "jazz-tools";
 import { useWorkspaceAccount } from "@/features/workspace/workspace.adapter";
 import type { ElementoError } from "@/features/elemento/elemento.errors";
-import { FonteSchema, ElementoSchema } from "@/features/elemento/elemento.schema";
+import { FonteSchema, ElementoSchema, MediaImmagineSchema } from "@/features/elemento/elemento.schema";
 import { normalizeElementoInput, type ElementoInput } from "@/features/elemento/elemento.rules";
 import { ensureTagsInRegistry } from "@/features/workspace/workspace.rules";
 import { parseElementoId, type ElementoId } from "@/features/shared/newtypes";
@@ -114,7 +114,8 @@ export function createElementoInWorkspace(
         : undefined,
       tipo: normalized.tipo,
       tags: co.list(z.string()).create([...normalized.tags], account),
-      fonti: co.list(FonteSchema).create([], account)
+      fonti: co.list(FonteSchema).create([], account),
+      media: co.list(MediaImmagineSchema).create([], account)
     },
     account
   );

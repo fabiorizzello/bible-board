@@ -87,18 +87,19 @@ export function formatElementDate(el: Elemento): string | undefined {
  * For "dinamica" boards: filter ELEMENTI by tags/tipi.
  */
 function getBoardElements(board: Board): Elemento[] {
-  if (board.selezione.kind === "fissa") {
-    const idSet = new Set(board.selezione.elementiIds);
+  const selezione = board.selezione;
+  if (selezione.kind === "fissa") {
+    const idSet = new Set(selezione.elementiIds);
     return ELEMENTI.filter((el) => idSet.has(el.id as string));
   }
   // dinamica
   return ELEMENTI.filter((el) => {
     const matchesTag =
-      !board.selezione.tags?.length ||
-      el.tags.some((t) => board.selezione.tags!.includes(t));
+      !selezione.tags?.length ||
+      el.tags.some((t) => selezione.tags!.includes(t));
     const matchesTipo =
-      !board.selezione.tipi?.length ||
-      board.selezione.tipi.includes(el.tipo);
+      !selezione.tipi?.length ||
+      selezione.tipi.includes(el.tipo);
     return matchesTag || matchesTipo;
   });
 }
@@ -211,14 +212,15 @@ export function resolveCollegamenti(el: Elemento): ResolvedLink[] {
  */
 export function resolveBoardsForElement(el: Elemento): string[] {
   return BOARDS.filter((board) => {
-    if (board.selezione.kind === "fissa") {
-      return board.selezione.elementiIds.includes(el.id as string);
+    const selezione = board.selezione;
+    if (selezione.kind === "fissa") {
+      return selezione.elementiIds.includes(el.id as string);
     }
     // dinamica
     const matchesTag =
-      board.selezione.tags?.some((t) => el.tags.includes(t)) ?? false;
+      selezione.tags?.some((t) => el.tags.includes(t)) ?? false;
     const matchesTipo =
-      board.selezione.tipi?.includes(el.tipo) ?? false;
+      selezione.tipi?.includes(el.tipo) ?? false;
     return matchesTag || matchesTipo;
   }).map((b) => b.nome);
 }

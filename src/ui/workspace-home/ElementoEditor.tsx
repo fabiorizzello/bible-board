@@ -201,14 +201,14 @@ export function ElementoEditor({ element }: { element: Elemento }) {
       {/* ── Actions ── */}
       <div className="flex items-center gap-2 pt-2 border-t border-primary/6">
         <Button
-          variant="solid"
+          variant="primary"
           className="min-h-[44px] gap-1.5 bg-accent px-4 text-[13px] font-semibold text-white"
           onPress={handleSave}
         >
           <Save className="h-3.5 w-3.5" /> Salva
         </Button>
         <Button
-          variant="flat"
+          variant="ghost"
           className="min-h-[44px] gap-1.5 px-4 text-[13px] font-medium text-ink-lo"
           onPress={handleCancel}
         >

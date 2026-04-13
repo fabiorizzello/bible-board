@@ -1,4 +1,4 @@
-import { z } from "jazz-tools";
+import { z } from "zod";
 import { ok, err, type Result } from "neverthrow";
 
 // Branded schemas
@@ -22,7 +22,10 @@ export type NonEmptyString = z.infer<typeof NonEmptyStringSchema>;
 // Generic parse helper
 type ParseError = { type: "parse_error"; message: string };
 
-function parseWith<T>(schema: z.ZodType<T>, value: unknown): Result<T, ParseError> {
+function parseWith<S extends z.ZodType>(
+  schema: S,
+  value: unknown,
+): Result<z.output<S>, ParseError> {
   const result = schema.safeParse(value);
   return result.success
     ? ok(result.data)

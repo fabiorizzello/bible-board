@@ -96,7 +96,7 @@ export function DemoAuthPage() {
         <Button
           type="submit"
           className="mt-6 w-full min-h-[44px] bg-accent text-white font-body font-medium"
-          variant="solid"
+          variant="primary"
           size="sm"
         >
           Accedi

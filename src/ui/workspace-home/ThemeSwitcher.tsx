@@ -238,7 +238,7 @@ export function ThemeSwitcher() {
         <Tooltip>
           <Button
             isIconOnly
-            variant="solid"
+            variant="primary"
             onPress={() => setOpen(!open)}
             className="h-11 w-11 rounded-full bg-slate-800 text-white shadow-lg hover:bg-slate-700 cursor-pointer"
             aria-label="Cambia palette colori"
