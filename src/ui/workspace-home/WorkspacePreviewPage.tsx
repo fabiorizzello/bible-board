@@ -3,7 +3,13 @@
  *
  * Assembles the 3-pane layout from extracted components:
  * NavSidebar, ListPane, DetailPane, ThemeSwitcher, FullscreenOverlay.
+ *
+ * Mounts Toast.Provider here (composition shell level) so imperative
+ * `toast()` calls from any pane render into a shared bottom region.
+ * iPad-native: bottom placement keeps undo affordances near the thumb.
  */
+
+import { Toast } from "@heroui/react";
 
 import { NavSidebar } from "./NavSidebar";
 import { ListPane } from "./ListPane";
@@ -19,6 +25,7 @@ export function WorkspacePreviewPage() {
       <DetailPane />
       <ThemeSwitcher />
       <FullscreenOverlay />
+      <Toast.Provider placement="bottom" />
     </div>
   );
 }
