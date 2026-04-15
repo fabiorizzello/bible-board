@@ -81,8 +81,9 @@
       <div class="text-xs uppercase tracking-wider text-teal-700 font-semibold">Phase 02 · S02 · R005</div>
       <h1 class="text-3xl mt-2 text-teal-900">Editor app-native — inline per-campo</h1>
       <p class="text-teal-800/70 mt-3 max-w-2xl text-sm leading-relaxed">
-        4 aree di decisione, 3 alternative ciascuna. Apri ogni sketch, confronta visivamente,
-        poi torna in chat e dimmi quale scegli (o cosa vuoi combinare).
+        6 aree di decisione, 3 alternative ciascuna. Sketch 1-4 = grammatica editor inline.
+        Sketch 5-6 = composite component + cross-field validation. Apri ognuno, confronta,
+        poi torna in chat con le scelte (o cosa vuoi combinare).
       </p>
     </header>
 
@@ -185,6 +186,48 @@
           <span class="pill pill-recommended">A. Bubble menu</span>
           <span class="pill">B. Sticky toolbar</span>
           <span class="pill">C. Slash only</span>
+        </div>
+      </a>
+
+      <a href="05-composite-vita.html" class="hero-card">
+        <div class="flex items-start justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="badge">5</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold">Composite</div>
+              <h2 class="text-lg text-teal-900">Vita component</h2>
+            </div>
+          </div>
+          <span class="pill pill-recommended" title="Recommended: A. Compact inline range">A</span>
+        </div>
+        <p class="text-sm text-teal-800/70 leading-relaxed">
+          Coppia <strong>nascita + morte (opt)</strong> come componente unico. Risolve cross-validation per costruzione (Parse, Don't Validate). Generalizzabile a <code>Intervallo&lt;T&gt;</code>.
+        </p>
+        <div class="mt-4 flex gap-2 text-xs flex-wrap">
+          <span class="pill pill-recommended">A. Compact range</span>
+          <span class="pill">B. Sub-rows</span>
+          <span class="pill">C. Popover picker</span>
+        </div>
+      </a>
+
+      <a href="06-validation-ux.html" class="hero-card">
+        <div class="flex items-start justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="badge">6</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold">Validation</div>
+              <h2 class="text-lg text-teal-900">Cross-field UX</h2>
+            </div>
+          </div>
+          <span class="pill pill-recommended" title="Recommended: C. Soft validation">C</span>
+        </div>
+        <p class="text-sm text-teal-800/70 leading-relaxed">
+          Quando un commit viola un vincolo cross-aggregate (es. evento precede vita.nascita): hard reject, auto-prompt, o soft validation con icone+badge+sidebar marker?
+        </p>
+        <div class="mt-4 flex gap-2 text-xs flex-wrap">
+          <span class="pill" style="background:#FEF2F2;color:#DC2626;border:1px solid #FCA5A5;">A. Hard reject</span>
+          <span class="pill">B. Auto-prompt</span>
+          <span class="pill pill-recommended">C. Soft validation</span>
         </div>
       </a>
 

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 5 — Composite Vita component (iPad scale)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hero-primary-50:  #F0FDFA;
+    --hero-primary-100: #CCFBF1;
+    --hero-primary-200: #99F6E4;
+    --hero-primary-400: #2DD4BF;
+    --hero-primary-500: #14B8A6;
+    --hero-primary-600: #0D9488;
+    --hero-primary-700: #0F766E;
+    --hero-primary-900: #134E4A;
+    --hero-warning:     #F97316;
+    --hero-content1:    #FFFFFF;
+    --hero-content2:    #F8FAFC;
+    --hero-content3:    #F1F5F9;
+    --hero-default-200: #E2E8F0;
+    --hero-default-400: #94A3B8;
+    --hero-default-500: #64748B;
+    --hero-default-700: #334155;
+    --hero-radius-sm:   6px;
+    --hero-radius-md:   10px;
+    --hero-radius-lg:   14px;
+    --hero-shadow-md:   0 4px 12px rgba(13, 148, 136, 0.08), 0 1px 3px rgba(13, 148, 136, 0.04);
+    --hero-shadow-lg:   0 12px 32px rgba(13, 148, 136, 0.14), 0 2px 8px rgba(13, 148, 136, 0.06);
+  }
+
+  body { font-family: 'Fira Sans', sans-serif; background: var(--hero-primary-50); color: var(--hero-primary-900); }
+  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  code { font-family: 'Fira Code', monospace; }
+
+  .pill-recommended {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; height: 28px;
+    background: linear-gradient(135deg, var(--hero-primary-600), var(--hero-primary-500));
+    color: white; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+  }
+  .pill-recommended svg { width: 14px; height: 14px; }
+
+  .alt-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.18), transparent); margin: 36px 0; }
+
+  .alt-badge {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fira Code'; font-weight: 700; font-size: 18px;
+    background: var(--hero-primary-100); color: var(--hero-primary-700);
+    flex-shrink: 0;
+  }
+  .alt-badge.recommended {
+    background: linear-gradient(135deg, var(--hero-primary-600), var(--hero-primary-500));
+    color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+  }
+
+  .ipad-frame {
+    width: 520px;
+    background: var(--hero-content1);
+    border: 1px solid var(--hero-default-200);
+    border-radius: var(--hero-radius-lg);
+    box-shadow: var(--hero-shadow-md);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .ipad-frame-header {
+    height: 36px;
+    background: var(--hero-content2);
+    border-bottom: 1px solid var(--hero-default-200);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--hero-default-500); font-weight: 600;
+  }
+  .ipad-frame-body { padding: 24px 28px; }
+
+  .elem-header { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid var(--hero-default-200); margin-bottom: 12px; }
+  .chip-tipo {
+    display: inline-flex; align-self: flex-start;
+    padding: 4px 12px; height: 24px; align-items: center;
+    font-size: 11px; font-weight: 600;
+    background: var(--hero-primary-100); color: var(--hero-primary-700);
+    border-radius: 999px;
+  }
+  .elem-name { font-size: 24px; font-weight: 600; color: var(--hero-primary-900); line-height: 1.2; }
+
+  .field-row {
+    display: flex; align-items: center; gap: 16px;
+    min-height: 48px;
+    padding: 4px 8px; margin: 0 -8px;
+    border-radius: var(--hero-radius-sm);
+    transition: background 150ms ease-out;
+  }
+  .field-row:hover { background: rgba(20, 184, 166, 0.04); }
+  .field-label {
+    width: 110px; flex-shrink: 0;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 600;
+  }
+  .field-value { flex: 1; font-size: 15px; color: var(--hero-primary-900); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  /* ========================================================================
+     COMPOSITE VITA — Alt A: compact inline range (RECOMMENDED)
+     ======================================================================== */
+  .vita-compact {
+    display: flex; align-items: center; gap: 12px;
+    flex: 1;
+  }
+  .vita-half {
+    display: inline-flex; align-items: center;
+    min-height: 44px; padding: 0 12px;
+    border-radius: var(--hero-radius-sm);
+    cursor: text;
+    font-size: 15px; color: var(--hero-primary-900);
+    transition: background 150ms;
+  }
+  .vita-half:hover { background: var(--hero-primary-50); }
+  .vita-half.empty {
+    color: var(--hero-default-400);
+    font-style: italic;
+  }
+  .vita-half.editing {
+    background: var(--hero-content1);
+    border: 2px solid var(--hero-primary-500);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15);
+    border-radius: var(--hero-radius-md);
+    padding: 0 14px;
+    height: 48px; min-height: 48px;
+  }
+  .vita-half.editing::after {
+    content: '|'; color: var(--hero-primary-600); margin-left: 1px;
+    animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .vita-arrow {
+    color: var(--hero-default-400);
+    font-size: 16px;
+    user-select: none;
+  }
+  .vita-derived {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--hero-default-500);
+    background: var(--hero-content2);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Fira Code';
+    border: 1px solid var(--hero-default-200);
+  }
+  .vita-warning {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--hero-warning);
+    font-weight: 600;
+  }
+  .vita-warning svg { width: 16px; height: 16px; }
+
+  /* ========================================================================
+     COMPOSITE VITA — Alt B: sub-rows under heading
+     ======================================================================== */
+  .vita-section {
+    margin: 8px -8px;
+    padding: 12px 12px 14px;
+    border-radius: var(--hero-radius-md);
+    border: 1px solid rgba(20, 184, 166, 0.18);
+    background: var(--hero-primary-50);
+  }
+  .vita-section-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .vita-sub-row {
+    display: flex; align-items: center; gap: 16px;
+    min-height: 44px;
+  }
+  .vita-sub-label {
+    width: 90px; flex-shrink: 0;
+    font-size: 11px; color: var(--hero-default-500); font-weight: 600;
+  }
+  .vita-sub-value {
+    flex: 1; font-size: 14px; color: var(--hero-primary-900);
+    cursor: text;
+  }
+  .vita-sub-value.empty { color: var(--hero-default-400); font-style: italic; }
+  .vita-derived-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed rgba(20, 184, 166, 0.25);
+    font-size: 11px;
+    color: var(--hero-primary-700);
+  }
+
+  /* ========================================================================
+     COMPOSITE VITA — Alt C: popover date picker
+     ======================================================================== */
+  .vita-trigger {
+    display: inline-flex; align-items: center; gap: 8px;
+    flex: 1;
+    height: 44px; padding: 0 12px;
+    border-radius: var(--hero-radius-sm);
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 150ms;
+  }
+  .vita-trigger:hover { background: var(--hero-primary-50); }
+  .vita-trigger svg { width: 16px; height: 16px; color: var(--hero-default-500); }
+
+  .popover {
+    position: absolute;
+    background: var(--hero-content1);
+    border: 1px solid rgba(20, 184, 166, 0.20);
+    border-radius: var(--hero-radius-lg);
+    box-shadow: var(--hero-shadow-lg);
+    padding: 16px;
+    width: 380px;
+    z-index: 30;
+  }
+  .popover::before {
+    content: ''; position: absolute; top: -7px; left: 32px;
+    width: 12px; height: 12px;
+    background: var(--hero-content1);
+    border-left: 1px solid rgba(20, 184, 166, 0.20);
+    border-top: 1px solid rgba(20, 184, 166, 0.20);
+    transform: rotate(45deg);
+  }
+  .popover-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 700;
+    padding: 0 4px 12px;
+  }
+  .popover-input-group {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .popover-label {
+    font-size: 11px; color: var(--hero-default-500); font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .hero-input {
+    width: 100%; height: 48px; padding: 0 14px;
+    background: var(--hero-content2);
+    border: 2px solid var(--hero-default-200);
+    border-radius: var(--hero-radius-md);
+    font-family: inherit; font-size: 15px;
+    color: var(--hero-primary-900);
+    outline: none;
+  }
+  .hero-input:focus, .hero-input.focused { border-color: var(--hero-primary-500); background: var(--hero-content1); box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15); }
+
+  /* States gallery — small variants below main mock */
+  .states-gallery {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: 12px;
+  }
+  .state-card {
+    background: var(--hero-content1);
+    border: 1px solid var(--hero-default-200);
+    border-radius: var(--hero-radius-md);
+    padding: 10px 12px;
+  }
+  .state-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--hero-default-500); font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .state-label.invalid { color: var(--hero-warning); }
+  .state-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    color: var(--hero-primary-900);
+    min-height: 36px;
+  }
+  .state-row .lbl { font-size: 10px; text-transform: uppercase; color: var(--hero-primary-700); font-weight: 600; min-width: 38px; }
+  .state-row .empty-half { color: var(--hero-default-400); font-style: italic; }
+  .state-row .arrow { color: var(--hero-default-400); }
+  .state-row .warn { color: var(--hero-warning); display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
+  .state-row .warn svg { width: 12px; height: 12px; }
+
+  .lucide { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .lucide-sm { width: 14px; height: 14px; }
+
+  .reason-list { font-size: 13px; line-height: 1.55; }
+  .reason-list .row { display: flex; align-items: flex-start; gap: 10px; padding: 4px 0; }
+  .reason-list .icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+  .pro .icon { color: #059669; }
+  .con .icon { color: #DC2626; }
+
+  .grammatica {
+    background: var(--hero-primary-50);
+    border: 1px solid rgba(20, 184, 166, 0.18);
+    border-radius: var(--hero-radius-md);
+    padding: 14px 16px;
+    font-size: 13px; line-height: 1.6;
+    color: var(--hero-primary-900);
+  }
+  .grammatica-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 700; margin-bottom: 6px;
+  }
+
+  .ddd-box {
+    background: #0F172A; color: #E2E8F0;
+    border-radius: var(--hero-radius-md);
+    padding: 16px 20px;
+    font-family: 'Fira Code'; font-size: 12px; line-height: 1.6;
+    overflow-x: auto;
+  }
+  .ddd-box .keyword { color: #F472B6; }
+  .ddd-box .type { color: #67E8F9; }
+  .ddd-box .string { color: #FCD34D; }
+  .ddd-box .comment { color: #64748B; font-style: italic; }
+  .ddd-box .fn { color: #A78BFA; }
+</style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+
+    <header class="mb-10">
+      <a href="index.html" class="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:text-teal-900 font-medium">
+        <svg class="lucide lucide-sm" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        Tutti gli sketch
+      </a>
+      <div class="flex items-center gap-4 mt-4">
+        <div class="alt-badge">5</div>
+        <div>
+          <h1 class="text-3xl text-teal-900 leading-tight">Composite Vita component</h1>
+          <p class="text-sm text-teal-800/70 mt-1.5 max-w-xl">Coppia naturale <strong>nascita + morte (opt)</strong> come componente unico. Risolve la cross-validation per costruzione: morte senza nascita = stato impossibile by design (Parse, Don't Validate).</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- DDD model preview -->
+    <section class="mb-10">
+      <div class="text-xs uppercase tracking-wider text-teal-700 font-semibold mb-2">Modello di dominio</div>
+      <div class="ddd-box"><span class="comment">// shared/value-objects.ts</span>
+<span class="keyword">type</span> <span class="type">Vita</span> = {
+  nascita: <span class="type">DataStorica</span>;
+  morte?: <span class="type">DataStorica</span>;  <span class="comment">// opzionale by construction</span>
+};
+
+<span class="comment">// constructor enforces invariant: morte (se presente) > nascita</span>
+<span class="keyword">const</span> <span class="fn">creaVita</span> = (
+  nascita: <span class="type">DataStorica</span>,
+  morte?: <span class="type">DataStorica</span>
+): <span class="type">Result</span>&lt;<span class="type">Vita</span>, <span class="type">VitaError</span>&gt; =&gt;
+  morte && morte.compareTo(nascita) &lt;= <span class="string">0</span>
+    ? err({ tipo: <span class="string">'morte_prima_di_nascita'</span> })
+    : ok({ nascita, morte });
+
+<span class="comment">// Personaggio aggregate</span>
+<span class="keyword">type</span> <span class="type">Personaggio</span> = {
+  ...
+  vita?: <span class="type">Vita</span>;  <span class="comment">// o assente, o valida — terzo stato impossibile</span>
+};</div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- A — Compact inline range (RECOMMENDED)                         -->
+    <!-- ============================================================= -->
+    <section>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="alt-badge recommended">A</div>
+        <div class="flex-1">
+          <h2 class="text-xl text-teal-900">Compact inline range</h2>
+          <div class="text-sm text-teal-700/70">una sola row, due input editabili indipendentemente, durata derivata a destra</div>
+        </div>
+        <span class="pill-recommended">
+          <svg class="lucide lucide-sm" viewBox="0 0 24 24"><path d="M12 2 9.91 8.84 3 9l5.46 4.73L7 21l5-3 5 3-1.46-7.27L21 9l-6.91-.16L12 2z"/></svg>
+          Raccomandato per iPad
+        </span>
+      </div>
+
+      <div class="flex gap-8 items-start">
+        <div style="width: 520px;">
+          <div class="ipad-frame">
+            <div class="ipad-frame-header">
+              <span>iPad · detail pane · 520px</span>
+              <span class="text-emerald-600">touch ≥ 44px ✓</span>
+            </div>
+            <div class="ipad-frame-body">
+              <div class="elem-header">
+                <span class="chip-tipo">personaggio</span>
+                <div class="elem-name">Abraamo</div>
+              </div>
+
+              <div class="field-row">
+                <span class="field-label">Tipo</span>
+                <span class="field-value">personaggio</span>
+              </div>
+
+              <!-- Composite Vita — COMPLETE state, both halves clickable -->
+              <div class="field-row">
+                <span class="field-label">Vita</span>
+                <div class="vita-compact">
+                  <span class="vita-half">2000 a.E.V.</span>
+                  <span class="vita-arrow">→</span>
+                  <span class="vita-half">1825 a.E.V.</span>
+                  <span class="vita-derived">175 anni</span>
+                </div>
+              </div>
+
+              <!-- Composite Vita — EDITING state (just morte half) -->
+              <div class="field-row">
+                <span class="field-label">Regno</span>
+                <div class="vita-compact">
+                  <span class="vita-half">2050 a.E.V.</span>
+                  <span class="vita-arrow">→</span>
+                  <span class="vita-half editing">1825 a.E.V.</span>
+                  <span class="vita-derived">in modifica</span>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <span class="field-label">Tribù</span>
+                <span class="field-value">Ebrei</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- States gallery -->
+          <div class="states-gallery">
+            <div class="state-card">
+              <div class="state-label">Empty</div>
+              <div class="state-row">
+                <span class="lbl">Vita</span>
+                <span class="empty-half">— nascita</span>
+                <span class="arrow">→</span>
+                <span class="empty-half">— morte (opt)</span>
+              </div>
+            </div>
+            <div class="state-card">
+              <div class="state-label">Partial · solo nascita</div>
+              <div class="state-row">
+                <span class="lbl">Vita</span>
+                <span>2000 a.E.V.</span>
+                <span class="arrow">→</span>
+                <span class="empty-half">— morte (opt)</span>
+              </div>
+            </div>
+            <div class="state-card">
+              <div class="state-label">Complete</div>
+              <div class="state-row">
+                <span class="lbl">Vita</span>
+                <span>2000</span>
+                <span class="arrow">→</span>
+                <span>1825</span>
+                <span class="arrow ml-auto" style="font-family:'Fira Code'; font-size: 10px;">175 anni</span>
+              </div>
+            </div>
+            <div class="state-card" style="border-color: rgba(249, 115, 22, 0.4);">
+              <div class="state-label invalid">Invalid · morte ≤ nascita</div>
+              <div class="state-row">
+                <span class="lbl">Vita</span>
+                <span>2000</span>
+                <span class="arrow">→</span>
+                <span style="color: var(--hero-warning);">2050</span>
+                <span class="warn ml-auto">
+                  <svg class="lucide" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  bloccato dal costruttore
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 min-w-0 space-y-5">
+          <div class="grammatica">
+            <div class="grammatica-title">Grammatica</div>
+            <div>
+              <strong>Una sola field-row</strong> semanticamente, due input independentemente focusabili.<br>
+              Tap su "2000 a.E.V." → entra in edit solo la nascita (focus ring sul singolo half, l'altro statico).<br>
+              Tap su "1825 a.E.V." → entra in edit solo la morte. Em-dash <code>→</code> non tappabile (separatore visivo).<br>
+              <strong>Calcolo derivato "175 anni"</strong> read-only, calcolato da <code>features/elemento/rules.ts</code> via <code>vita.durata()</code>. Aggiornato in tempo reale al commit.<br>
+              <strong>Stato invalid impossibile per costruzione</strong>: il costruttore <code>creaVita()</code> ritorna <code>Err</code> se morte ≤ nascita, e l'UI ripristina il valore precedente con un toast inline rosso (no commit del valore invalido).
+            </div>
+          </div>
+
+          <div class="reason-list">
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span><strong>Densità massima</strong> — una sola row anche per due valori</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Inline per-campo preservato — half editabili indipendentemente, no mode swap</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span><strong>Cross-validation by construction</strong>: morte senza nascita o morte ≤ nascita = stato impossibile, no warning UI da gestire</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Calcolo derivato visibile (175 anni) senza chrome — chip muted a destra</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Generalizzabile a <code>Intervallo&lt;DataStorica&gt;</code> per Regno, Periodo, Profezia, ecc.</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Su date molto lunghe (es. "fine III secolo a.E.V.") la row può wrappare — gestire wrap o truncate</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Tap precision: i due half sono stretti (~140px), serve attenzione hit-area</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="alt-divider"></div>
+
+    <!-- ============================================================= -->
+    <!-- B — Sub-rows under heading                                     -->
+    <!-- ============================================================= -->
+    <section>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="alt-badge">B</div>
+        <div class="flex-1">
+          <h2 class="text-xl text-teal-900">Sub-rows under heading</h2>
+          <div class="text-sm text-teal-700/70">Vita come sezione raggruppante con sub-row nascita / morte / durata</div>
+        </div>
+      </div>
+
+      <div class="flex gap-8 items-start">
+        <div class="ipad-frame">
+          <div class="ipad-frame-header">
+            <span>iPad · detail pane · 520px</span>
+            <span class="text-emerald-600">touch ≥ 44px ✓</span>
+          </div>
+          <div class="ipad-frame-body">
+            <div class="elem-header">
+              <span class="chip-tipo">personaggio</span>
+              <div class="elem-name">Abraamo</div>
+            </div>
+
+            <div class="field-row">
+              <span class="field-label">Tipo</span>
+              <span class="field-value">personaggio</span>
+            </div>
+
+            <!-- Composite Vita — section style -->
+            <div class="vita-section">
+              <div class="vita-section-title">Vita</div>
+              <div class="vita-sub-row">
+                <span class="vita-sub-label">nascita</span>
+                <span class="vita-sub-value">2000 a.E.V.</span>
+              </div>
+              <div class="vita-sub-row">
+                <span class="vita-sub-label">morte</span>
+                <span class="vita-sub-value">1825 a.E.V.</span>
+                <span class="text-[10px] text-slate-400 italic">(opzionale)</span>
+              </div>
+              <div class="vita-derived-row">
+                <span>durata</span>
+                <span class="font-mono">175 anni</span>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <span class="field-label">Tribù</span>
+              <span class="field-value">Ebrei</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 min-w-0 space-y-5">
+          <div class="grammatica">
+            <div class="grammatica-title">Grammatica</div>
+            <div>
+              <strong>Sezione raggruppante</strong> con header "Vita" e sub-row indentate.<br>
+              Sub-row <code>nascita</code> obbligatoria, <code>morte</code> con etichetta "(opzionale)" inline.<br>
+              <code>durata</code> sub-row read-only in basso, separata da divider tratteggiato.<br>
+              Tap su sub-value → edit del singolo input.<br>
+              Visualmente la "Vita" diventa un mini-card raggruppato (background teal-50 + border).
+            </div>
+          </div>
+
+          <div class="reason-list">
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Massima discoverability — labels esplicite "nascita" e "morte"</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Touch target larghi — full-row tappabile</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Spazio per metadata extra (nota incertezza data, fonte, ecc.)</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span><strong>Chrome heavy</strong> — il box raggruppante sembra "una scheda dentro la scheda", rompe la densità Notion</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>4 row verticali per un solo concetto — su personaggi con molti campi diventa lungo</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Inconsistente con gli altri field semplici (label single-line) — due paradigmi</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="alt-divider"></div>
+
+    <!-- ============================================================= -->
+    <!-- C — Popover date picker                                        -->
+    <!-- ============================================================= -->
+    <section>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="alt-badge">C</div>
+        <div class="flex-1">
+          <h2 class="text-xl text-teal-900">Popover date picker</h2>
+          <div class="text-sm text-teal-700/70">tap su Vita row → popover con due input data side by side (Apple Calendar style)</div>
+        </div>
+      </div>
+
+      <div class="flex gap-8 items-start">
+        <div class="ipad-frame" style="position: relative;">
+          <div class="ipad-frame-header">
+            <span>iPad · detail pane · 520px</span>
+            <span class="text-emerald-600">touch ≥ 44px ✓</span>
+          </div>
+          <div class="ipad-frame-body" style="min-height: 460px;">
+            <div class="elem-header">
+              <span class="chip-tipo">personaggio</span>
+              <div class="elem-name">Abraamo</div>
+            </div>
+
+            <div class="field-row">
+              <span class="field-label">Tipo</span>
+              <span class="field-value">personaggio</span>
+            </div>
+
+            <div class="field-row">
+              <span class="field-label">Vita</span>
+              <button class="vita-trigger">
+                <span>2000 a.E.V. → 1825 a.E.V.</span>
+                <span class="text-xs text-slate-400">· 175 anni</span>
+                <svg class="ml-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </div>
+
+            <!-- Popover anchored to Vita row -->
+            <div class="popover" style="top: 184px; left: 132px;">
+              <div class="popover-title">Modifica vita</div>
+              <div class="popover-input-group">
+                <div>
+                  <div class="popover-label">Nascita (obbligatoria)</div>
+                  <input type="text" class="hero-input focused" value="2000 a.E.V.">
+                </div>
+                <div>
+                  <div class="popover-label">Morte (opzionale)</div>
+                  <input type="text" class="hero-input" value="1825 a.E.V.">
+                </div>
+                <div class="text-xs text-teal-700 flex items-center justify-between mt-1 pt-2 border-t border-teal-100">
+                  <span>Durata calcolata</span>
+                  <span class="font-mono font-semibold">175 anni</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row" style="margin-top: 280px;">
+              <span class="field-label">Tribù</span>
+              <span class="field-value">Ebrei</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 min-w-0 space-y-5">
+          <div class="grammatica">
+            <div class="grammatica-title">Grammatica</div>
+            <div>
+              Vita appare come una <strong>row trigger compatta</strong> con preview "2000 → 1825 · 175 anni" + chevron.<br>
+              Tap → popover HeroUI con due input HeroUI lg (48px) verticali: "Nascita (obbligatoria)" e "Morte (opzionale)".<br>
+              Calcolo durata in fondo al popover, aggiornato live.<br>
+              Tap fuori dal popover → commit di entrambi i campi insieme + close popover.
+            </div>
+          </div>
+
+          <div class="reason-list">
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Molto chiaro — labels esplicite "(obbligatoria)" / "(opzionale)"</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Pattern Apple Calendar / iCal — familiare iPad</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Atomicità: i due valori commitano insieme — più semplice da implementare con neverthrow</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span><strong>Mode swap inline → modal</strong>: tap Vita ti fa uscire dal flow inline per-campo, viola il principio</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Per modifica veloce di un solo half (es. correggi "1825" in "1820"), un popover è friction</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Z-index war se altri popover sono già aperti (collegamento picker)</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Inconsistente con sketch 1A (blur-to-save inline) — qui hai un mode "modale"</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-14 pt-6 border-t border-teal-200 text-xs text-teal-700/70 leading-relaxed">
+      <div class="font-semibold text-teal-900 mb-1.5">Note iPad-specific</div>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong>Generalizzazione:</strong> il pattern composite serve anche per Regno (re), Periodo storico, Profezia (enunciazione → adempimento), Evento esteso. Tutti istanze di un VO <code>Intervallo&lt;DataStorica&gt;</code> riusabile. Da decidere in plan 02-03.</li>
+        <li><strong>Parse, Don't Validate:</strong> il costruttore <code>creaVita()</code> rifiuta morte ≤ nascita. Lo stato invalido non esiste mai a livello dominio. Coerente con CLAUDE.md V-bis.</li>
+        <li><strong>Soft validation D residua:</strong> i composite eliminano cross-validation intra-aggregato. La strategia D (sketch 6) resta utile per cross-aggregato (es. "evento referenziato precede vita.nascita del personaggio").</li>
+        <li><strong>HeroUI mapping:</strong> ogni half è <code>&lt;Input variant="bordered" size="lg"&gt;</code> in stato edit; in idle è solo testo (zero chrome).</li>
+        <li><strong>Coerenza:</strong> commit blur-to-save (sketch 1A), nessun bottone esplicito, focus ring HeroUI standard.</li>
+      </ul>
+    </footer>
+  </div>
+</body>
+</html>
