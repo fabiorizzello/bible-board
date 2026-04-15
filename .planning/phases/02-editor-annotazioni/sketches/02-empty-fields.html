@@ -3,311 +3,522 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sketch 2 — Empty fields + aggiungi campo</title>
+<title>Sketch 2 — Empty fields + aggiungi campo (iPad scale)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; }
+  :root {
+    --hero-primary-50:  #F0FDFA;
+    --hero-primary-100: #CCFBF1;
+    --hero-primary-200: #99F6E4;
+    --hero-primary-400: #2DD4BF;
+    --hero-primary-500: #14B8A6;
+    --hero-primary-600: #0D9488;
+    --hero-primary-700: #0F766E;
+    --hero-primary-900: #134E4A;
+    --hero-warning:     #F97316;
+    --hero-content1:    #FFFFFF;
+    --hero-content2:    #F8FAFC;
+    --hero-content3:    #F1F5F9;
+    --hero-default-200: #E2E8F0;
+    --hero-default-400: #94A3B8;
+    --hero-default-500: #64748B;
+    --hero-default-700: #334155;
+    --hero-radius-sm:   6px;
+    --hero-radius-md:   10px;
+    --hero-radius-lg:   14px;
+    --hero-shadow-sm:   0 1px 2px rgba(13, 148, 136, 0.05);
+    --hero-shadow-md:   0 4px 12px rgba(13, 148, 136, 0.08), 0 1px 3px rgba(13, 148, 136, 0.04);
+    --hero-shadow-lg:   0 12px 32px rgba(13, 148, 136, 0.14), 0 2px 8px rgba(13, 148, 136, 0.06);
+  }
+
+  body { font-family: 'Fira Sans', sans-serif; background: var(--hero-primary-50); color: var(--hero-primary-900); }
   h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
-  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 12px; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06); }
+  code, .mono { font-family: 'Fira Code', monospace; }
 
-  .field-row { padding: 8px 12px; margin: 0 -12px; border-radius: 8px; transition: background 150ms ease-out; min-height: 44px; display: flex; align-items: center; gap: 12px; }
-  .field-row:hover { background: rgba(13, 148, 136, 0.04); }
-  .field-row.empty { color: #94A3B8; }
-  .field-row.empty:hover { background: rgba(13, 148, 136, 0.03); color: #64748B; }
+  .pill-recommended {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; height: 28px;
+    background: linear-gradient(135deg, var(--hero-primary-600), var(--hero-primary-500));
+    color: white; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+  }
+  .pill-recommended svg { width: 14px; height: 14px; }
 
-  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0F766E; font-weight: 600; width: 90px; flex-shrink: 0; }
-  .field-row.empty .field-label { color: #94A3B8; }
-  .field-value { font-size: 14px; color: #134E4A; flex: 1; }
-  .field-value.placeholder { font-style: italic; color: #94A3B8; }
+  .alt-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.18), transparent); margin: 36px 0; }
 
-  .chip-tipo { display: inline-flex; padding: 2px 10px; font-size: 11px; background: #CCFBF1; color: #0F766E; border-radius: 999px; font-weight: 500; }
+  .alt-badge {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fira Code'; font-weight: 700; font-size: 18px;
+    background: var(--hero-primary-100); color: var(--hero-primary-700);
+    flex-shrink: 0;
+  }
+  .alt-badge.recommended {
+    background: linear-gradient(135deg, var(--hero-primary-600), var(--hero-primary-500));
+    color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+  }
 
-  /* FAB */
-  .fab { position: absolute; bottom: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: #0D9488; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35); cursor: pointer; transition: all 200ms ease-out; }
-  .fab:hover { background: #0F766E; transform: translateY(-2px); }
-  .fab-menu { position: absolute; bottom: 72px; right: 16px; background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 10px; box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15); padding: 6px; min-width: 200px; }
-  .fab-menu-item { padding: 10px 14px; font-size: 13px; color: #134E4A; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-  .fab-menu-item:hover { background: #F0FDFA; }
-  .fab-menu-item .plus { width: 14px; height: 14px; color: #0D9488; }
+  .ipad-frame {
+    width: 520px;
+    background: var(--hero-content1);
+    border: 1px solid var(--hero-default-200);
+    border-radius: var(--hero-radius-lg);
+    box-shadow: var(--hero-shadow-md);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .ipad-frame-header {
+    height: 36px;
+    background: var(--hero-content2);
+    border-bottom: 1px solid var(--hero-default-200);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--hero-default-500); font-weight: 600;
+  }
+  .ipad-frame-body { padding: 24px 28px; }
 
-  /* Inline add row */
-  .add-row { padding: 10px 12px; margin: 4px -12px 0; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #0D9488; font-size: 13px; font-weight: 500; border: 1px dashed rgba(13, 148, 136, 0.3); transition: all 150ms; }
-  .add-row:hover { background: rgba(13, 148, 136, 0.06); border-color: #0D9488; }
-  .add-row-expanded { padding: 12px; margin: 4px -12px 0; border-radius: 8px; background: #F0FDFA; border: 1px solid rgba(13, 148, 136, 0.2); }
-  .chip-field { display: inline-flex; padding: 5px 10px; font-size: 11px; background: white; color: #134E4A; border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 999px; cursor: pointer; font-weight: 500; gap: 4px; align-items: center; }
-  .chip-field:hover { background: #CCFBF1; border-color: #0D9488; }
+  .elem-header { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid var(--hero-default-200); margin-bottom: 12px; }
+  .chip-tipo {
+    display: inline-flex; align-self: flex-start;
+    padding: 4px 12px; height: 24px; align-items: center;
+    font-size: 11px; font-weight: 600;
+    background: var(--hero-primary-100); color: var(--hero-primary-700);
+    border-radius: 999px;
+  }
+  .elem-name { font-size: 24px; font-weight: 600; color: var(--hero-primary-900); line-height: 1.2; }
 
-  .pro { color: #059669; }
-  .con { color: #DC2626; }
-  .kbd { display: inline-flex; padding: 1px 6px; font-family: 'Fira Code', monospace; font-size: 10px; color: #475569; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 4px; }
+  .field-row {
+    display: flex; align-items: center; gap: 16px;
+    min-height: 48px;
+    padding: 4px 8px; margin: 0 -8px;
+    border-radius: var(--hero-radius-sm);
+    cursor: text; transition: background 150ms ease-out;
+  }
+  .field-row:hover { background: rgba(20, 184, 166, 0.05); }
+  .field-row.empty { color: var(--hero-default-400); }
+  .field-row.empty:hover { background: rgba(20, 184, 166, 0.04); }
+
+  .field-label {
+    width: 110px; flex-shrink: 0;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 600;
+  }
+  .field-row.empty .field-label { color: var(--hero-default-400); }
+
+  .field-value {
+    flex: 1; font-size: 15px; color: var(--hero-primary-900);
+    min-height: 24px; display: flex; align-items: center;
+  }
+  .field-value.placeholder { color: var(--hero-default-400); font-style: italic; }
+
+  /* HeroUI Buttons */
+  .hero-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 44px; min-width: 44px; padding: 0 16px; gap: 8px;
+    border-radius: var(--hero-radius-md);
+    font-size: 14px; font-weight: 500; font-family: inherit;
+    cursor: pointer; transition: all 150ms ease-out;
+    border: none; outline: none;
+  }
+  .hero-btn-primary { background: var(--hero-primary-600); color: white; box-shadow: 0 2px 6px rgba(13, 148, 136, 0.20); }
+  .hero-btn-primary:hover { background: var(--hero-primary-700); }
+  .hero-btn-default { background: var(--hero-content3); color: var(--hero-default-700); }
+  .hero-btn-default:hover { background: var(--hero-default-200); }
+  .hero-btn-light { background: transparent; color: var(--hero-primary-700); }
+  .hero-btn-light:hover { background: var(--hero-primary-50); }
+  .hero-btn-icon { width: 44px; padding: 0; }
+
+  /* Inline add-field row (alt C — recommended) */
+  .add-field-row {
+    display: flex; align-items: center; gap: 10px;
+    min-height: 48px;
+    padding: 0 12px; margin: 8px -12px 0;
+    border-radius: var(--hero-radius-md);
+    border: 1px dashed rgba(13, 148, 136, 0.35);
+    color: var(--hero-primary-700);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    transition: all 150ms;
+  }
+  .add-field-row:hover {
+    background: var(--hero-primary-50);
+    border-color: var(--hero-primary-500);
+    border-style: solid;
+  }
+  .add-field-row svg { width: 18px; height: 18px; }
+
+  /* Expanded add menu — chips list */
+  .add-field-expanded {
+    margin: 8px -12px 0;
+    padding: 14px 16px;
+    border-radius: var(--hero-radius-md);
+    background: var(--hero-primary-50);
+    border: 1px solid rgba(20, 184, 166, 0.25);
+  }
+  .add-field-expanded-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 700;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chip-field {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 44px; padding: 0 14px;
+    background: var(--hero-content1);
+    border: 1px solid rgba(20, 184, 166, 0.35);
+    border-radius: 999px;
+    font-size: 13px; font-weight: 500;
+    color: var(--hero-primary-900);
+    cursor: pointer;
+    transition: all 120ms;
+  }
+  .chip-field:hover {
+    background: var(--hero-primary-100);
+    border-color: var(--hero-primary-600);
+  }
+  .chip-field svg { width: 16px; height: 16px; color: var(--hero-primary-600); }
+
+  /* FAB (alt B — anti-pattern) */
+  .fab {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--hero-primary-600);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(13, 148, 136, 0.40);
+    cursor: pointer;
+    transition: all 200ms ease-out;
+  }
+  .fab:hover { background: var(--hero-primary-700); transform: translateY(-2px); }
+  .fab svg { width: 24px; height: 24px; }
+
+  /* HeroUI Listbox / Menu */
+  .hero-menu {
+    position: absolute;
+    background: var(--hero-content1);
+    border: 1px solid rgba(20, 184, 166, 0.20);
+    border-radius: var(--hero-radius-md);
+    box-shadow: var(--hero-shadow-lg);
+    padding: 6px;
+    min-width: 220px;
+    z-index: 20;
+  }
+  .hero-menu-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-default-500); font-weight: 700;
+    padding: 8px 12px 4px;
+  }
+  .hero-menu-item {
+    display: flex; align-items: center; gap: 12px;
+    height: 44px; padding: 0 12px;
+    border-radius: var(--hero-radius-sm);
+    font-size: 14px; color: var(--hero-primary-900);
+    cursor: pointer;
+    transition: background 120ms;
+  }
+  .hero-menu-item:hover { background: var(--hero-primary-50); }
+  .hero-menu-item svg { width: 18px; height: 18px; color: var(--hero-primary-600); flex-shrink: 0; }
+
+  .lucide { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .lucide-sm { width: 14px; height: 14px; }
+
+  .reason-list { font-size: 13px; line-height: 1.55; }
+  .reason-list .row { display: flex; align-items: flex-start; gap: 10px; padding: 4px 0; }
+  .reason-list .icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+  .pro .icon { color: #059669; }
+  .con .icon { color: #DC2626; }
+
+  .grammatica {
+    background: var(--hero-primary-50);
+    border: 1px solid rgba(20, 184, 166, 0.18);
+    border-radius: var(--hero-radius-md);
+    padding: 14px 16px;
+    font-size: 13px; line-height: 1.6;
+    color: var(--hero-primary-900);
+  }
+  .grammatica-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--hero-primary-700); font-weight: 700; margin-bottom: 6px;
+  }
 </style>
 </head>
 <body class="min-h-screen">
-  <div class="max-w-7xl mx-auto px-6 py-8">
-    <header class="mb-8">
-      <a href="index.html" class="text-xs text-teal-700 hover:text-teal-900">← Tutti gli sketch</a>
-      <div class="flex items-center gap-3 mt-3">
-        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono font-semibold">2</div>
+  <div class="max-w-6xl mx-auto px-6 py-10">
+
+    <header class="mb-10">
+      <a href="index.html" class="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:text-teal-900 font-medium">
+        <svg class="lucide lucide-sm" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        Tutti gli sketch
+      </a>
+      <div class="flex items-center gap-4 mt-4">
+        <div class="alt-badge">2</div>
         <div>
-          <h1 class="text-2xl text-teal-900">Empty fields + aggiungi campo</h1>
-          <p class="text-sm text-teal-800/70 mt-1">Campi vuoti sempre visibili, nascosti dietro FAB o dietro una riga inline? Dove va il menu?</p>
+          <h1 class="text-3xl text-teal-900 leading-tight">Empty fields + aggiungi campo</h1>
+          <p class="text-sm text-teal-800/70 mt-1.5 max-w-xl">Scenario: Abraamo ha 4 campi popolati. <strong>Ruoli</strong> e <strong>Tags</strong> sono vuoti. Si mostrano sempre, si nascondono, o si aggiungono on-demand?</p>
         </div>
       </div>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- ============================================================= -->
+    <!-- A — Placeholder sempre visibili                                -->
+    <!-- ============================================================= -->
+    <section>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="alt-badge">A</div>
+        <div class="flex-1">
+          <h2 class="text-xl text-teal-900">Placeholder sempre visibili</h2>
+          <div class="text-sm text-teal-700/70">tutti i campi del tipo, anche vuoti, mostrati come riga muted</div>
+        </div>
+      </div>
 
-      <!-- ============================================================= -->
-      <!-- ALTERNATIVA A — Always visible placeholders                    -->
-      <!-- ============================================================= -->
-      <section class="card p-5">
-        <div class="flex items-start gap-3 mb-4">
-          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">A</div>
-          <div>
-            <h2 class="text-base text-teal-900">Placeholder sempre visibili</h2>
-            <div class="text-xs text-teal-700/70 mt-0.5">tutti i campi possibili, sempre</div>
+      <div class="flex gap-8 items-start">
+        <div class="ipad-frame">
+          <div class="ipad-frame-header">
+            <span>iPad · detail pane · 520px</span>
+            <span class="text-emerald-600">touch ≥ 44px ✓</span>
+          </div>
+          <div class="ipad-frame-body">
+            <div class="elem-header">
+              <span class="chip-tipo">personaggio</span>
+              <div class="elem-name">Abraamo</div>
+            </div>
+
+            <div class="field-row"><span class="field-label">Tipo</span><span class="field-value">personaggio</span></div>
+            <div class="field-row"><span class="field-label">Descrizione</span><span class="field-value">Patriarca dei tre monoteismi.</span></div>
+            <div class="field-row"><span class="field-label">Nascita</span><span class="field-value">2000 a.E.V.</span></div>
+            <div class="field-row"><span class="field-label">Morte</span><span class="field-value">1825 a.E.V.</span></div>
+            <div class="field-row"><span class="field-label">Tribù</span><span class="field-value">Ebrei</span></div>
+
+            <!-- Empty rows as placeholders (in flow, dimmed) -->
+            <div class="field-row empty">
+              <span class="field-label">Ruoli</span>
+              <span class="field-value placeholder">— nessun ruolo</span>
+            </div>
+            <div class="field-row empty">
+              <span class="field-label">Tags</span>
+              <span class="field-value placeholder">— nessun tag</span>
+            </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4 relative">
-          <div class="mb-3 pb-3 border-b border-teal-100">
-            <span class="chip-tipo">personaggio</span>
-            <div class="text-lg font-semibold text-teal-900 mt-1">Abraamo</div>
+        <div class="flex-1 min-w-0 space-y-5">
+          <div class="grammatica">
+            <div class="grammatica-title">Grammatica</div>
+            <div>
+              Tutti i campi del <code>TipoElemento</code> corrente sono mostrati come <code>field-row</code>.<br>
+              Vuoti → label muted + valore italico <em>"— nessun X"</em>.<br>
+              Tap su placeholder → entra in edit mode con valore vuoto.<br>
+              <strong>Nessun menu "+ aggiungi campo"</strong> — la lista campi è data-driven dal tipo.
+            </div>
           </div>
 
-          <div class="field-row">
-            <span class="field-label">Descrizione</span>
-            <span class="field-value">Patriarca di Israele, padre della fede…</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Nascita</span>
-            <span class="field-value">2000 a.E.V.</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Morte</span>
-            <span class="field-value">1825 a.E.V.</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Tribù</span>
-            <span class="field-value">Ebrei</span>
-          </div>
-
-          <!-- empty ones shown as placeholders -->
-          <div class="field-row empty">
-            <span class="field-label">Ruoli</span>
-            <span class="field-value placeholder">— nessun ruolo</span>
-          </div>
-
-          <div class="field-row empty">
-            <span class="field-label">Tags</span>
-            <span class="field-value placeholder">— aggiungi tags</span>
-          </div>
-
-          <div class="text-[10px] text-slate-400 mt-4 pt-3 border-t border-teal-100">
-            i 6 campi di personaggio sono sempre visibili, anche se vuoti
+          <div class="reason-list">
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Discoverability 100% — l'utente vede subito quali campi può popolare</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Cambio <code>TipoElemento</code> → auto-surface dei nuovi campi senza chrome</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Layout prevedibile — ogni elemento dello stesso tipo ha la stessa altezza</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span><strong>Clutter su tipi ricchi</strong> (periodo: 4 campi data, evento: 6+ campi). Se l'utente popola pochi campi, la pane si riempie di "— nessun X"</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Rumore visivo > contenuto — anti-Notion (Notion mostra solo property con valore o esplicitamente fissate)</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Niente posto naturale per <em>aggiungere</em> link, fonti, allegati (solo i field tipizzati sono in lista)</span></div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
-          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
-          <div class="text-teal-800">
-            Ogni campo del tipo corrente è visibile come row.<br>
-            Vuoti mostrano placeholder <em>"— nessun valore"</em>.<br>
-            Tap su placeholder → entra in edit mode vuoto.<br>
-            <strong>Nessun menu</strong> "+ aggiungi campo" necessario.
-          </div>
+    <div class="alt-divider"></div>
+
+    <!-- ============================================================= -->
+    <!-- B — FAB floating (anti-pattern iPad)                           -->
+    <!-- ============================================================= -->
+    <section>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="alt-badge">B</div>
+        <div class="flex-1">
+          <h2 class="text-xl text-teal-900">FAB "+" floating</h2>
+          <div class="text-sm text-teal-700/70">solo campi popolati visibili, FAB Material in basso-destra apre menu</div>
         </div>
+      </div>
 
-        <div class="text-xs space-y-1.5">
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Discovery 100% — tutto visibile</span></div>
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Nessun menu extra da disegnare</span></div>
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Cambio tipo → auto-surface dei nuovi campi</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>Clutter quando molti campi vuoti (guerra: 2, periodo: 4 date)</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>Rumore visivo domina il contenuto</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>Meno Notion-like, più "form"</span></div>
-        </div>
-      </section>
-
-      <!-- ============================================================= -->
-      <!-- ALTERNATIVA B — Floating + FAB                                 -->
-      <!-- ============================================================= -->
-      <section class="card p-5">
-        <div class="flex items-start gap-3 mb-4">
-          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">B</div>
-          <div>
-            <h2 class="text-base text-teal-900">FAB "+" floating</h2>
-            <div class="text-xs text-teal-700/70 mt-0.5">solo filled visibili, menu a comparsa</div>
+      <div class="flex gap-8 items-start">
+        <div class="ipad-frame" style="min-height: 460px;">
+          <div class="ipad-frame-header">
+            <span>iPad · detail pane · 520px</span>
+            <span class="text-amber-600">⚠ Material — non Apple HIG</span>
           </div>
-        </div>
+          <div class="ipad-frame-body" style="padding-bottom: 90px;">
+            <div class="elem-header">
+              <span class="chip-tipo">personaggio</span>
+              <div class="elem-name">Abraamo</div>
+            </div>
 
-        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4 relative" style="min-height: 340px;">
-          <div class="mb-3 pb-3 border-b border-teal-100">
-            <span class="chip-tipo">personaggio</span>
-            <div class="text-lg font-semibold text-teal-900 mt-1">Abraamo</div>
+            <div class="field-row"><span class="field-label">Tipo</span><span class="field-value">personaggio</span></div>
+            <div class="field-row"><span class="field-label">Descrizione</span><span class="field-value">Patriarca dei tre monoteismi.</span></div>
+            <div class="field-row"><span class="field-label">Nascita</span><span class="field-value">2000 a.E.V.</span></div>
+            <div class="field-row"><span class="field-label">Morte</span><span class="field-value">1825 a.E.V.</span></div>
+            <div class="field-row"><span class="field-label">Tribù</span><span class="field-value">Ebrei</span></div>
           </div>
 
-          <div class="field-row">
-            <span class="field-label">Descrizione</span>
-            <span class="field-value">Patriarca di Israele, padre della fede…</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Nascita</span>
-            <span class="field-value">2000 a.E.V.</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Morte</span>
-            <span class="field-value">1825 a.E.V.</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Tribù</span>
-            <span class="field-value">Ebrei</span>
-          </div>
-
-          <div class="text-[10px] text-slate-400 mt-4 pt-3 border-t border-teal-100">
-            solo i 4 campi con valori. "Ruoli" e "Tags" non mostrati.
-          </div>
-
-          <!-- FAB menu -->
-          <div class="fab-menu">
-            <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold px-3 py-1.5">Aggiungi campo</div>
-            <div class="fab-menu-item">
-              <svg class="plus" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+          <!-- HeroUI Listbox shown above FAB -->
+          <div class="hero-menu" style="bottom: 90px; right: 20px;">
+            <div class="hero-menu-title">Aggiungi campo</div>
+            <div class="hero-menu-item">
+              <svg class="lucide" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
               Ruoli
             </div>
-            <div class="fab-menu-item">
-              <svg class="plus" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+            <div class="hero-menu-item">
+              <svg class="lucide" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
               Tags
+            </div>
+            <div class="hero-menu-item">
+              <svg class="lucide" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              Collegamento
+            </div>
+            <div class="hero-menu-item">
+              <svg class="lucide" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              Fonte
             </div>
           </div>
 
           <div class="fab">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           </div>
         </div>
 
-        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
-          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
-          <div class="text-teal-800">
-            Solo campi con valore visibili.<br>
-            FAB circolare in basso-destra, sempre presente.<br>
-            Tap FAB → menu di campi addable filtrati per tipo.<br>
-            Tap su voce → nuovo row inserito in edit state.
-          </div>
-        </div>
-
-        <div class="text-xs space-y-1.5">
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Pulito — zero clutter in view mode</span></div>
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Affordance "app-like" chiara</span></div>
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Menu può includere anche "Aggiungi link / Aggiungi fonte"</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>FAB sovrapposto al contenuto (copre field row)</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>Più "mobile app" che "documento Notion"</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>In fullscreen overlay, dove va il FAB?</span></div>
-        </div>
-      </section>
-
-      <!-- ============================================================= -->
-      <!-- ALTERNATIVA C — Riga inline "+ aggiungi campo" a fondo body    -->
-      <!-- ============================================================= -->
-      <section class="card p-5">
-        <div class="flex items-start gap-3 mb-4">
-          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">C</div>
-          <div>
-            <h2 class="text-base text-teal-900">Riga inline a fondo body</h2>
-            <div class="text-xs text-teal-700/70 mt-0.5">Notion-inspired, in-flow</div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4">
-          <div class="mb-3 pb-3 border-b border-teal-100">
-            <span class="chip-tipo">personaggio</span>
-            <div class="text-lg font-semibold text-teal-900 mt-1">Abraamo</div>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Descrizione</span>
-            <span class="field-value">Patriarca di Israele, padre della fede…</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Nascita</span>
-            <span class="field-value">2000 a.E.V.</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Morte</span>
-            <span class="field-value">1825 a.E.V.</span>
-          </div>
-
-          <div class="field-row">
-            <span class="field-label">Tribù</span>
-            <span class="field-value">Ebrei</span>
-          </div>
-
-          <!-- inline expanded state with chips -->
-          <div class="add-row-expanded">
-            <div class="flex items-center gap-2 mb-2">
-              <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-              <span class="text-xs font-semibold text-teal-900">Aggiungi campo</span>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              <span class="chip-field">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Ruoli
-              </span>
-              <span class="chip-field">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Tags
-              </span>
-              <span class="chip-field">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Fonte
-              </span>
-              <span class="chip-field">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
-                Collegamento
-              </span>
+        <div class="flex-1 min-w-0 space-y-5">
+          <div class="grammatica">
+            <div class="grammatica-title">Grammatica</div>
+            <div>
+              Solo campi con valore mostrati nella detail pane.<br>
+              FAB circolare 56×56 in basso-destra, sempre presente.<br>
+              Tap FAB → menu HeroUI Listbox sopra il FAB con campi addable + collegamento + fonte.<br>
+              Tap voce → nuovo field-row in edit state in fondo al body.
             </div>
           </div>
 
-          <div class="text-[10px] text-slate-400 mt-4 pt-3 border-t border-teal-100">
-            collassato: una sola riga "+ aggiungi campo" — qui espansa per mostrare le opzioni
+          <div class="reason-list">
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Pulito — zero clutter in idle</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>FAB sempre raggiungibile da pollice destro (iPad portrait)</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Menu unifica field + link + fonte — un punto d'accesso</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span><strong>Anti-iPad-native</strong> — FAB è Material Design / Android. Apple HIG non lo usa, nessuna app iPad nativa (Notes, Things 3, Reminders, Notion iPad) ce l'ha</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Copre il contenuto — su detail pane corti, il FAB sovrappone l'ultimo field row</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>HeroUI v3 non ha un componente <code>&lt;FAB&gt;</code> ufficiale — saremmo a custom</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>In overlay/modal dove sta il FAB? Z-index war</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="alt-divider"></div>
+
+    <!-- ============================================================= -->
+    <!-- C — Riga inline "+ aggiungi campo" (RECOMMENDED)               -->
+    <!-- ============================================================= -->
+    <section>
+      <div class="flex items-center gap-3 mb-5">
+        <div class="alt-badge recommended">C</div>
+        <div class="flex-1">
+          <h2 class="text-xl text-teal-900">Riga inline "+ aggiungi campo"</h2>
+          <div class="text-sm text-teal-700/70">in-flow Notion-style, nessun chrome floating, espansa a chip filtrati per tipo</div>
+        </div>
+        <span class="pill-recommended">
+          <svg class="lucide lucide-sm" viewBox="0 0 24 24"><path d="M12 2 9.91 8.84 3 9l5.46 4.73L7 21l5-3 5 3-1.46-7.27L21 9l-6.91-.16L12 2z"/></svg>
+          Raccomandato per iPad
+        </span>
+      </div>
+
+      <div class="flex gap-8 items-start">
+        <div class="ipad-frame">
+          <div class="ipad-frame-header">
+            <span>iPad · detail pane · 520px</span>
+            <span class="text-emerald-600">touch ≥ 44px ✓</span>
+          </div>
+          <div class="ipad-frame-body">
+            <div class="elem-header">
+              <span class="chip-tipo">personaggio</span>
+              <div class="elem-name">Abraamo</div>
+            </div>
+
+            <div class="field-row"><span class="field-label">Tipo</span><span class="field-value">personaggio</span></div>
+            <div class="field-row"><span class="field-label">Descrizione</span><span class="field-value">Patriarca dei tre monoteismi.</span></div>
+            <div class="field-row"><span class="field-label">Nascita</span><span class="field-value">2000 a.E.V.</span></div>
+            <div class="field-row"><span class="field-label">Morte</span><span class="field-value">1825 a.E.V.</span></div>
+            <div class="field-row"><span class="field-label">Tribù</span><span class="field-value">Ebrei</span></div>
+
+            <!-- Add field row — collapsed state shown as comment -->
+            <!-- Expanded state shown live -->
+            <div class="add-field-expanded">
+              <div class="add-field-expanded-title">
+                <svg class="lucide lucide-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Aggiungi campo
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button class="chip-field">
+                  <svg class="lucide-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  Ruoli
+                </button>
+                <button class="chip-field">
+                  <svg class="lucide-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  Tags
+                </button>
+                <button class="chip-field">
+                  <svg class="lucide-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  Collegamento
+                </button>
+                <button class="chip-field">
+                  <svg class="lucide-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Fonte
+                </button>
+              </div>
+            </div>
+
+            <!-- Note about collapsed state -->
+            <div class="text-[10px] text-slate-400 mt-3 italic">↑ stato espanso — collassato è una sola riga "+ aggiungi" dashed (mostrata sotto)</div>
+            <div class="add-field-row" style="margin-top: 8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Aggiungi campo
+            </div>
           </div>
         </div>
 
-        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
-          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
-          <div class="text-teal-800">
-            Solo campi con valore visibili.<br>
-            Sotto l'ultimo campo: row "+ aggiungi campo" in stile dashed.<br>
-            Tap → espande in riga di chip filtrati per tipo.<br>
-            Tap su chip → nuovo row inserito in edit state.
+        <div class="flex-1 min-w-0 space-y-5">
+          <div class="grammatica">
+            <div class="grammatica-title">Grammatica</div>
+            <div>
+              Solo campi con valore in lista (in-flow).<br>
+              Sotto l'ultimo field, riga 48px <strong>"+ aggiungi campo"</strong> in style dashed (HeroUI <code>variant="bordered"</code>).<br>
+              Tap → si espande inline in chip filtrati per <code>TipoElemento</code> + chip universali (collegamento, fonte).<br>
+              Tap su chip → nuovo field-row in edit state, l'add-row torna collassato.<br>
+              <strong>Coerente con commit blur-to-save</strong> (sketch 1A) — niente conferma esplicita.
+            </div>
+          </div>
+
+          <div class="reason-list">
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span><strong>In-flow Notion-style</strong> — perfettamente in linea con "tutto è solo testo"</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Touch target 48px su row + 44px su chip — iPad-friendly</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Unifica field + link + fonte in un solo entry point — meno surface da imparare</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Apple HIG-compliant — pattern presente in Notes, Reminders ("Add Item"), Things 3</span></div>
+            <div class="row pro"><svg class="icon lucide" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg><span>Niente clutter su tipi semplici (annotazione: 0 → mostra solo "+ aggiungi")</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Su elementi molto popolati (50+ link/fonti), la riga "+ aggiungi" può finire fuori viewport — mitigabile con sticky-bottom o jump-to-add gesture</span></div>
+            <div class="row con"><svg class="icon lucide" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Discoverability dei <em>field tipizzati</em> dipende dal tap → richiede onboarding minimo</span></div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="text-xs space-y-1.5">
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>In-flow con contenuto, Notion feel</span></div>
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Nessun chrome floating — tutto lineare</span></div>
-          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Unificabile con "+ collegamento" e "+ fonte"</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>Meno immediato del FAB — devi scrollare fino in fondo</span></div>
-          <div class="flex gap-2"><span class="con font-bold">−</span><span>In elementi lunghi (molte fonti/link) può "perdersi"</span></div>
-        </div>
-      </section>
-
-    </div>
-
-    <footer class="mt-10 pt-6 border-t border-teal-200 text-xs text-teal-700/60">
-      <div class="mb-1">Note:</div>
-      <ul class="list-disc list-inside space-y-0.5 ml-2">
-        <li>La policy "data-driven empty fields + menu" è già decisa. Qui scegli la <em>geometria</em>: placeholder sempre visibili (A), FAB floating (B), o riga inline (C).</li>
-        <li>Per tipi con pochi campi (annotazione: 0, luogo: 1) l'alternativa A è indolore. Per periodo (4 campi data) diventa rumorosa.</li>
-        <li>Considera anche fonti e collegamenti: l'alt C può unificare "+ aggiungi campo / fonte / collegamento" in un solo menu.</li>
+    <footer class="mt-14 pt-6 border-t border-teal-200 text-xs text-teal-700/70 leading-relaxed">
+      <div class="font-semibold text-teal-900 mb-1.5">Note iPad-specific</div>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong>Apple HIG vs Material:</strong> il FAB è il marker più riconoscibile di Material Design (Android/Google). Su iPad è straniante: né Notes né Things né Notion-iPad lo usano. Per il principio "iPad-native feel" della Constitution → escluso.</li>
+        <li><strong>HeroUI mapping:</strong> la chip-field è <code>&lt;Chip variant="bordered" size="lg"&gt;</code>, la add-row è <code>&lt;Button variant="bordered" startContent={&lt;Plus/&gt;}&gt;</code>, il menu (alt B) è <code>&lt;Listbox&gt;</code> dentro <code>&lt;Popover&gt;</code>.</li>
+        <li><strong>Fields data-driven:</strong> la lista campi ammessi viene da <code>features/elemento/rules.ts</code> esaustivo su <code>TipoElemento</code> (8 varianti). La UI riflette il dominio, non duplica la lista.</li>
+        <li><strong>Commit:</strong> tutte le 3 alternative ereditano blur-to-save (sketch 1A). Tap su nuovo chip → field-row in edit, tap fuori → commit.</li>
       </ul>
     </footer>
   </div>

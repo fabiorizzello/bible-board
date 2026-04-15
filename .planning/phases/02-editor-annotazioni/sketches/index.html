@@ -3,107 +3,201 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>S02.1 — Sketches editor inline per-campo</title>
+<title>S02 R005 — Sketches editor inline per-campo (iPad scale)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --primary: #0D9488;
-    --secondary: #14B8A6;
-    --cta: #F97316;
-    --bg: #F0FDFA;
-    --text: #134E4A;
+    --hero-primary-50:  #F0FDFA;
+    --hero-primary-100: #CCFBF1;
+    --hero-primary-500: #14B8A6;
+    --hero-primary-600: #0D9488;
+    --hero-primary-700: #0F766E;
+    --hero-primary-900: #134E4A;
+    --hero-warning:     #F97316;
+    --hero-content1:    #FFFFFF;
+    --hero-default-200: #E2E8F0;
+    --hero-default-500: #64748B;
+    --hero-radius-md:   10px;
+    --hero-radius-lg:   14px;
+    --hero-shadow-md:   0 4px 12px rgba(13, 148, 136, 0.08), 0 1px 3px rgba(13, 148, 136, 0.04);
   }
-  body { font-family: 'Fira Sans', sans-serif; background: var(--bg); color: var(--text); }
+  body { font-family: 'Fira Sans', sans-serif; background: var(--hero-primary-50); color: var(--hero-primary-900); }
   h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
-  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.15); border-radius: 12px; }
-  .card:hover { border-color: rgba(13, 148, 136, 0.4); transform: translateY(-1px); transition: all 150ms ease-out; }
+  code { font-family: 'Fira Code', monospace; }
+
+  .hero-card {
+    background: var(--hero-content1);
+    border: 1px solid rgba(20, 184, 166, 0.15);
+    border-radius: var(--hero-radius-lg);
+    box-shadow: var(--hero-shadow-md);
+    transition: all 200ms ease-out;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    padding: 24px;
+  }
+  .hero-card:hover {
+    border-color: rgba(13, 148, 136, 0.35);
+    box-shadow: 0 12px 28px rgba(13, 148, 136, 0.14), 0 4px 10px rgba(13, 148, 136, 0.06);
+    transform: translateY(-2px);
+  }
+
+  .badge {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fira Code'; font-weight: 700; font-size: 18px;
+    background: var(--hero-primary-100); color: var(--hero-primary-700);
+    flex-shrink: 0;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; height: 22px;
+    background: var(--hero-primary-100); color: var(--hero-primary-700);
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    border-radius: 999px;
+  }
+  .pill-recommended {
+    background: linear-gradient(135deg, var(--hero-primary-600), var(--hero-primary-500));
+    color: white;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.20);
+  }
+  .pill svg { width: 12px; height: 12px; }
+
+  .info-banner {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.04));
+    border: 1px solid rgba(20, 184, 166, 0.20);
+    border-left: 4px solid var(--hero-primary-500);
+    border-radius: var(--hero-radius-md);
+    padding: 16px 20px;
+  }
 </style>
 </head>
 <body class="min-h-screen">
-  <div class="max-w-6xl mx-auto px-6 py-10">
+  <div class="max-w-5xl mx-auto px-6 py-12">
+
     <header class="mb-8">
-      <div class="text-xs uppercase tracking-wider text-teal-700 font-semibold">Phase S02.1</div>
-      <h1 class="text-3xl mt-1 text-teal-900">Editor app-native — inline per-campo</h1>
-      <p class="text-teal-800/70 mt-2 max-w-2xl text-sm leading-relaxed">
-        4 aree da decidere. Per ciascuna, 3 alternative. Apri ogni sketch, confronta,
+      <div class="text-xs uppercase tracking-wider text-teal-700 font-semibold">Phase 02 · S02 · R005</div>
+      <h1 class="text-3xl mt-2 text-teal-900">Editor app-native — inline per-campo</h1>
+      <p class="text-teal-800/70 mt-3 max-w-2xl text-sm leading-relaxed">
+        4 aree di decisione, 3 alternative ciascuna. Apri ogni sketch, confronta visivamente,
         poi torna in chat e dimmi quale scegli (o cosa vuoi combinare).
       </p>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <a href="01-commit-interaction.html" class="card p-6 block no-underline">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">1</div>
-          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Interazione</div>
+    <div class="info-banner mb-8">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div class="text-xs leading-relaxed text-teal-900">
+          <div class="font-semibold mb-1">Sketch ricostruiti a scala iPad reale (v2 · 2026-04-15)</div>
+          <ul class="space-y-0.5 ml-1">
+            <li>• Detail pane mock <strong>520px</strong> = larghezza realistica nel 3-pane su iPad landscape (1194px)</li>
+            <li>• Tutti i touch target rispettano <strong>≥44×44px</strong> (Apple HIG + WCAG 2.5.5)</li>
+            <li>• <strong>HeroUI v3 visual idiom</strong> replicato: input 48px, button 44px, radius 10/14, shadow soft teal</li>
+            <li>• Layout verticale (non 3-col) → ogni alternativa confrontabile a scala onesta</li>
+            <li>• <span class="pill pill-recommended" style="vertical-align:middle;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9.91 8.84 3 9l5.46 4.73L7 21l5-3 5 3-1.46-7.27L21 9l-6.91-.16L12 2z"/></svg> Raccomandato</span> marcato visivamente sull'alternativa preferita per ciascuno</li>
+          </ul>
         </div>
-        <h2 class="text-lg text-teal-900 mb-2">Commit & touch interaction</h2>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <a href="01-commit-interaction.html" class="hero-card">
+        <div class="flex items-start justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="badge">1</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold">Interazione</div>
+              <h2 class="text-lg text-teal-900">Commit & touch interaction</h2>
+            </div>
+          </div>
+          <span class="pill pill-recommended" title="Recommended: A. Blur-to-save">A</span>
+        </div>
         <p class="text-sm text-teal-800/70 leading-relaxed">
           Come un campo entra/esce da edit mode su iPad e quando le modifiche si salvano.
         </p>
-        <div class="mt-4 flex gap-2 text-xs">
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Blur-to-save</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. Enter/Esc</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. ✓/✕ inline</span>
+        <div class="mt-4 flex gap-2 text-xs flex-wrap">
+          <span class="pill pill-recommended">A. Blur-to-save</span>
+          <span class="pill">B. Enter/ESC</span>
+          <span class="pill">C. ✓/✕ inline</span>
         </div>
       </a>
 
-      <a href="02-empty-fields.html" class="card p-6 block no-underline">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">2</div>
-          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Discovery</div>
+      <a href="02-empty-fields.html" class="hero-card">
+        <div class="flex items-start justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="badge">2</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold">Discovery</div>
+              <h2 class="text-lg text-teal-900">Empty fields + aggiungi campo</h2>
+            </div>
+          </div>
+          <span class="pill pill-recommended" title="Recommended: C. Riga inline">C</span>
         </div>
-        <h2 class="text-lg text-teal-900 mb-2">Empty fields + aggiungi campo</h2>
         <p class="text-sm text-teal-800/70 leading-relaxed">
-          Campi vuoti sempre visibili come placeholder o nascosti dietro menu?
-          Dove vive il + aggiungi campo?
+          Campi vuoti sempre visibili, FAB, o riga inline a fondo body? Dove vive il "+ aggiungi campo"?
         </p>
-        <div class="mt-4 flex gap-2 text-xs">
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Placeholder</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. FAB +</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. Riga inline</span>
+        <div class="mt-4 flex gap-2 text-xs flex-wrap">
+          <span class="pill">A. Placeholder</span>
+          <span class="pill">B. FAB +</span>
+          <span class="pill pill-recommended">C. Riga inline</span>
         </div>
       </a>
 
-      <a href="03-collegamento-picker.html" class="card p-6 block no-underline">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">3</div>
-          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Popover</div>
+      <a href="03-collegamento-picker.html" class="hero-card">
+        <div class="flex items-start justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="badge">3</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold">Popover</div>
+              <h2 class="text-lg text-teal-900">Collegamento picker</h2>
+            </div>
+          </div>
+          <span class="pill pill-recommended" title="Recommended: A. Single-step grouped">A</span>
         </div>
-        <h2 class="text-lg text-teal-900 mb-2">Collegamento picker</h2>
         <p class="text-sm text-teal-800/70 leading-relaxed">
-          Search, filtro TipoLink, recent, RuoloLink inline. Popover in un passo o due?
+          Search, filtro TipoLink, recent, RuoloLink inline. Single-step, two-step, o command palette?
         </p>
-        <div class="mt-4 flex gap-2 text-xs">
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Single-step</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. Two-step</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. Command palette</span>
+        <div class="mt-4 flex gap-2 text-xs flex-wrap">
+          <span class="pill pill-recommended">A. Single-step</span>
+          <span class="pill">B. Two-step</span>
+          <span class="pill">C. Command palette</span>
         </div>
       </a>
 
-      <a href="04-markdown-descrizione.html" class="card p-6 block no-underline">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">4</div>
-          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Milkdown</div>
+      <a href="04-markdown-descrizione.html" class="hero-card">
+        <div class="flex items-start justify-between mb-4 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="badge">4</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold">Milkdown</div>
+              <h2 class="text-lg text-teal-900">Markdown descrizione</h2>
+            </div>
+          </div>
+          <span class="pill pill-recommended" title="Recommended: A. Bubble menu">A</span>
         </div>
-        <h2 class="text-lg text-teal-900 mb-2">Markdown descrizione</h2>
         <p class="text-sm text-teal-800/70 leading-relaxed">
-          View formattato o piatto, edit chrome (bubble vs sticky toolbar vs slash), commit.
+          View formattato, edit chrome (bubble menu vs sticky toolbar vs slash command), commit blur.
         </p>
-        <div class="mt-4 flex gap-2 text-xs">
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Bubble menu</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. Sticky toolbar</span>
-          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. Slash only</span>
+        <div class="mt-4 flex gap-2 text-xs flex-wrap">
+          <span class="pill pill-recommended">A. Bubble menu</span>
+          <span class="pill">B. Sticky toolbar</span>
+          <span class="pill">C. Slash only</span>
         </div>
       </a>
+
     </div>
 
-    <footer class="mt-10 pt-6 border-t border-teal-200">
-      <div class="text-xs text-teal-700/60">
-        Tutti gli sketch usano lo stesso dataset (personaggio Abraamo) per confronto a parità di contenuto.
-        Token: teal #0D9488 · CTA orange #F97316 · bg #F0FDFA · heading Fira Code · body Fira Sans.
-        Tap target ≥44×44 · gap 8px · transizioni 150-300ms.
-      </div>
+    <footer class="mt-12 pt-6 border-t border-teal-200 text-xs text-teal-700/60 leading-relaxed">
+      <div class="font-semibold text-teal-900 mb-1.5">Convenzioni del set</div>
+      <ul class="space-y-1 ml-1">
+        <li>• Tutti gli sketch usano lo stesso dataset (personaggio Abraamo) per confronto a parità di contenuto</li>
+        <li>• Token: teal #0D9488 · CTA orange #F97316 · bg #F0FDFA · heading Fira Code · body Fira Sans</li>
+        <li>• HeroUI mapping: <code>&lt;Input size="lg"&gt;</code> 48px · <code>&lt;Button size="md"&gt;</code> 44px · <code>&lt;Chip&gt;</code> 44px tap target · <code>&lt;Popover&gt;</code> 380px width · radius medium 10px / large 14px</li>
+        <li>• Commit pattern uniforme su tutti gli sketch (ereditato da 1A)</li>
+      </ul>
     </footer>
   </div>
 </body>
