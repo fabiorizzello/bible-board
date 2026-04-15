@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 3 — Collegamento picker popover</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; }
+  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 12px; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06); }
+
+  /* Mock detail pane bottom (collegamenti section) */
+  .collegamenti-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; }
+  .chip-link { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; font-size: 11px; background: #CCFBF1; color: #0F766E; border-radius: 999px; font-weight: 500; }
+  .btn-add-link { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 11px; color: #0D9488; border: 1px dashed rgba(13, 148, 136, 0.4); border-radius: 999px; font-weight: 500; cursor: pointer; background: white; }
+  .btn-add-link:hover { background: #F0FDFA; border-style: solid; }
+
+  /* Popover base */
+  .popover { position: absolute; background: white; border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 12px; box-shadow: 0 12px 32px rgba(13, 148, 136, 0.18), 0 2px 8px rgba(13, 148, 136, 0.08); padding: 10px; min-width: 320px; z-index: 20; }
+  .popover::before { content: ''; position: absolute; top: -6px; left: 20px; width: 10px; height: 10px; background: white; border-left: 1px solid rgba(20, 184, 166, 0.3); border-top: 1px solid rgba(20, 184, 166, 0.3); transform: rotate(45deg); }
+  .popover-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0F766E; font-weight: 600; padding: 0 4px 6px; }
+
+  .search-input { width: 100%; padding: 8px 10px 8px 32px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23475569' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m21 21-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z'/%3E%3C/svg%3E") no-repeat 10px center; font-family: inherit; outline: none; }
+  .search-input:focus { border-color: #14B8A6; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15); }
+
+  .group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748B; font-weight: 600; padding: 8px 8px 4px; }
+  .elem-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background 120ms; }
+  .elem-row:hover { background: #F0FDFA; }
+  .elem-row.selected { background: #CCFBF1; }
+  .elem-name { font-size: 13px; color: #134E4A; font-weight: 500; flex: 1; }
+  .elem-tipo { font-size: 10px; padding: 1px 7px; background: #f1f5f9; color: #475569; border-radius: 999px; }
+
+  .tipo-chip { display: inline-flex; align-items: center; padding: 6px 12px; font-size: 12px; font-weight: 500; color: #0F766E; background: #F0FDFA; border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 999px; cursor: pointer; transition: all 120ms; }
+  .tipo-chip:hover { background: #CCFBF1; border-color: #0D9488; }
+  .tipo-chip.active { background: #0D9488; color: white; border-color: #0D9488; }
+
+  .ruolo-row { display: flex; align-items: center; gap: 6px; padding: 8px 8px 4px; border-top: 1px dashed #e2e8f0; margin-top: 8px; }
+  .ruolo-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748B; font-weight: 600; margin-right: 2px; }
+
+  .kbd { display: inline-flex; padding: 1px 5px; font-family: 'Fira Code', monospace; font-size: 10px; color: #475569; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 4px; }
+  .pro { color: #059669; }
+  .con { color: #DC2626; }
+
+  /* Mini page mock */
+  .mini-detail { background: white; border-radius: 8px; padding: 10px 12px; border: 1px solid #e2e8f0; margin-bottom: 0; }
+  .mini-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0F766E; font-weight: 600; }
+  .chip-tipo { display: inline-flex; padding: 2px 10px; font-size: 11px; background: #CCFBF1; color: #0F766E; border-radius: 999px; font-weight: 500; }
+
+  .step-num { display: inline-flex; width: 18px; height: 18px; background: #0D9488; color: white; font-size: 10px; font-weight: 700; border-radius: 50%; align-items: center; justify-content: center; font-family: 'Fira Code', monospace; }
+</style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <header class="mb-8">
+      <a href="index.html" class="text-xs text-teal-700 hover:text-teal-900">← Tutti gli sketch</a>
+      <div class="flex items-center gap-3 mt-3">
+        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono font-semibold">3</div>
+        <div>
+          <h1 class="text-2xl text-teal-900">Collegamento picker popover</h1>
+          <p class="text-sm text-teal-800/70 mt-1">Scenario: sei su <strong>Abraamo</strong>, vuoi aggiungere link a <strong>Isacco</strong> con parentela → figlio.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+      <!-- ============================================================= -->
+      <!-- A — Single-step grouped                                         -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">A</div>
+          <div>
+            <h2 class="text-base text-teal-900">Single-step grouped</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">ricerca + lista raggruppata per TipoLink</div>
+          </div>
+        </div>
+
+        <!-- Mock detail trigger + popover above -->
+        <div class="relative mb-4" style="min-height: 360px;">
+          <div class="mini-detail">
+            <span class="chip-tipo">personaggio</span>
+            <div class="text-base font-semibold text-teal-900 mt-1">Abraamo</div>
+            <div class="mt-3">
+              <div class="mini-label mb-1.5">Collegamenti</div>
+              <div class="collegamenti-box flex flex-wrap gap-1.5 items-center">
+                <span class="chip-link">Sara <span class="text-teal-500">· coniuge</span></span>
+                <button class="btn-add-link">+ collegamento</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Popover (single-step grouped) -->
+          <div class="popover" style="top: 140px; left: 8px; min-width: 300px;">
+            <div class="popover-title">Aggiungi collegamento</div>
+            <input type="text" class="search-input" placeholder="Cerca elemento..." value="Isa">
+
+            <div class="mt-2 max-h-[260px] overflow-y-auto">
+              <div class="group-label">Parentela</div>
+              <div class="elem-row selected">
+                <div class="elem-name">Isacco</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+              <div class="elem-row">
+                <div class="elem-name">Ismaele</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+
+              <div class="group-label mt-2">Adempimento</div>
+              <div class="elem-row">
+                <div class="elem-name">Promessa della terra</div>
+                <span class="elem-tipo">profezia</span>
+              </div>
+            </div>
+
+            <!-- Ruolo inline row (visible after selecting parentela item) -->
+            <div class="ruolo-row">
+              <span class="ruolo-label">Ruolo</span>
+              <span class="tipo-chip active" style="padding: 3px 9px; font-size: 11px;">figlio</span>
+              <span class="tipo-chip" style="padding: 3px 9px; font-size: 11px;">figlia</span>
+              <span class="tipo-chip" style="padding: 3px 9px; font-size: 11px;">padre</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Popover si apre con focus sul search.<br>
+            Lista raggruppata per <strong>TipoLink</strong> (il tipo è implicito nel gruppo).<br>
+            Tap elemento → selezionato. Per <strong>parentela</strong>, row inline mostra ruoli (chip attivo = default).<br>
+            Enter → conferma.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>One-shot — tutto in un popover</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Ruolo parentela appare solo quando serve</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Search filtra tutti i gruppi simultaneamente</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Utente deve sapere che "Isacco è parentela" per interpretare il gruppo</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Con molti link la lista diventa lunga (scroll)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>TipoLink "implicito dal gruppo" può essere ambiguo</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- B — Two-step                                                    -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">B</div>
+          <div>
+            <h2 class="text-base text-teal-900">Two-step explicit</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">TipoLink first, elemento dopo</div>
+          </div>
+        </div>
+
+        <div class="relative mb-4" style="min-height: 360px;">
+          <div class="mini-detail">
+            <span class="chip-tipo">personaggio</span>
+            <div class="text-base font-semibold text-teal-900 mt-1">Abraamo</div>
+            <div class="mt-3">
+              <div class="mini-label mb-1.5">Collegamenti</div>
+              <div class="collegamenti-box flex flex-wrap gap-1.5 items-center">
+                <span class="chip-link">Sara <span class="text-teal-500">· coniuge</span></span>
+                <button class="btn-add-link">+ collegamento</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="popover" style="top: 140px; left: 8px; min-width: 300px;">
+            <div class="popover-title flex items-center justify-between">
+              <span>Step 2/2 · Scegli elemento</span>
+              <span class="text-teal-600 normal-case">← indietro</span>
+            </div>
+
+            <!-- Step 1 summary pinned -->
+            <div class="bg-teal-50 rounded-md px-2.5 py-1.5 text-xs text-teal-900 mb-2 flex items-center gap-2">
+              <span class="step-num">1</span>
+              <span class="font-semibold">TipoLink:</span> parentela
+            </div>
+
+            <input type="text" class="search-input" placeholder="Cerca elemento..." value="">
+
+            <div class="mt-2 max-h-[160px] overflow-y-auto">
+              <div class="elem-row selected">
+                <div class="elem-name">Isacco</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+              <div class="elem-row">
+                <div class="elem-name">Ismaele</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+              <div class="elem-row">
+                <div class="elem-name">Sara</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+            </div>
+
+            <div class="ruolo-row">
+              <span class="ruolo-label">Ruolo</span>
+              <span class="tipo-chip active" style="padding: 3px 9px; font-size: 11px;">figlio</span>
+              <span class="tipo-chip" style="padding: 3px 9px; font-size: 11px;">figlia</span>
+              <span class="tipo-chip" style="padding: 3px 9px; font-size: 11px;">padre</span>
+              <span class="tipo-chip" style="padding: 3px 9px; font-size: 11px;">madre</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            <strong>Step 1</strong>: chip con 8 TipoLink (parentela, causa-effetto, adempimento, parallelo, successione, localizzazione, residenza, correlato). Tap → step 2.<br>
+            <strong>Step 2</strong>: lista elementi filtrati per compatibilità + search.<br>
+            <strong>Step 3 (solo parentela)</strong>: 5 chip ruolo (padre/madre/figlio/figlia/coniuge).
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Esplicito — mental model chiaro</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>TipoLink mai ambiguo</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Lista step-2 più corta (pre-filtrata)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>2-3 tap per link (lento per power user)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Chi già conosce il target deve comunque iniziare da "che tipo"</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- C — Command palette                                             -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">C</div>
+          <div>
+            <h2 class="text-base text-teal-900">Command palette</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">Linear/Raycast style, recent-first</div>
+          </div>
+        </div>
+
+        <div class="relative mb-4" style="min-height: 360px;">
+          <div class="mini-detail">
+            <span class="chip-tipo">personaggio</span>
+            <div class="text-base font-semibold text-teal-900 mt-1">Abraamo</div>
+            <div class="mt-3">
+              <div class="mini-label mb-1.5">Collegamenti</div>
+              <div class="collegamenti-box flex flex-wrap gap-1.5 items-center">
+                <span class="chip-link">Sara <span class="text-teal-500">· coniuge</span></span>
+                <button class="btn-add-link">+ collegamento</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="popover" style="top: 140px; left: 8px; min-width: 300px;">
+            <div class="popover-title flex items-center justify-between">
+              <span>Aggiungi collegamento</span>
+              <span class="kbd">⌘K</span>
+            </div>
+            <input type="text" class="search-input" placeholder="Cerca..." value="">
+
+            <!-- Filter pills -->
+            <div class="flex gap-1.5 mt-2 flex-wrap px-1">
+              <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">tutti</span>
+              <span class="tipo-chip active" style="padding: 3px 8px; font-size: 10px;">personaggio</span>
+              <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">evento</span>
+              <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">luogo</span>
+            </div>
+
+            <div class="mt-2 max-h-[200px] overflow-y-auto">
+              <div class="group-label">Recenti</div>
+              <div class="elem-row">
+                <div class="elem-name">Sara</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+              <div class="elem-row selected">
+                <div class="elem-name">Isacco</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+              <div class="elem-row">
+                <div class="elem-name">Ismaele</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+
+              <div class="group-label mt-1">Tutti</div>
+              <div class="elem-row">
+                <div class="elem-name">Mosè</div>
+                <span class="elem-tipo">personaggio</span>
+              </div>
+            </div>
+
+            <!-- TipoLink + Ruolo inline at bottom (after elem select) -->
+            <div class="ruolo-row flex-col items-stretch !gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="ruolo-label">Tipo</span>
+                <span class="tipo-chip active" style="padding: 3px 8px; font-size: 10px;">parentela</span>
+                <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">causa-effetto</span>
+                <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">parallelo</span>
+                <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">correlato</span>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="ruolo-label">Ruolo</span>
+                <span class="tipo-chip active" style="padding: 3px 8px; font-size: 10px;">figlio</span>
+                <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">padre</span>
+                <span class="tipo-chip" style="padding: 3px 8px; font-size: 10px;">coniuge</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Search prominent, filter pills tipo elemento, <strong>Recenti prima</strong>, tutto il resto dopo.<br>
+            Selezione elemento → sezione inline al bottom per TipoLink e (se parentela) Ruolo.<br>
+            ⌘K come affordance keyboard veloce, tap funziona ugualmente.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Fastest per power user — recent-first è realistico</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Filter pills visualizza scope prima di cercare</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Familiar pattern (Linear, Slack, Raycast)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Più elementi visivi insieme (può sembrare denso)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Separazione "elemento → tipo → ruolo" può confondere: scelgo prima chi, poi il come</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Senza tastiera ⌘K è solo decorativo</span></div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="mt-10 pt-6 border-t border-teal-200 text-xs text-teal-700/60">
+      <div class="mb-1">Note:</div>
+      <ul class="list-disc list-inside space-y-0.5 ml-2">
+        <li>Il popover è locked decision (HeroUI Popover). Questo sketch confronta solo la <em>grammatica interna</em>.</li>
+        <li>Tutte e 3 le alternative gestiscono Ruolo come sub-step inline quando TipoLink = parentela. Nessuna forza un modal separato.</li>
+        <li>Link bidirezionali (es. Isacco → padre → Abraamo) vengono creati automaticamente dal dominio — non compaiono nel picker.</li>
+      </ul>
+    </footer>
+  </div>
+</body>
+</html>

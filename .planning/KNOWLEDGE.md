@@ -160,6 +160,31 @@ Jazz CoMap (mutable, CRDT) → Adapter → Domain model (immutable, puro) → Re
 
 ---
 
+## Pattern: Density & Spacing
+
+Scala Tailwind standard (1=4px, 2=8px, 3=12px, 4=16px). Interfaccia compatta stile Notion/Linear — info utile visibile senza scroll su iPad landscape (1024×768).
+
+- **Sezioni**: `gap-4` standard tra blocchi principali.
+- **Liste**: `gap-1` / `gap-2` tra item adiacenti.
+- **Detail pane**: padding `p-4`.
+- **List items**: padding `px-3 py-2`.
+- **Sidebar items**: padding `px-2 py-1.5` (più compatti perché chrome).
+- **Touch target**: ≥44×44px, gap ≥8px tra target adiacenti. Per elementi custom, usare padding adeguato.
+- **Regola negativa**: header su una sola riga con titolo+azioni, mai hero banner multi-riga. Pannelli vuoti nascosti o ridotti a una riga, mai placeholder illustrati.
+
+---
+
+## Pattern: Animation
+
+- **Durate**: 150ms per micro-interazioni (hover, press, toggle); 250-300ms per transizioni layout (overlay, panel switch, fullscreen).
+- **Easing**: `ease-out` per entrate, `ease-in` per uscite. Curve custom solo se giustificate.
+- **Proprietà animate**: SOLO `opacity` e `transform`. MAI `width`, `height`, `top`, `left` (forzano reflow).
+- **prefers-reduced-motion**: tutto disabilitato con `@media (prefers-reduced-motion: reduce)`.
+- **Fullscreen entry/exit**: overlay `fixed inset-0` con `opacity` + `translate-y` combinati, non scale.
+- **Feedback tap**: risposta visiva entro 100ms dal tap (non una animazione, un cambio di stato immediato).
+
+---
+
 ## Pattern: Vite Dev Server
 
 - **Tailwind via PostCSS, MAI via Vite plugin** (D027): usare `@tailwindcss/postcss` in `postcss.config.mjs`. NON usare `@tailwindcss/vite` come plugin — causa loop infinito di reload del dev server. Questa configurazione NON va cambiata per nessun motivo.
