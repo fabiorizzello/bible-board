@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 4 — Markdown descrizione (Milkdown)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; }
+  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 12px; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06); }
+
+  /* Mini detail mock */
+  .mini-detail { background: white; border-radius: 10px; padding: 12px 14px; border: 1px solid #e2e8f0; }
+  .mini-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0F766E; font-weight: 600; }
+  .chip-tipo { display: inline-flex; padding: 2px 10px; font-size: 11px; background: #CCFBF1; color: #0F766E; border-radius: 999px; font-weight: 500; }
+
+  /* Descrizione content — formatted view */
+  .md-view { font-size: 13px; line-height: 1.6; color: #134E4A; }
+  .md-view p { margin: 0 0 8px; }
+  .md-view strong { font-weight: 600; color: #0F766E; }
+  .md-view em { font-style: italic; color: #0F766E; }
+  .md-view a { color: #0D9488; text-decoration: underline; text-decoration-color: rgba(13, 148, 136, 0.35); text-underline-offset: 2px; }
+  .md-view ul { margin: 6px 0 8px 18px; list-style: disc; }
+  .md-view li { margin-bottom: 2px; }
+  .md-view code { font-family: 'Fira Code', monospace; font-size: 11.5px; background: #F0FDFA; color: #0F766E; padding: 1px 5px; border-radius: 4px; }
+
+  /* Editing field frame (when descrizione is in edit mode) */
+  .md-edit-frame { position: relative; border: 2px solid #14B8A6; background: white; border-radius: 8px; padding: 10px 12px; box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12); }
+  .caret::after { content: '|'; color: #0D9488; animation: blink 1s steps(2, start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
+
+  /* Selected text highlight */
+  .sel { background: rgba(20, 184, 166, 0.22); border-radius: 2px; padding: 0 1px; }
+
+  /* Bubble menu (alt A) */
+  .bubble { position: absolute; background: #0F172A; border-radius: 8px; padding: 4px; display: inline-flex; gap: 2px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25), 0 2px 6px rgba(15, 23, 42, 0.12); z-index: 20; }
+  .bubble::after { content: ''; position: absolute; bottom: -5px; left: 22px; width: 10px; height: 10px; background: #0F172A; transform: rotate(45deg); }
+  .bubble-btn { min-width: 30px; height: 28px; padding: 0 7px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #E2E8F0; border-radius: 5px; cursor: pointer; transition: background 120ms; font-family: 'Fira Sans'; }
+  .bubble-btn:hover { background: rgba(255, 255, 255, 0.12); }
+  .bubble-btn.active { background: #0D9488; color: white; }
+  .bubble-sep { width: 1px; background: rgba(255, 255, 255, 0.15); margin: 4px 2px; }
+
+  /* Sticky toolbar (alt B) */
+  .sticky-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; border-top-left-radius: 6px; border-top-right-radius: 6px; flex-wrap: wrap; }
+  .tb-btn { min-width: 28px; height: 28px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #475569; border-radius: 4px; cursor: pointer; transition: background 120ms; font-family: 'Fira Sans'; }
+  .tb-btn:hover { background: #E2E8F0; }
+  .tb-btn.active { background: #CCFBF1; color: #0F766E; }
+  .tb-sep { width: 1px; height: 18px; background: #E2E8F0; margin: 0 3px; }
+
+  /* Slash menu (alt C) */
+  .slash-menu { position: absolute; background: white; border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 10px; box-shadow: 0 12px 32px rgba(13, 148, 136, 0.18), 0 2px 8px rgba(13, 148, 136, 0.08); padding: 6px; min-width: 240px; z-index: 20; }
+  .slash-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748B; font-weight: 600; padding: 4px 8px 4px; }
+  .slash-row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px; color: #134E4A; transition: background 120ms; }
+  .slash-row:hover { background: #F0FDFA; }
+  .slash-row.selected { background: #CCFBF1; }
+  .slash-icon { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; background: #F0FDFA; color: #0F766E; border-radius: 4px; font-family: 'Fira Code'; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+  .slash-name { flex: 1; font-weight: 500; }
+  .slash-hint { font-size: 10px; color: #94A3B8; font-family: 'Fira Code'; }
+
+  .kbd { display: inline-flex; padding: 1px 5px; font-family: 'Fira Code', monospace; font-size: 10px; color: #475569; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 4px; }
+  .pro { color: #059669; }
+  .con { color: #DC2626; }
+
+  /* State label that labels VIEW vs EDIT */
+  .state-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #94A3B8; font-weight: 600; padding: 3px 6px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+  .state-label.edit { color: #0D9488; background: #F0FDFA; border-color: rgba(20, 184, 166, 0.3); }
+</style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <header class="mb-8">
+      <a href="index.html" class="text-xs text-teal-700 hover:text-teal-900">← Tutti gli sketch</a>
+      <div class="flex items-center gap-3 mt-3">
+        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono font-semibold">4</div>
+        <div>
+          <h1 class="text-2xl text-teal-900">Markdown descrizione — Milkdown</h1>
+          <p class="text-sm text-teal-800/70 mt-1">Scenario: <strong>Abraamo</strong> ha una descrizione markdown con grassetto, link a <em>Isacco</em>, e una lista. Come si edita senza rompere il flusso inline per-campo?</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+      <!-- ============================================================= -->
+      <!-- A — Bubble menu (Notion style)                                 -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">A</div>
+          <div>
+            <h2 class="text-base text-teal-900">Bubble menu</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">stile Notion — toolbar floating on selection</div>
+          </div>
+        </div>
+
+        <!-- VIEW state -->
+        <div class="state-label">VIEW</div>
+        <div class="mini-detail mb-3">
+          <span class="chip-tipo">personaggio</span>
+          <div class="text-base font-semibold text-teal-900 mt-1">Abraamo</div>
+          <div class="mt-3">
+            <div class="mini-label mb-1.5">Descrizione</div>
+            <div class="md-view">
+              <p>Patriarca dei <strong>tre monoteismi abramitici</strong>. Chiamato da <em>Ur dei Caldei</em>, riceve la promessa divina di una terra e una discendenza.</p>
+              <p>La sua fede viene messa alla prova nel sacrificio di <a href="#">Isacco</a>, evento chiamato <em>Akedah</em>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDIT state with bubble -->
+        <div class="state-label edit">EDIT — testo selezionato</div>
+        <div class="mini-detail mb-4">
+          <div class="mini-label mb-1.5">Descrizione</div>
+          <div class="md-edit-frame relative" style="min-height: 130px;">
+            <div class="md-view">
+              <p>Patriarca dei <span class="sel">tre monoteismi abramitici</span>. Chiamato da <em>Ur dei Caldei</em>, riceve la promessa divina.</p>
+              <p>La sua fede viene messa alla prova nel sacrificio di <a href="#">Isacco</a>.<span class="caret"></span></p>
+            </div>
+            <!-- Bubble positioned above selection -->
+            <div class="bubble" style="top: -38px; left: 30px;">
+              <span class="bubble-btn active" style="font-weight: 700;">B</span>
+              <span class="bubble-btn" style="font-style: italic;">I</span>
+              <span class="bubble-btn" style="text-decoration: line-through;">S</span>
+              <span class="bubble-sep"></span>
+              <span class="bubble-btn">H1</span>
+              <span class="bubble-btn">H2</span>
+              <span class="bubble-sep"></span>
+              <span class="bubble-btn">🔗</span>
+              <span class="bubble-btn" style="font-family: 'Fira Code';">&lt;/&gt;</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Tap nel campo → diventa editable con bordo teal (coerente con altri campi).<br>
+            <strong>Nessun chrome visibile finché non selezioni</strong>. Seleziona testo → bubble appare sopra con B / I / S / H1 / H2 / link / code.<br>
+            Shortcut markdown inline (<code>**bold**</code>, <code>- lista</code>) auto-convertiti da Milkdown.<br>
+            Tap fuori dal campo → commit (blur-to-save, coerente con sketch 1).
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Chrome zero fino a quando serve — massima densità</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Mental model familiare (Notion, Linear docs)</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Coerente con "inline per-campo" — il campo sembra solo testo</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Selezione touch su iPad è fumosa — tap-hold loupe, a volte scomoda</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Features discoverability bassa: l'utente deve sapere "seleziona per formattare"</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Liste e heading richiedono shortcut markdown o bubble H1/H2 (non ovvio)</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- B — Sticky toolbar (classic editor)                            -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">B</div>
+          <div>
+            <h2 class="text-base text-teal-900">Sticky toolbar</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">toolbar fissa sopra il campo durante edit</div>
+          </div>
+        </div>
+
+        <!-- VIEW state -->
+        <div class="state-label">VIEW</div>
+        <div class="mini-detail mb-3">
+          <span class="chip-tipo">personaggio</span>
+          <div class="text-base font-semibold text-teal-900 mt-1">Abraamo</div>
+          <div class="mt-3">
+            <div class="mini-label mb-1.5">Descrizione</div>
+            <div class="md-view">
+              <p>Patriarca dei <strong>tre monoteismi abramitici</strong>. Chiamato da <em>Ur dei Caldei</em>, riceve la promessa divina di una terra e una discendenza.</p>
+              <p>La sua fede viene messa alla prova nel sacrificio di <a href="#">Isacco</a>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDIT state with sticky toolbar -->
+        <div class="state-label edit">EDIT — toolbar visibile</div>
+        <div class="mini-detail mb-4">
+          <div class="mini-label mb-1.5">Descrizione</div>
+          <div class="md-edit-frame" style="padding: 0; overflow: hidden;">
+            <div class="sticky-toolbar">
+              <span class="tb-btn active" style="font-weight: 700;">B</span>
+              <span class="tb-btn" style="font-style: italic;">I</span>
+              <span class="tb-btn" style="text-decoration: line-through;">S</span>
+              <span class="tb-sep"></span>
+              <span class="tb-btn">H1</span>
+              <span class="tb-btn">H2</span>
+              <span class="tb-btn">H3</span>
+              <span class="tb-sep"></span>
+              <span class="tb-btn">•</span>
+              <span class="tb-btn">1.</span>
+              <span class="tb-btn">☐</span>
+              <span class="tb-sep"></span>
+              <span class="tb-btn">🔗</span>
+              <span class="tb-btn" style="font-family: 'Fira Code';">&lt;/&gt;</span>
+              <span class="tb-btn">❝</span>
+            </div>
+            <div class="md-view" style="padding: 10px 12px;">
+              <p>Patriarca dei <strong>tre monoteismi abramitici</strong>. Chiamato da <em>Ur dei Caldei</em>, riceve la promessa divina.</p>
+              <p>La sua fede viene messa alla prova nel sacrificio di <a href="#">Isacco</a>.<span class="caret"></span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Tap nel campo → bordo teal + <strong>toolbar appare in alto</strong>, sticky al campo.<br>
+            Tutti gli strumenti visibili: format, heading, lista, link, code, quote. Tap cursore in posizione → l'active state riflette il contesto.<br>
+            Shortcut markdown inline sempre disponibili in parallelo.<br>
+            Tap fuori → toolbar scompare + commit.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Massima discoverability — tutti i tool sono lì</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Touch-friendly: non richiede selezione preliminare</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Heading/lista con un tap — zero shortcut da imparare</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Chrome pesante — il campo descrizione diventa visivamente un editor, rompe la sensazione "tutto è solo testo"</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Occupa verticale prezioso sul detail pane (iPad landscape)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Meno coerente con gli altri campi inline (nome, data, tipo) che non hanno chrome</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- C — Slash only                                                  -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">C</div>
+          <div>
+            <h2 class="text-base text-teal-900">Slash only</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">zero chrome — solo <code class="font-mono">/</code> + shortcut inline</div>
+          </div>
+        </div>
+
+        <!-- VIEW state -->
+        <div class="state-label">VIEW</div>
+        <div class="mini-detail mb-3">
+          <span class="chip-tipo">personaggio</span>
+          <div class="text-base font-semibold text-teal-900 mt-1">Abraamo</div>
+          <div class="mt-3">
+            <div class="mini-label mb-1.5">Descrizione</div>
+            <div class="md-view">
+              <p>Patriarca dei <strong>tre monoteismi abramitici</strong>. Chiamato da <em>Ur dei Caldei</em>, riceve la promessa divina di una terra e una discendenza.</p>
+              <p>La sua fede viene messa alla prova nel sacrificio di <a href="#">Isacco</a>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDIT state with slash menu -->
+        <div class="state-label edit">EDIT — slash command</div>
+        <div class="mini-detail mb-4">
+          <div class="mini-label mb-1.5">Descrizione</div>
+          <div class="md-edit-frame relative" style="min-height: 170px;">
+            <div class="md-view">
+              <p>Patriarca dei <strong>tre monoteismi abramitici</strong>. Chiamato da <em>Ur dei Caldei</em>.</p>
+              <p><span style="color: #0D9488; font-family: 'Fira Code'; font-weight: 600;">/list</span><span class="caret"></span></p>
+            </div>
+            <!-- Slash menu positioned under cursor -->
+            <div class="slash-menu" style="top: 62px; left: 8px;">
+              <div class="slash-title">Inserisci blocco</div>
+              <div class="slash-row selected">
+                <span class="slash-icon">•</span>
+                <span class="slash-name">Lista puntata</span>
+                <span class="slash-hint">- </span>
+              </div>
+              <div class="slash-row">
+                <span class="slash-icon">1.</span>
+                <span class="slash-name">Lista ordinata</span>
+                <span class="slash-hint">1. </span>
+              </div>
+              <div class="slash-row">
+                <span class="slash-icon">H1</span>
+                <span class="slash-name">Titolo grande</span>
+                <span class="slash-hint"># </span>
+              </div>
+              <div class="slash-row">
+                <span class="slash-icon">❝</span>
+                <span class="slash-name">Citazione</span>
+                <span class="slash-hint">&gt; </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Tap nel campo → bordo teal, ma il campo sembra identico al view (zero chrome).<br>
+            <strong>Inline: shortcut markdown</strong> (<code>**grassetto**</code>, <code>*corsivo*</code>, <code>[link](url)</code>) auto-convertiti live.<br>
+            <strong>Blocchi: digita <code>/</code></strong> → popover menu con lista, heading, quote, code, check.<br>
+            Tap fuori → commit.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Chrome assolutamente zero — densità massima, coerenza perfetta con altri campi inline</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Slash menu è popover (stesso primitivo del collegamento picker)</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Power user gode — tutto da tastiera, zero tap su chrome</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Discoverability bassa: senza tastiera, l'utente deve sapere che <code>/</code> esiste</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Grassetto/corsivo richiedono shortcut markdown (no bold button) — rischio per utenti non power</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Keyboard software iPad deve essere aperta per digitare <code>/</code> — se l'utente apre con pencil è fottuto</span></div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="mt-10 pt-6 border-t border-teal-200 text-xs text-teal-700/60">
+      <div class="mb-1">Note:</div>
+      <ul class="list-disc list-inside space-y-0.5 ml-2">
+        <li><strong>Editor locked:</strong> Milkdown (MIT, headless, ProseMirror). Lo sketch confronta solo la <em>UI chrome</em> proposta sopra Milkdown.</li>
+        <li><strong>Data model invariato:</strong> <code>Elemento.descrizione: string</code> rimane markdown plain text. Milkdown serializza/deserializza al boundary adapter — il dominio non vede MDAST.</li>
+        <li><strong>Commit:</strong> tutte le 3 alternative ereditano la decisione di sketch 1 (blur-to-save). Tap fuori dal campo salva; Esc annulla.</li>
+        <li><strong>Coerenza visiva:</strong> tutte e 3 usano lo stesso bordo teal + shadow del campo in edit (uguale a sketch 1), per mantenere il "questo è un campo inline" anche quando sotto c'è un editor markdown.</li>
+        <li>Nessuna alternativa usa un modal o un editor full-screen separato — violerebbe il principio "nessun mode swap".</li>
+      </ul>
+    </footer>
+  </div>
+</body>
+</html>
