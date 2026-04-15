@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 1 — Commit & interaction</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; }
+  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 12px; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06); }
+
+  .field-row { padding: 8px 12px; margin: 0 -12px; border-radius: 8px; cursor: text; transition: background 150ms ease-out; min-height: 44px; display: flex; align-items: center; gap: 12px; }
+  .field-row:hover { background: rgba(13, 148, 136, 0.04); }
+  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0F766E; font-weight: 600; width: 90px; flex-shrink: 0; }
+  .field-value { font-size: 14px; color: #134E4A; flex: 1; }
+  .field-value.editing { padding: 6px 10px; border: 2px solid #14B8A6; background: white; border-radius: 6px; outline: none; box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12); }
+  .caret::after { content: '|'; color: #0D9488; animation: blink 1s steps(2, start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .pencil { width: 16px; height: 16px; color: #0F766E; opacity: 0; transition: opacity 150ms; flex-shrink: 0; }
+  .field-row:hover .pencil { opacity: 0.6; }
+  .field-row.focused .pencil { opacity: 1; }
+
+  .inline-btn { width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: all 150ms; }
+  .inline-btn.save { background: #0D9488; color: white; }
+  .inline-btn.save:hover { background: #0F766E; }
+  .inline-btn.cancel { background: #F1F5F9; color: #64748B; margin-left: 6px; }
+  .inline-btn.cancel:hover { background: #E2E8F0; }
+
+  .kbd { display: inline-flex; align-items: center; justify-content: center; padding: 1px 6px; font-family: 'Fira Code', monospace; font-size: 10px; color: #475569; background: #F1F5F9; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 4px; line-height: 1; height: 18px; }
+  .hint-row { display: flex; gap: 8px; align-items: center; font-size: 11px; color: #64748B; margin-top: 4px; padding-left: 102px; }
+
+  .chip-tipo { display: inline-flex; padding: 2px 10px; font-size: 11px; background: #CCFBF1; color: #0F766E; border-radius: 999px; font-weight: 500; }
+
+  .pro { color: #059669; }
+  .con { color: #DC2626; }
+
+  /* Highlight outside-tap target for alt A */
+  .blur-target { position: relative; }
+  .blur-target::after { content: '👆 tap qui salva'; position: absolute; top: -22px; right: 0; font-size: 10px; color: #F97316; font-weight: 600; }
+</style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <header class="mb-8">
+      <a href="index.html" class="text-xs text-teal-700 hover:text-teal-900">← Tutti gli sketch</a>
+      <div class="flex items-center gap-3 mt-3">
+        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono font-semibold">1</div>
+        <div>
+          <h1 class="text-2xl text-teal-900">Commit & touch interaction</h1>
+          <p class="text-sm text-teal-800/70 mt-1">Come un campo entra/esce da edit mode su iPad e quando le modifiche si salvano.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+      <!-- ============================================================= -->
+      <!-- ALTERNATIVA A — Blur-to-save (Notion style)                    -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">A</div>
+          <div>
+            <h2 class="text-base text-teal-900">Blur-to-save</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">stile Notion / Apple Notes</div>
+          </div>
+        </div>
+
+        <!-- mock detail pane -->
+        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4 blur-target">
+          <div class="mb-3 pb-3 border-b border-teal-100">
+            <div class="flex items-center gap-2">
+              <span class="chip-tipo">personaggio</span>
+            </div>
+            <div class="field-row" style="padding: 4px 0; margin: 4px 0; min-height: 32px;">
+              <span class="text-lg font-semibold text-teal-900">Abraamo</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Nascita</span>
+            <span class="field-value">2000 a.E.V.</span>
+          </div>
+
+          <!-- campo in edit state -->
+          <div class="field-row">
+            <span class="field-label">Morte</span>
+            <span class="field-value editing caret">1825</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Tribù</span>
+            <span class="field-value">Ebrei</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Ruoli</span>
+            <span class="field-value">patriarca, profeta</span>
+          </div>
+        </div>
+
+        <!-- interaction caption -->
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Tap sul row → <span class="kbd">edit</span><br>
+            Tap fuori (altro campo o area vuota) → <span class="kbd">save</span><br>
+            <span class="kbd">Esc</span> → annulla · <span class="kbd">↵</span> → save &amp; next
+          </div>
+        </div>
+
+        <!-- tradeoffs -->
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Zero chrome — densità massima, Notion feel</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Un solo tap per editare, nessun pulsante</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>"Tap fuori" ambiguo su iPad portrait</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Nessun cue esplicito di "hai salvato"</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Rischio commit accidentali (tap per sbaglio)</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- ALTERNATIVA B — Pencil affordance + Enter/Esc                  -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">B</div>
+          <div>
+            <h2 class="text-base text-teal-900">Pencil + Enter/Esc</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">stile Linear — keyboard-first</div>
+          </div>
+        </div>
+
+        <!-- mock detail pane -->
+        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4">
+          <div class="mb-3 pb-3 border-b border-teal-100">
+            <div class="flex items-center gap-2">
+              <span class="chip-tipo">personaggio</span>
+            </div>
+            <div class="field-row" style="padding: 4px 0; margin: 4px 0; min-height: 32px;">
+              <span class="text-lg font-semibold text-teal-900">Abraamo</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Nascita</span>
+            <span class="field-value">2000 a.E.V.</span>
+            <svg class="pencil" style="opacity: 0.6;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          </div>
+
+          <div class="field-row focused" style="background: rgba(13, 148, 136, 0.04);">
+            <span class="field-label">Morte</span>
+            <span class="field-value editing caret">1825</span>
+          </div>
+          <div class="hint-row">
+            <span class="kbd">↵</span> salva <span class="text-teal-400">·</span> <span class="kbd">Esc</span> annulla
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Tribù</span>
+            <span class="field-value">Ebrei</span>
+            <svg class="pencil" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Ruoli</span>
+            <span class="field-value">patriarca, profeta</span>
+            <svg class="pencil" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Tap sul row o sulla pencil → <span class="kbd">edit</span><br>
+            <span class="kbd">↵ Enter</span> → save · <span class="kbd">Esc</span> → cancel<br>
+            Pencil sempre visibile su iPad (no hover)
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Affordance esplicita, discoverable</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Keyboard shortcut chiari (Enter/Esc)</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>No commit accidentali — devi premere Enter</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Pencil icons = più chrome visivo</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Su iPad senza tastiera "Enter" non esiste nativamente — keyboard software ha ↵</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- ALTERNATIVA C — Inline ✓/✕ buttons                             -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">C</div>
+          <div>
+            <h2 class="text-base text-teal-900">Save/Cancel inline</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">explicit commit buttons</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4">
+          <div class="mb-3 pb-3 border-b border-teal-100">
+            <div class="flex items-center gap-2">
+              <span class="chip-tipo">personaggio</span>
+            </div>
+            <div class="field-row" style="padding: 4px 0; margin: 4px 0; min-height: 32px;">
+              <span class="text-lg font-semibold text-teal-900">Abraamo</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Nascita</span>
+            <span class="field-value">2000 a.E.V.</span>
+          </div>
+
+          <div class="field-row focused" style="background: rgba(13, 148, 136, 0.04);">
+            <span class="field-label">Morte</span>
+            <span class="field-value editing caret" style="flex:1; min-width: 0;">1825</span>
+            <button class="inline-btn save" title="Salva (↵)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            </button>
+            <button class="inline-btn cancel" title="Annulla (Esc)">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Tribù</span>
+            <span class="field-value">Ebrei</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Ruoli</span>
+            <span class="field-value">patriarca, profeta</span>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Tap sul row → <span class="kbd">edit</span><br>
+            Tap ✓ → <span class="kbd">save</span> · Tap ✕ → <span class="kbd">cancel</span><br>
+            <span class="kbd">↵</span> = ✓ · <span class="kbd">Esc</span> = ✕
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Commit esplicito — zero ambiguità</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Touch-first, no keyboard needed</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Undo ovvio (tap ✕)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Meno minimale — 2 button chrome per ogni edit</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Due tap per azione (edit + save)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Feel più "form tradizionale" che "app nativa"</span></div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="mt-10 pt-6 border-t border-teal-200 text-xs text-teal-700/60">
+      <div class="mb-1">Note:</div>
+      <ul class="list-disc list-inside space-y-0.5 ml-2">
+        <li>Il paradigma inline per-campo è già deciso (editingFieldId sostituisce isEditing). Qui scegli solo come funziona <em>il singolo campo</em> in edit mode.</li>
+        <li>Le alternative A e C si auto-estendono ai campi multi-line (descrizione Milkdown): A usa blur, C usa ✓/✕ sotto l'editor.</li>
+        <li>Su iPad senza tastiera fisica, Enter/Esc richiedono la tastiera software — pensa se è accettabile.</li>
+      </ul>
+    </footer>
+  </div>
+</body>
+</html>

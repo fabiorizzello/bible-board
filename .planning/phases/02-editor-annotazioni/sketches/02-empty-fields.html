@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 2 — Empty fields + aggiungi campo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; }
+  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 12px; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.06); }
+
+  .field-row { padding: 8px 12px; margin: 0 -12px; border-radius: 8px; transition: background 150ms ease-out; min-height: 44px; display: flex; align-items: center; gap: 12px; }
+  .field-row:hover { background: rgba(13, 148, 136, 0.04); }
+  .field-row.empty { color: #94A3B8; }
+  .field-row.empty:hover { background: rgba(13, 148, 136, 0.03); color: #64748B; }
+
+  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0F766E; font-weight: 600; width: 90px; flex-shrink: 0; }
+  .field-row.empty .field-label { color: #94A3B8; }
+  .field-value { font-size: 14px; color: #134E4A; flex: 1; }
+  .field-value.placeholder { font-style: italic; color: #94A3B8; }
+
+  .chip-tipo { display: inline-flex; padding: 2px 10px; font-size: 11px; background: #CCFBF1; color: #0F766E; border-radius: 999px; font-weight: 500; }
+
+  /* FAB */
+  .fab { position: absolute; bottom: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: #0D9488; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35); cursor: pointer; transition: all 200ms ease-out; }
+  .fab:hover { background: #0F766E; transform: translateY(-2px); }
+  .fab-menu { position: absolute; bottom: 72px; right: 16px; background: white; border: 1px solid rgba(20, 184, 166, 0.2); border-radius: 10px; box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15); padding: 6px; min-width: 200px; }
+  .fab-menu-item { padding: 10px 14px; font-size: 13px; color: #134E4A; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .fab-menu-item:hover { background: #F0FDFA; }
+  .fab-menu-item .plus { width: 14px; height: 14px; color: #0D9488; }
+
+  /* Inline add row */
+  .add-row { padding: 10px 12px; margin: 4px -12px 0; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #0D9488; font-size: 13px; font-weight: 500; border: 1px dashed rgba(13, 148, 136, 0.3); transition: all 150ms; }
+  .add-row:hover { background: rgba(13, 148, 136, 0.06); border-color: #0D9488; }
+  .add-row-expanded { padding: 12px; margin: 4px -12px 0; border-radius: 8px; background: #F0FDFA; border: 1px solid rgba(13, 148, 136, 0.2); }
+  .chip-field { display: inline-flex; padding: 5px 10px; font-size: 11px; background: white; color: #134E4A; border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 999px; cursor: pointer; font-weight: 500; gap: 4px; align-items: center; }
+  .chip-field:hover { background: #CCFBF1; border-color: #0D9488; }
+
+  .pro { color: #059669; }
+  .con { color: #DC2626; }
+  .kbd { display: inline-flex; padding: 1px 6px; font-family: 'Fira Code', monospace; font-size: 10px; color: #475569; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 4px; }
+</style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <header class="mb-8">
+      <a href="index.html" class="text-xs text-teal-700 hover:text-teal-900">← Tutti gli sketch</a>
+      <div class="flex items-center gap-3 mt-3">
+        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono font-semibold">2</div>
+        <div>
+          <h1 class="text-2xl text-teal-900">Empty fields + aggiungi campo</h1>
+          <p class="text-sm text-teal-800/70 mt-1">Campi vuoti sempre visibili, nascosti dietro FAB o dietro una riga inline? Dove va il menu?</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+      <!-- ============================================================= -->
+      <!-- ALTERNATIVA A — Always visible placeholders                    -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">A</div>
+          <div>
+            <h2 class="text-base text-teal-900">Placeholder sempre visibili</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">tutti i campi possibili, sempre</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4 relative">
+          <div class="mb-3 pb-3 border-b border-teal-100">
+            <span class="chip-tipo">personaggio</span>
+            <div class="text-lg font-semibold text-teal-900 mt-1">Abraamo</div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Descrizione</span>
+            <span class="field-value">Patriarca di Israele, padre della fede…</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Nascita</span>
+            <span class="field-value">2000 a.E.V.</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Morte</span>
+            <span class="field-value">1825 a.E.V.</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Tribù</span>
+            <span class="field-value">Ebrei</span>
+          </div>
+
+          <!-- empty ones shown as placeholders -->
+          <div class="field-row empty">
+            <span class="field-label">Ruoli</span>
+            <span class="field-value placeholder">— nessun ruolo</span>
+          </div>
+
+          <div class="field-row empty">
+            <span class="field-label">Tags</span>
+            <span class="field-value placeholder">— aggiungi tags</span>
+          </div>
+
+          <div class="text-[10px] text-slate-400 mt-4 pt-3 border-t border-teal-100">
+            i 6 campi di personaggio sono sempre visibili, anche se vuoti
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Ogni campo del tipo corrente è visibile come row.<br>
+            Vuoti mostrano placeholder <em>"— nessun valore"</em>.<br>
+            Tap su placeholder → entra in edit mode vuoto.<br>
+            <strong>Nessun menu</strong> "+ aggiungi campo" necessario.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Discovery 100% — tutto visibile</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Nessun menu extra da disegnare</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Cambio tipo → auto-surface dei nuovi campi</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Clutter quando molti campi vuoti (guerra: 2, periodo: 4 date)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Rumore visivo domina il contenuto</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Meno Notion-like, più "form"</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- ALTERNATIVA B — Floating + FAB                                 -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">B</div>
+          <div>
+            <h2 class="text-base text-teal-900">FAB "+" floating</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">solo filled visibili, menu a comparsa</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4 relative" style="min-height: 340px;">
+          <div class="mb-3 pb-3 border-b border-teal-100">
+            <span class="chip-tipo">personaggio</span>
+            <div class="text-lg font-semibold text-teal-900 mt-1">Abraamo</div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Descrizione</span>
+            <span class="field-value">Patriarca di Israele, padre della fede…</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Nascita</span>
+            <span class="field-value">2000 a.E.V.</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Morte</span>
+            <span class="field-value">1825 a.E.V.</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Tribù</span>
+            <span class="field-value">Ebrei</span>
+          </div>
+
+          <div class="text-[10px] text-slate-400 mt-4 pt-3 border-t border-teal-100">
+            solo i 4 campi con valori. "Ruoli" e "Tags" non mostrati.
+          </div>
+
+          <!-- FAB menu -->
+          <div class="fab-menu">
+            <div class="text-[10px] uppercase tracking-wider text-teal-600 font-semibold px-3 py-1.5">Aggiungi campo</div>
+            <div class="fab-menu-item">
+              <svg class="plus" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+              Ruoli
+            </div>
+            <div class="fab-menu-item">
+              <svg class="plus" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+              Tags
+            </div>
+          </div>
+
+          <div class="fab">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Solo campi con valore visibili.<br>
+            FAB circolare in basso-destra, sempre presente.<br>
+            Tap FAB → menu di campi addable filtrati per tipo.<br>
+            Tap su voce → nuovo row inserito in edit state.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Pulito — zero clutter in view mode</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Affordance "app-like" chiara</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Menu può includere anche "Aggiungi link / Aggiungi fonte"</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>FAB sovrapposto al contenuto (copre field row)</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Più "mobile app" che "documento Notion"</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>In fullscreen overlay, dove va il FAB?</span></div>
+        </div>
+      </section>
+
+      <!-- ============================================================= -->
+      <!-- ALTERNATIVA C — Riga inline "+ aggiungi campo" a fondo body    -->
+      <!-- ============================================================= -->
+      <section class="card p-5">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-mono text-xs font-bold">C</div>
+          <div>
+            <h2 class="text-base text-teal-900">Riga inline a fondo body</h2>
+            <div class="text-xs text-teal-700/70 mt-0.5">Notion-inspired, in-flow</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-teal-100 p-4 mb-4">
+          <div class="mb-3 pb-3 border-b border-teal-100">
+            <span class="chip-tipo">personaggio</span>
+            <div class="text-lg font-semibold text-teal-900 mt-1">Abraamo</div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Descrizione</span>
+            <span class="field-value">Patriarca di Israele, padre della fede…</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Nascita</span>
+            <span class="field-value">2000 a.E.V.</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Morte</span>
+            <span class="field-value">1825 a.E.V.</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Tribù</span>
+            <span class="field-value">Ebrei</span>
+          </div>
+
+          <!-- inline expanded state with chips -->
+          <div class="add-row-expanded">
+            <div class="flex items-center gap-2 mb-2">
+              <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span class="text-xs font-semibold text-teal-900">Aggiungi campo</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="chip-field">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                Ruoli
+              </span>
+              <span class="chip-field">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                Tags
+              </span>
+              <span class="chip-field">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                Fonte
+              </span>
+              <span class="chip-field">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
+                Collegamento
+              </span>
+            </div>
+          </div>
+
+          <div class="text-[10px] text-slate-400 mt-4 pt-3 border-t border-teal-100">
+            collassato: una sola riga "+ aggiungi campo" — qui espansa per mostrare le opzioni
+          </div>
+        </div>
+
+        <div class="bg-teal-50 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+          <div class="font-semibold text-teal-900 mb-1.5">Grammatica</div>
+          <div class="text-teal-800">
+            Solo campi con valore visibili.<br>
+            Sotto l'ultimo campo: row "+ aggiungi campo" in stile dashed.<br>
+            Tap → espande in riga di chip filtrati per tipo.<br>
+            Tap su chip → nuovo row inserito in edit state.
+          </div>
+        </div>
+
+        <div class="text-xs space-y-1.5">
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>In-flow con contenuto, Notion feel</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Nessun chrome floating — tutto lineare</span></div>
+          <div class="flex gap-2"><span class="pro font-bold">+</span><span>Unificabile con "+ collegamento" e "+ fonte"</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>Meno immediato del FAB — devi scrollare fino in fondo</span></div>
+          <div class="flex gap-2"><span class="con font-bold">−</span><span>In elementi lunghi (molte fonti/link) può "perdersi"</span></div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="mt-10 pt-6 border-t border-teal-200 text-xs text-teal-700/60">
+      <div class="mb-1">Note:</div>
+      <ul class="list-disc list-inside space-y-0.5 ml-2">
+        <li>La policy "data-driven empty fields + menu" è già decisa. Qui scegli la <em>geometria</em>: placeholder sempre visibili (A), FAB floating (B), o riga inline (C).</li>
+        <li>Per tipi con pochi campi (annotazione: 0, luogo: 1) l'alternativa A è indolore. Per periodo (4 campi data) diventa rumorosa.</li>
+        <li>Considera anche fonti e collegamenti: l'alt C può unificare "+ aggiungi campo / fonte / collegamento" in un solo menu.</li>
+      </ul>
+    </footer>
+  </div>
+</body>
+</html>

@@ -7,7 +7,7 @@ Costruire il prototipo completo partendo dal codice attuale: monolite WorkspaceP
 | ID | Slice | Risk | Depends | Done | After this |
 |----|-------|------|---------|------|------------|
 | S01 | Recupero layout 3-pane consolidato con dark mode | medium | — | ⬜ | Layout 3-pane identico agli screenshot: sidebar completa, list pane con filtri tipo, detail con desc+fonti+link+board, dark mode con ThemeSwitcher FAB, DemoAuth funzionante |
-| S02 | Editor inline, annotazioni, soft delete | medium | S01 | ⬜ | Click Modifica → editor inline con campi tipo-specifici. Annotazioni mie/altrui nel detail. Soft delete con toast Annulla 30s. |
+| S02 | Editor inline per-campo, annotazioni, soft delete | medium | S01 | ⬜ | Editor inline per-campo (no mode swap, `editingFieldId` sostituisce `isEditing`), campi tipo-specifici via domain contract (8 `ElementoTipo`, `ElementoInput`/`normalizeElementoInput`), descrizione con Milkdown markdown, data-driven empty fields + menu `+ aggiungi campo`, collegamento picker HeroUI popover. Annotazioni mie/altrui nel detail. Soft delete con toast Annulla 30s. |
 | S03 | Fonti e link editor inline | low | S01 | ⬜ | Detail mostra fonti come link cliccabili raggruppati per tipo. Editor link inline con selettore tipo e ruolo parentela. |
 | S04 | Board CRUD e ricerca | medium | S01 | ⬜ | Crea board da sidebar, rinomina inline, elimina con conferma. Vista lista compatta con ordinamento. Ricerca cross-view. |
 | S05 | Timeline D3 SVG con zoom/pan e popup | high | S01, S04 | ⬜ | Vista timeline con asse verticale SVG, card posizionate, zoom cambia scala, pan con drag, popup compatto su click card. |

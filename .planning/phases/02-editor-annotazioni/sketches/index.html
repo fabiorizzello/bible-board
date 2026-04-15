@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S02.1 — Sketches editor inline per-campo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #0D9488;
+    --secondary: #14B8A6;
+    --cta: #F97316;
+    --bg: #F0FDFA;
+    --text: #134E4A;
+  }
+  body { font-family: 'Fira Sans', sans-serif; background: var(--bg); color: var(--text); }
+  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  .card { background: white; border: 1px solid rgba(20, 184, 166, 0.15); border-radius: 12px; }
+  .card:hover { border-color: rgba(13, 148, 136, 0.4); transform: translateY(-1px); transition: all 150ms ease-out; }
+</style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <header class="mb-8">
+      <div class="text-xs uppercase tracking-wider text-teal-700 font-semibold">Phase S02.1</div>
+      <h1 class="text-3xl mt-1 text-teal-900">Editor app-native — inline per-campo</h1>
+      <p class="text-teal-800/70 mt-2 max-w-2xl text-sm leading-relaxed">
+        4 aree da decidere. Per ciascuna, 3 alternative. Apri ogni sketch, confronta,
+        poi torna in chat e dimmi quale scegli (o cosa vuoi combinare).
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <a href="01-commit-interaction.html" class="card p-6 block no-underline">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">1</div>
+          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Interazione</div>
+        </div>
+        <h2 class="text-lg text-teal-900 mb-2">Commit & touch interaction</h2>
+        <p class="text-sm text-teal-800/70 leading-relaxed">
+          Come un campo entra/esce da edit mode su iPad e quando le modifiche si salvano.
+        </p>
+        <div class="mt-4 flex gap-2 text-xs">
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Blur-to-save</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. Enter/Esc</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. ✓/✕ inline</span>
+        </div>
+      </a>
+
+      <a href="02-empty-fields.html" class="card p-6 block no-underline">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">2</div>
+          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Discovery</div>
+        </div>
+        <h2 class="text-lg text-teal-900 mb-2">Empty fields + aggiungi campo</h2>
+        <p class="text-sm text-teal-800/70 leading-relaxed">
+          Campi vuoti sempre visibili come placeholder o nascosti dietro menu?
+          Dove vive il + aggiungi campo?
+        </p>
+        <div class="mt-4 flex gap-2 text-xs">
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Placeholder</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. FAB +</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. Riga inline</span>
+        </div>
+      </a>
+
+      <a href="03-collegamento-picker.html" class="card p-6 block no-underline">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">3</div>
+          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Popover</div>
+        </div>
+        <h2 class="text-lg text-teal-900 mb-2">Collegamento picker</h2>
+        <p class="text-sm text-teal-800/70 leading-relaxed">
+          Search, filtro TipoLink, recent, RuoloLink inline. Popover in un passo o due?
+        </p>
+        <div class="mt-4 flex gap-2 text-xs">
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Single-step</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. Two-step</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. Command palette</span>
+        </div>
+      </a>
+
+      <a href="04-markdown-descrizione.html" class="card p-6 block no-underline">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-mono text-sm font-semibold">4</div>
+          <div class="text-xs uppercase tracking-wider text-teal-600 font-semibold">Milkdown</div>
+        </div>
+        <h2 class="text-lg text-teal-900 mb-2">Markdown descrizione</h2>
+        <p class="text-sm text-teal-800/70 leading-relaxed">
+          View formattato o piatto, edit chrome (bubble vs sticky toolbar vs slash), commit.
+        </p>
+        <div class="mt-4 flex gap-2 text-xs">
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">A. Bubble menu</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">B. Sticky toolbar</span>
+          <span class="px-2 py-1 bg-teal-50 text-teal-700 rounded-full">C. Slash only</span>
+        </div>
+      </a>
+    </div>
+
+    <footer class="mt-10 pt-6 border-t border-teal-200">
+      <div class="text-xs text-teal-700/60">
+        Tutti gli sketch usano lo stesso dataset (personaggio Abraamo) per confronto a parità di contenuto.
+        Token: teal #0D9488 · CTA orange #F97316 · bg #F0FDFA · heading Fira Code · body Fira Sans.
+        Tap target ≥44×44 · gap 8px · transizioni 150-300ms.
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
