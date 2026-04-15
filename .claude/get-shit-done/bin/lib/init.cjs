@@ -1492,11 +1492,13 @@ function cmdAgentSkills(cwd, agentType, raw) {
 
   const config = loadConfig(cwd);
   const block = buildAgentSkillsBlock(config, agentType, cwd);
-  // Output raw text (not JSON) so workflows can embed it directly
+  // Output raw text (not JSON) so workflows can embed it directly.
+  // Must use `return` (not process.exit) so the gsd-tools.cjs dispatcher's
+  // stdout-interception `finally` block runs and flushes outChunks.
   if (block) {
     process.stdout.write(block);
   }
-  process.exit(0);
+  return;
 }
 
 module.exports = {
