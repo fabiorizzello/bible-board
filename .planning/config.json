@@ -1,0 +1,13 @@
+{
+  "workflow": {
+    "_auto_chain_active": false,
+    "nyquist_validation": false,
+    "ai_integration_phase": true,
+    "ui_safety_gate": false
+  },
+  "model_profile": "balanced",
+  "agent_skills": {
+    "gsd-planner": [".claude/skills/mockup-first"],
+    "gsd-executor": [".claude/skills/mockup-first"]
+  }
+}
