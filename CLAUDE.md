@@ -259,7 +259,7 @@ Interfaccia densa e compatta, stile Notion/Linear. Info utile visibile senza scr
 
 ## Workflow di sviluppo
 
-- **GSD-Driven**: Requisiti in `.gsd/REQUIREMENTS.md`, regole dominio in `.gsd/KNOWLEDGE.md`, decisioni in `.gsd/DECISIONS.md`. Consultare SEMPRE prima di implementare.
+- **GSD-Driven**: Requisiti in `.planning/REQUIREMENTS.md`, regole dominio in `.planning/KNOWLEDGE.md`, decisioni in `.planning/DECISIONS.md`. Consultare SEMPRE prima di implementare.
 - **Jazz Docs First**: Prima di implementare data model o auth flow, consultare jazz.tools/docs. Jazz è una libreria giovane con training data limitati — sempre verificare contro docs correnti.
 - **Incremental Delivery**: Ogni user story DEVE essere testabile e consegnabile indipendentemente.
 - **YAGNI**: Non implementare feature non richieste. Iniziare semplice, aggiungere complessità solo quando giustificata.
@@ -267,7 +267,7 @@ Interfaccia densa e compatta, stile Notion/Linear. Info utile visibile senza scr
 ### UI/UX Review Gate
 
 Ogni componente UI nuovo o modifica visiva significativa DEVE passare un gate di approvazione umana.
-Dettagli operativi in `.gsd/KNOWLEDGE.md` sezione "UI/UX Review Gate (Human-in-the-Loop)".
+Dettagli operativi in `.planning/KNOWLEDGE.md` sezione "UI/UX Review Gate (Human-in-the-Loop)".
 
 - **Skill obbligatoria**: caricare `ui-ux-pro-max` (Skill tool) PRIMA di scrivere codice UI.
 - **Interattivo**: implementa → mostra nel browser (screenshot) → chiedi approvazione → itera fino ad OK.

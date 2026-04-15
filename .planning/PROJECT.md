@@ -41,9 +41,12 @@ All visible features preserved: dark mode, ThemeSwitcher FAB with 8 palettes, si
 - **Annotazione = Elemento** — tipo "annotazione" è un Elemento first-class, non un sub-oggetto (D021)
 - **Board = query salvata** — selezione fissa/dinamica + vista lista/timeline (D012)
 
-## Capability Contract
+## Requirements
 
-See `.gsd/REQUIREMENTS.md` for the explicit capability contract, requirement status, and coverage mapping.
+See [`.planning/REQUIREMENTS.md`](./REQUIREMENTS.md) for the explicit capability contract and coverage mapping.
+
+**M002 active:** 11 requirements (R001–R011), 4 validated (R001–R004 via S01–S02).
+**Deferred:** R031–R034 (post-M004 — documented in `.planning/FUTURE.md`).
 
 ## Milestone Sequence
 
@@ -54,4 +57,4 @@ See `.gsd/REQUIREMENTS.md` for the explicit capability contract, requirement sta
 - [ ] M006: Media e immagini — upload, gallery, visualizzatore
 - [ ] M007: Viste D3 avanzate — grafo force-directed, genealogia
 
-Feature post-prototipo documentate in `.gsd/FUTURE.md`.
+Feature post-prototipo documentate in `.planning/FUTURE.md`.

@@ -27,19 +27,19 @@ Ogni requirement è mappato alla slice che lo consegna.
 
 ### R031 — Untitled
 - Status: deferred
-- Notes: Post-prototipo. Documentato in .gsd/FUTURE.md sotto M004.
+- Notes: Post-prototipo. Documentato in .planning/FUTURE.md sotto M004.
 
 ### R032 — Untitled
 - Status: deferred
-- Notes: Post-prototipo. Documentato in .gsd/FUTURE.md sotto M004.
+- Notes: Post-prototipo. Documentato in .planning/FUTURE.md sotto M004.
 
 ### R033 — Untitled
 - Status: deferred
-- Notes: Post-prototipo. Documentato in .gsd/FUTURE.md sotto M004.
+- Notes: Post-prototipo. Documentato in .planning/FUTURE.md sotto M004.
 
 ### R034 — Untitled
 - Status: deferred
-- Notes: Post-prototipo. Documentato in .gsd/FUTURE.md sotto M004.
+- Notes: Post-prototipo. Documentato in .planning/FUTURE.md sotto M004.
 
 ## Traceability
 

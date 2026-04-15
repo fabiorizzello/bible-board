@@ -12,3 +12,25 @@ Costruire il prototipo completo partendo dal codice attuale: monolite WorkspaceP
 | S04 | Board CRUD e ricerca | medium | S01 | ⬜ | Crea board da sidebar, rinomina inline, elimina con conferma. Vista lista compatta con ordinamento. Ricerca cross-view. |
 | S05 | Timeline D3 SVG con zoom/pan e popup | high | S01, S04 | ⬜ | Vista timeline con asse verticale SVG, card posizionate, zoom cambia scala, pan con drag, popup compatto su click card. |
 | S06 | Polish iPad-native e UAT finale | low | S01, S02, S03, S04, S05 | ⬜ | App completa che sembra iPad nativa. Scenario UAT end-to-end passa. |
+
+## Phase Details
+
+> Sezioni canoniche `Phase NN:` mappate 1-a-1 con le slice sopra e con le directory in `.planning/phases/`. La Slice Overview è la vista umana compatta; questa sezione è la vista tool-readable richiesta dal GSD validator e dai parser di roadmap.
+
+### Phase 01: Recupero layout 3-pane consolidato con dark mode
+**Goal:** Layout 3-pane identico agli screenshot: sidebar completa, list pane con filtri tipo, detail con desc+fonti+link+board, dark mode con ThemeSwitcher FAB, DemoAuth funzionante.
+
+### Phase 02: Editor inline per-campo, annotazioni, soft delete
+**Goal:** Editor inline per-campo (no mode swap, `editingFieldId` sostituisce `isEditing`), campi tipo-specifici via domain contract (8 `ElementoTipo`, `ElementoInput`/`normalizeElementoInput`), descrizione con Milkdown markdown, data-driven empty fields + menu `+ aggiungi campo`, collegamento picker HeroUI popover. Annotazioni mie/altrui nel detail. Soft delete con toast Annulla 30s.
+
+### Phase 03: Fonti e link editor inline
+**Goal:** Detail mostra fonti come link cliccabili raggruppati per tipo. Editor link inline con selettore tipo e ruolo parentela.
+
+### Phase 04: Board CRUD e ricerca
+**Goal:** Crea board da sidebar, rinomina inline, elimina con conferma. Vista lista compatta con ordinamento. Ricerca cross-view.
+
+### Phase 05: Timeline D3 SVG con zoom/pan e popup
+**Goal:** Vista timeline con asse verticale SVG, card posizionate, zoom cambia scala, pan con drag, popup compatto su click card.
+
+### Phase 06: Polish iPad-native e UAT finale
+**Goal:** App completa che sembra iPad nativa. Scenario UAT end-to-end passa.
