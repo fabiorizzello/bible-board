@@ -35,8 +35,6 @@ import {
 } from "./display-helpers";
 import { RECENTI } from "@/mock/data";
 
-const BOARD_ITEMS = getBoardDisplayItems();
-
 export function ListPane() {
   const currentView = useValue(workspaceUi$.currentView);
   const filterText = useValue(workspaceUi$.filterText);
@@ -45,6 +43,9 @@ export function ListPane() {
   const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
   const fullscreen = useValue(workspaceUi$.fullscreen);
   const deletedElementIds = useValue(workspaceUi$.deletedElementIds);
+  const lastModified = useValue(workspaceUi$.lastModified);
+  void lastModified;
+  const boardItems = getBoardDisplayItems();
 
   const isElementView = currentView === "tutti" || currentView.startsWith("board-");
   const isRecentiView = currentView === "recenti";
@@ -55,7 +56,7 @@ export function ListPane() {
 
   const viewLabel = currentView === "recenti" ? "Recenti"
     : currentView === "tutti" ? "Tutti gli elementi"
-    : BOARD_ITEMS.find((b) => b.viewId === currentView)?.nome ?? currentView;
+    : boardItems.find((b) => b.viewId === currentView)?.nome ?? currentView;
 
   const listCount = isRecentiView ? RECENTI.length : currentElements.length;
 
@@ -172,7 +173,7 @@ export function ListPane() {
               const id = compositeKey.substring(dashIdx + 1);
               if (tipo === "elemento") handleSelectElement(id);
               else if (tipo === "board") {
-                const board = BOARD_ITEMS.find((b) => b.id === id);
+                const board = boardItems.find((b) => b.id === id);
                 if (board) handleRecentiNavChange(board.viewId);
               }
             }}

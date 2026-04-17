@@ -32,11 +32,12 @@ import { workspaceUi$, navigateToView } from "./workspace-ui-store";
 import type { ViewId } from "./workspace-ui-store";
 import { getBoardDisplayItems } from "./display-helpers";
 
-const BOARD_ITEMS = getBoardDisplayItems();
-
 export function NavSidebar() {
   const currentView = useValue(workspaceUi$.currentView);
   const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
+  const lastModified = useValue(workspaceUi$.lastModified);
+  void lastModified;
+  const boardItems = getBoardDisplayItems();
 
   function handleNavChange(viewId: ViewId) {
     navigateToView(viewId);
@@ -168,7 +169,7 @@ export function NavSidebar() {
           }}
           className="border-none p-0 outline-none"
         >
-          {BOARD_ITEMS.map((board) => (
+          {boardItems.map((board) => (
             <ListBox.Item
               key={board.id}
               id={board.viewId}

@@ -5,9 +5,27 @@
  * decomposed workspace components.
  */
 
+import type { Elemento } from "@/features/elemento/elemento.model";
+import type { NormalizedElementoInput } from "@/features/elemento/elemento.rules";
 import { observable } from "@legendapp/state";
 
 export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
+
+export type EditableFieldId =
+  | "titolo"
+  | "tipo"
+  | "vita"
+  | "origine"
+  | "tribu"
+  | "descrizione"
+  | "ruoli"
+  | "tags"
+  | "collegamenti-famiglia"
+  | "collegamenti-generici"
+  | "add-field"
+  | "review";
+
+export type ElementoSessionPatch = Partial<Omit<Elemento, "id">>;
 
 export interface WorkspaceUIState {
   currentView: ViewId;
@@ -16,7 +34,7 @@ export interface WorkspaceUIState {
   activeTipo: string;
   sidebarOpen: boolean;
   fullscreen: boolean;
-  isEditing: boolean;
+  editingFieldId: EditableFieldId | null;
   /**
    * IDs of elements that have been soft-deleted in this session.
    * In-memory only — no Jazz persistence in the prototype. The list pane
@@ -24,6 +42,7 @@ export interface WorkspaceUIState {
    * is soft-deleted. Restored via the toast undo action.
    */
   deletedElementIds: string[];
+  elementOverrides: Record<string, ElementoSessionPatch>;
   lastModified: number;
 }
 
@@ -34,8 +53,9 @@ const initialState: WorkspaceUIState = {
   activeTipo: "Tutti",
   sidebarOpen: true,
   fullscreen: false,
-  isEditing: false,
+  editingFieldId: null,
   deletedElementIds: [],
+  elementOverrides: {},
   lastModified: Date.now(),
 };
 
@@ -47,14 +67,58 @@ export function navigateToView(viewId: ViewId): void {
 
 export function selectElement(id: string): void {
   workspaceUi$.selectedElementId.set(id);
+  closeFieldEditor();
 }
 
-export function startEditing(): void {
-  workspaceUi$.isEditing.set(true);
+export function openFieldEditor(fieldId: EditableFieldId): void {
+  workspaceUi$.editingFieldId.set(fieldId);
 }
 
-export function stopEditing(): void {
-  workspaceUi$.isEditing.set(false);
+export function closeFieldEditor(): void {
+  workspaceUi$.editingFieldId.set(null);
+}
+
+export function isFieldEditing(fieldId: EditableFieldId): boolean {
+  return workspaceUi$.editingFieldId.peek() === fieldId;
+}
+
+export function commitElementPatch(
+  elementId: string,
+  patch: ElementoSessionPatch,
+): void {
+  const current = workspaceUi$.elementOverrides.peek();
+  const nextPatch = {
+    ...(current[elementId] ?? {}),
+    ...patch,
+  };
+
+  workspaceUi$.elementOverrides.set({
+    ...current,
+    [elementId]: nextPatch,
+  });
+  workspaceUi$.lastModified.set(Date.now());
+}
+
+export function commitNormalizedElement(
+  elementId: string,
+  normalized: NormalizedElementoInput,
+): void {
+  commitElementPatch(elementId, {
+    titolo: normalized.titolo,
+    descrizione: normalized.descrizione,
+    tags: normalized.tags,
+    tipo: normalized.tipo,
+    date: normalized.date,
+    nascita: normalized.nascita,
+    morte: normalized.morte,
+    tribu: normalized.tribu,
+    ruoli: normalized.ruoli,
+    fazioni: normalized.fazioni,
+    esito: normalized.esito,
+    statoProfezia: normalized.statoProfezia,
+    dettagliRegno: normalized.dettagliRegno,
+    regione: normalized.regione,
+  });
 }
 
 /**
@@ -68,7 +132,7 @@ export function softDeleteElement(id: string): void {
     workspaceUi$.deletedElementIds.set([...current, id]);
   }
   workspaceUi$.selectedElementId.set(null);
-  workspaceUi$.isEditing.set(false);
+  closeFieldEditor();
   workspaceUi$.fullscreen.set(false);
 }
 
@@ -94,4 +158,13 @@ export function finalizeDelete(id: string): void {
   // continues to filter it out. Kept as a named entry point so the future
   // Jazz adapter can hook persistence without refactoring callers.
   void id;
+}
+
+export function resetWorkspaceUiState(): void {
+  workspaceUi$.set({
+    ...initialState,
+    deletedElementIds: [],
+    elementOverrides: {},
+    lastModified: Date.now(),
+  });
 }

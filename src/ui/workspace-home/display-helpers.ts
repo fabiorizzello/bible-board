@@ -11,7 +11,8 @@ import { formatHistoricalEra } from "@/features/shared/value-objects";
 import type { DataStorica } from "@/features/shared/value-objects";
 import { ELEMENTI, BOARDS, ELEMENTI_MAP, ELEMENTO_IDS } from "@/mock/data";
 
-import type { ViewId } from "./workspace-ui-store";
+import type { ElementoSessionPatch, ViewId } from "./workspace-ui-store";
+import { workspaceUi$ } from "./workspace-ui-store";
 
 // Re-export ViewId for convenience — single import point for UI modules
 export type { ViewId };
@@ -52,6 +53,29 @@ const tipoFilterMap: Record<string, ElementoTipo> = {
   Profezie: "profezia",
 };
 
+function mergeElemento(
+  element: Elemento,
+  patch?: ElementoSessionPatch,
+): Elemento {
+  if (!patch) {
+    return element;
+  }
+
+  return {
+    ...element,
+    ...patch,
+  };
+}
+
+function getResolvedElements(): Elemento[] {
+  const overrides = workspaceUi$.elementOverrides.peek();
+  return ELEMENTI.map((element) => mergeElemento(element, overrides[element.id as string]));
+}
+
+function getResolvedElementMap(): Map<string, Elemento> {
+  return new Map(getResolvedElements().map((element) => [element.id as string, element]));
+}
+
 // ── Date formatting ──
 
 /** Format a DataStorica to a display string like "2018 a.e.v." or "~732 a.e.v." */
@@ -87,13 +111,14 @@ export function formatElementDate(el: Elemento): string | undefined {
  * For "dinamica" boards: filter ELEMENTI by tags/tipi.
  */
 function getBoardElements(board: Board): Elemento[] {
+  const resolvedElements = getResolvedElements();
   const selezione = board.selezione;
   if (selezione.kind === "fissa") {
     const idSet = new Set(selezione.elementiIds);
-    return ELEMENTI.filter((el) => idSet.has(el.id as string));
+    return resolvedElements.filter((el) => idSet.has(el.id as string));
   }
   // dinamica
-  return ELEMENTI.filter((el) => {
+  return resolvedElements.filter((el) => {
     const matchesTag =
       !selezione.tags?.length ||
       el.tags.some((t) => selezione.tags!.includes(t));
@@ -127,7 +152,7 @@ export function getElementsForView(
       return [];
 
     case "tutti":
-      items = [...ELEMENTI];
+      items = getResolvedElements();
       break;
 
     default: {
@@ -206,8 +231,9 @@ export interface ResolvedLink {
  * Falls back to the raw targetId if the target isn't found.
  */
 export function resolveCollegamenti(el: Elemento): ResolvedLink[] {
+  const resolvedMap = getResolvedElementMap();
   return el.link.map((link) => {
-    const target = ELEMENTI_MAP.get(link.targetId);
+    const target = resolvedMap.get(link.targetId) ?? ELEMENTI_MAP.get(link.targetId);
     return {
       titolo: target?.titolo ?? link.targetId,
       tipo: link.tipo,
@@ -280,7 +306,7 @@ export function getAnnotazioniForElement(
   elementId: string,
   currentAutore: string,
 ): AnnotazioniResult {
-  const annotations = ELEMENTI.filter(
+  const annotations = getResolvedElements().filter(
     (el) =>
       el.tipo === "annotazione" &&
       el.link.some((l) => l.targetId === elementId),
@@ -299,5 +325,7 @@ export function getAnnotazioniForElement(
  * Used by the detail pane to resolve the selected element.
  */
 export function findElementById(id: string): Elemento | undefined {
-  return ELEMENTI_MAP.get(id);
+  const overrides = workspaceUi$.elementOverrides.peek();
+  const base = ELEMENTI_MAP.get(id);
+  return base ? mergeElemento(base, overrides[id]) : undefined;
 }
