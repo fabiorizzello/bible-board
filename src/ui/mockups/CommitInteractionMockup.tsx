@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Input, TextField } from "@heroui/react";
-import { Check, X } from "lucide-react";
+import { Check, Pencil, X } from "lucide-react";
 import {
   Alternative,
   Code,
@@ -141,6 +141,121 @@ export function CommitInteractionMockup() {
   );
 }
 
+// ============================================================================
+// EditableField — atom condiviso che mostra view ↔ edit transition
+// Idle: text 48px tap-to-edit. Edit: HeroUI Input same height (no layout shift)
+// ============================================================================
+interface EditableFieldProps {
+  label: string;
+  value: string;
+  onCommit: (next: string) => void;
+  /** Mode: blur-saves (A), explicit-buttons (B), auto-save (C) */
+  mode: "blur" | "buttons" | "auto";
+  onTypingChange?: (typing: boolean) => void;
+}
+
+function EditableField({ label, value, onCommit, mode, onTypingChange }: EditableFieldProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      const id = requestAnimationFrame(() => inputRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+    return undefined;
+  }, [editing]);
+
+  function startEdit() {
+    setDraft(value);
+    setEditing(true);
+  }
+  function commit() {
+    onCommit(draft);
+    setEditing(false);
+    onTypingChange?.(false);
+  }
+  function cancel() {
+    setDraft(value);
+    setEditing(false);
+    onTypingChange?.(false);
+  }
+  function handleChange(next: string) {
+    setDraft(next);
+    if (mode === "auto") {
+      onCommit(next);
+      onTypingChange?.(true);
+    }
+  }
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") cancel();
+    if (e.key === "Enter" && mode !== "auto") commit();
+  }
+
+  if (editing) {
+    return (
+      <div className={`flex items-center min-h-[48px] py-1 ${mode === "buttons" ? "gap-3" : "gap-4"}`}>
+        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
+          {label}
+        </span>
+        <div className="flex-1">
+          <TextField value={draft} onChange={handleChange} aria-label={label}>
+            <Input
+              ref={inputRef}
+              className="min-h-[48px]"
+              onBlur={mode === "blur" ? commit : undefined}
+              onKeyDown={handleKeyDown}
+            />
+          </TextField>
+        </div>
+        {mode === "buttons" && (
+          <>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="primary"
+              aria-label="Salva"
+              className="min-w-11 min-h-11"
+              onPress={commit}
+            >
+              <Check size={18} />
+            </Button>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              aria-label="Annulla"
+              className="min-w-11 min-h-11"
+              onPress={cancel}
+            >
+              <X size={18} />
+            </Button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startEdit}
+      className="group w-full text-left flex items-center gap-4 min-h-[48px] py-1 px-2 -mx-2 rounded hover:bg-primary/5 cursor-text transition-colors"
+    >
+      <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
+        {label}
+      </span>
+      <span className="flex-1 text-[15px] text-ink-hi">{value}</span>
+      <Pencil
+        size={14}
+        className="text-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        aria-hidden
+      />
+    </button>
+  );
+}
+
 function BlurToSaveMock() {
   const [nascita, setNascita] = useState("2000 a.E.V.");
   return (
@@ -148,18 +263,13 @@ function BlurToSaveMock() {
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
       <SimpleField label="Descrizione" value="Patriarca dei tre monoteismi." />
-      <div className="flex items-center gap-4 min-h-[48px] py-1">
-        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
-          Nascita
-        </span>
-        <div className="flex-1">
-          <TextField value={nascita} onChange={setNascita} aria-label="Nascita">
-            <Input className="min-h-[48px]" />
-          </TextField>
-        </div>
-      </div>
+      <EditableField label="Nascita" value={nascita} onCommit={setNascita} mode="blur" />
       <SimpleField label="Morte" value="1825 a.E.V." />
       <SimpleField label="Tribù" value="Ebrei" />
+      <div className="mt-3 text-[11px] text-ink-dim italic">
+        ↑ Tap su <strong>Nascita</strong> → entra in edit. Tap fuori → salva. ESC →
+        annulla.
+      </div>
     </>
   );
 }
@@ -171,52 +281,42 @@ function InlineButtonsMock() {
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
       <SimpleField label="Descrizione" value="Patriarca dei tre monoteismi." />
-      <div className="flex items-center gap-3 min-h-[48px] py-1">
-        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
-          Nascita
-        </span>
-        <div className="flex-1">
-          <TextField value={nascita} onChange={setNascita} aria-label="Nascita">
-            <Input className="min-h-[48px]" />
-          </TextField>
-        </div>
-        <Button isIconOnly size="sm" variant="primary" aria-label="Salva" className="min-w-11 min-h-11">
-          <Check size={18} />
-        </Button>
-        <Button isIconOnly size="sm" variant="ghost" aria-label="Annulla" className="min-w-11 min-h-11">
-          <X size={18} />
-        </Button>
-      </div>
+      <EditableField label="Nascita" value={nascita} onCommit={setNascita} mode="buttons" />
       <SimpleField label="Morte" value="1825 a.E.V." />
       <SimpleField label="Tribù" value="Ebrei" />
+      <div className="mt-3 text-[11px] text-ink-dim italic">
+        ↑ Tap su <strong>Nascita</strong> → entra in edit. Tap ✓ salva, ✕ annulla.
+      </div>
     </>
   );
 }
 
 function AutoSaveMock() {
   const [nascita, setNascita] = useState("2000 a.E.V.");
+  const [typing, setTyping] = useState(false);
   return (
     <div className="relative">
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
       <SimpleField label="Descrizione" value="Patriarca dei tre monoteismi." />
-      <div className="flex items-center gap-4 min-h-[48px] py-1">
-        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
-          Nascita
-        </span>
-        <div className="flex-1">
-          <TextField value={nascita} onChange={setNascita} aria-label="Nascita">
-            <Input className="min-h-[48px]" />
-          </TextField>
-        </div>
-      </div>
+      <EditableField
+        label="Nascita"
+        value={nascita}
+        onCommit={setNascita}
+        mode="auto"
+        onTypingChange={setTyping}
+      />
       <SimpleField label="Morte" value="1825 a.E.V." />
       <SimpleField label="Tribù" value="Ebrei" />
-      {/* Toast mock */}
-      <div className="absolute -bottom-2 right-0 inline-flex items-center gap-2 px-3 h-8 bg-slate-900 text-white text-xs rounded-md shadow-lg">
-        <Check size={14} className="text-emerald-400" />
-        Salvato · 10:42:31
+      <div className="mt-3 text-[11px] text-ink-dim italic">
+        ↑ Tap su <strong>Nascita</strong> → entra in edit. Ogni keystroke auto-salva.
       </div>
+      {typing && (
+        <div className="absolute -bottom-2 right-0 inline-flex items-center gap-2 px-3 h-8 bg-slate-900 text-white text-xs rounded-md shadow-lg">
+          <Check size={14} className="text-emerald-400" />
+          Salvato
+        </div>
+      )}
     </div>
   );
 }
