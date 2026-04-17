@@ -8,7 +8,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url))
-    }
+    },
+    // Force single React instance — fixes "Cannot read properties of null (useRef)"
+    // bug when Milkdown (or other packages with React peer dep) bundles its own copy.
+    dedupe: ["react", "react-dom"]
+  },
+  optimizeDeps: {
+    // Pre-bundle Milkdown packages so they share the deduped React instance.
+    include: ["@milkdown/core", "@milkdown/react", "@milkdown/preset-commonmark", "@milkdown/plugin-listener"]
   },
   plugins: [
     react(),
