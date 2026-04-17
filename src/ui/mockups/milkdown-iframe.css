@@ -1,0 +1,133 @@
+/* ============================================================================
+   Milkdown POC styling — allineato ai tokens progetto Timeline Board
+   Scope: solo .milkdown-host (no global pollution)
+   ============================================================================ */
+
+.milkdown-host {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--board-color-text);
+}
+
+/* ProseMirror editable area */
+.milkdown-host .ProseMirror {
+  outline: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  min-height: 120px;
+  border: 2px solid transparent;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.milkdown-host .ProseMirror:hover {
+  background: rgba(20, 184, 166, 0.04);
+}
+
+.milkdown-host .ProseMirror:focus,
+.milkdown-host .ProseMirror.ProseMirror-focused {
+  background: white;
+  border-color: var(--board-color-primary);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15);
+}
+
+/* Block elements */
+.milkdown-host .ProseMirror p {
+  margin: 0 0 10px;
+}
+.milkdown-host .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.milkdown-host .ProseMirror h1,
+.milkdown-host .ProseMirror h2,
+.milkdown-host .ProseMirror h3 {
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
+  color: var(--board-color-ink-hi);
+  margin: 16px 0 8px;
+  letter-spacing: -0.01em;
+}
+.milkdown-host .ProseMirror h1 { font-size: 22px; }
+.milkdown-host .ProseMirror h2 { font-size: 18px; }
+.milkdown-host .ProseMirror h3 { font-size: 16px; }
+
+/* Inline */
+.milkdown-host .ProseMirror strong {
+  font-weight: 600;
+  color: var(--board-color-primary);
+}
+
+.milkdown-host .ProseMirror em {
+  font-style: italic;
+  color: var(--board-color-primary);
+}
+
+.milkdown-host .ProseMirror a {
+  color: var(--board-color-primary);
+  text-decoration: underline;
+  text-decoration-color: rgba(13, 148, 136, 0.4);
+  text-underline-offset: 3px;
+}
+
+.milkdown-host .ProseMirror code {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  background: rgba(20, 184, 166, 0.08);
+  color: var(--board-color-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.milkdown-host .ProseMirror pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  margin: 12px 0;
+}
+
+.milkdown-host .ProseMirror pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+/* Lists */
+.milkdown-host .ProseMirror ul,
+.milkdown-host .ProseMirror ol {
+  margin: 8px 0 12px 22px;
+}
+.milkdown-host .ProseMirror ul { list-style: disc; }
+.milkdown-host .ProseMirror ol { list-style: decimal; }
+.milkdown-host .ProseMirror li {
+  margin-bottom: 4px;
+}
+.milkdown-host .ProseMirror li > p {
+  margin: 0;
+}
+
+/* Blockquote */
+.milkdown-host .ProseMirror blockquote {
+  border-left: 3px solid var(--board-color-primary);
+  padding-left: 14px;
+  margin: 12px 0;
+  color: var(--board-color-ink-md);
+  font-style: italic;
+}
+
+/* Touch selection — make handles tap-target larger via iOS native handles */
+.milkdown-host .ProseMirror::selection,
+.milkdown-host .ProseMirror *::selection {
+  background: rgba(20, 184, 166, 0.25);
+}
+
+/* Horizontal rule */
+.milkdown-host .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--board-color-edge);
+  margin: 16px 0;
+}
