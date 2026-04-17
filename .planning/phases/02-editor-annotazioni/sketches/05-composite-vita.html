@@ -3,562 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sketch 5 — Composite Vita (HeroUI POC, no build)</title>
-
-<!-- Tailwind v4 browser CDN -->
-<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-
-<!-- Fonts -->
+<title>Sketch 5 — Composite Vita (React mockup)</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- Tailwind v4 theme override (teal palette per HeroUI) -->
-<style type="text/tailwindcss">
-@theme {
-  --color-primary-50:  #F0FDFA;
-  --color-primary-100: #CCFBF1;
-  --color-primary-200: #99F6E4;
-  --color-primary-300: #5EEAD4;
-  --color-primary-400: #2DD4BF;
-  --color-primary-500: #14B8A6;
-  --color-primary-600: #0D9488;
-  --color-primary-700: #0F766E;
-  --color-primary-800: #115E59;
-  --color-primary-900: #134E4A;
-  --color-primary: var(--color-primary-600);
-  --color-primary-foreground: #FFFFFF;
-  --color-warning: #F97316;
-  --color-warning-foreground: #FFFFFF;
-  --font-sans: 'Fira Sans', ui-sans-serif, system-ui;
-  --font-mono: 'Fira Code', ui-monospace, monospace;
-}
-</style>
-
-<!-- HeroUI CSS variables override (teal theme) -->
 <style>
-  :root {
-    /* HeroUI v3 expects these for Tailwind plugin output */
-    --heroui-primary-50:  240 253 250;
-    --heroui-primary-100: 204 251 241;
-    --heroui-primary-200: 153 246 228;
-    --heroui-primary-300: 94 234 212;
-    --heroui-primary-400: 45 212 191;
-    --heroui-primary-500: 20 184 166;
-    --heroui-primary-600: 13 148 136;
-    --heroui-primary-700: 15 118 110;
-    --heroui-primary-800: 17 94 89;
-    --heroui-primary-900: 19 78 74;
-    --heroui-primary: var(--heroui-primary-600);
-    --heroui-primary-foreground: 255 255 255;
-    --heroui-content1: 255 255 255;
-    --heroui-content2: 248 250 252;
-    --heroui-content3: 241 245 249;
-    --heroui-default: 226 232 240;
-    --heroui-default-foreground: 51 65 85;
-    --heroui-warning: 249 115 22;
-    --heroui-warning-foreground: 255 255 255;
-    --heroui-radius-small: 6px;
-    --heroui-radius-medium: 10px;
-    --heroui-radius-large: 14px;
-  }
-
-  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; margin: 0; }
-  h1, h2, h3, h4 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; margin: 0; }
-  code, .mono { font-family: 'Fira Code', monospace; }
-
-  /* iPad frame mock (custom — non in HeroUI) */
-  .ipad-frame {
-    width: 520px;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.08), 0 1px 3px rgba(13, 148, 136, 0.04);
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  .ipad-frame-header {
-    height: 36px;
-    background: #F8FAFC;
-    border-bottom: 1px solid #E2E8F0;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 16px;
-    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: #64748B; font-weight: 600;
-  }
-  .ipad-frame-body { padding: 24px 28px; }
-
-  .alt-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.18), transparent);
-    margin: 36px 0;
-  }
-
-  .ddd-box {
-    background: #0F172A; color: #E2E8F0;
-    border-radius: 10px;
-    padding: 16px 20px;
-    font-family: 'Fira Code'; font-size: 12px; line-height: 1.6;
-    overflow-x: auto;
-  }
-  .ddd-box .keyword { color: #F472B6; }
-  .ddd-box .type { color: #67E8F9; }
-  .ddd-box .string { color: #FCD34D; }
-  .ddd-box .comment { color: #64748B; font-style: italic; }
-  .ddd-box .fn { color: #A78BFA; }
-
-  .loading {
-    padding: 80px 24px;
-    text-align: center;
-    color: #64748B;
-    font-family: 'Fira Sans', sans-serif;
-  }
-  .loading .spinner {
-    display: inline-block;
-    width: 20px; height: 20px;
-    border: 2px solid #CCFBF1;
-    border-top-color: #0D9488;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle;
-    margin-right: 8px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  body { font-family: 'Fira Sans', sans-serif; background: #F0FDFA; color: #134E4A; }
+  h1, h2, h3 { font-family: 'Fira Code', monospace; letter-spacing: -0.01em; }
+  code { font-family: 'Fira Code', monospace; background: #F1F5F9; padding: 2px 8px; border-radius: 4px; font-size: 13px; color: #0F766E; }
 </style>
-
-<!-- ESM import map -->
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-    "@heroui/react": "https://esm.sh/@heroui/react?bundle&deps=react@18.3.1,react-dom@18.3.1",
-    "framer-motion": "https://esm.sh/framer-motion@11?deps=react@18.3.1,react-dom@18.3.1",
-    "lucide-react": "https://esm.sh/lucide-react?deps=react@18.3.1",
-    "htm": "https://esm.sh/htm@3"
-  }
-}
-</script>
 </head>
-
-<body>
-  <div id="root">
-    <div class="loading">
-      <span class="spinner"></span>
-      Caricamento HeroUI da esm.sh (~2 MB primo load, poi cached)…
-    </div>
-  </div>
-
-<script type="module">
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import {
-  HeroUIProvider,
-  Card, CardBody,
-  Input,
-  Chip,
-  Button,
-  Tooltip,
-} from '@heroui/react';
-import { ChevronLeft, Star, AlertTriangle, Plus, Pencil, ChevronDown } from 'lucide-react';
-import htm from 'htm';
-
-const html = htm.bind(React.createElement);
-
-// ============================================================================
-// Shared sketch atoms (custom, not HeroUI — for sketch metadata)
-// ============================================================================
-
-const Header = () => html`
-  <header className="mb-10">
-    <a href="index.html" className="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:text-teal-900 font-medium no-underline">
-      <${ChevronLeft} size=${14} />
-      Tutti gli sketch
+<body class="min-h-screen">
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <a href="index.html" class="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:text-teal-900 font-medium">
+      ← Tutti gli sketch
     </a>
-    <div className="flex items-center gap-4 mt-4">
-      <div className="w-11 h-11 rounded-full bg-teal-100 text-teal-700 inline-flex items-center justify-center font-mono font-bold text-lg flex-shrink-0">5</div>
-      <div>
-        <h1 className="text-3xl text-teal-900 leading-tight">Composite Vita component</h1>
-        <p className="text-sm text-teal-800/70 mt-1.5 max-w-xl">
-          Coppia <strong>nascita + morte (opt)</strong> come componente unico, ottimizzato per
-          spazio iPad reale (full-width input, no half stretti).
-        </p>
+
+    <header class="mt-4 mb-10">
+      <div class="flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full bg-teal-100 text-teal-700 inline-flex items-center justify-center font-mono font-bold text-lg">5</div>
+        <div>
+          <h1 class="text-3xl text-teal-900 leading-tight">Composite Vita component</h1>
+          <p class="text-sm text-teal-800/70 mt-1.5">Coppia <strong>nascita + morte (opt)</strong> ottimizzata per spazio iPad reale.</p>
+        </div>
       </div>
-    </div>
-    <div className="mt-6 px-4 py-3 bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded-md text-xs text-amber-900">
-      <strong>POC no-build:</strong> sketch renderizzato con React 18 + HeroUI v3 reali via esm.sh, senza dev server, senza bundler.
-      Tailwind v4 browser CDN. JSX-less via HTM template literals. Cold load ~2 MB, cached. Se vedi rendering rotto → reload o segnala.
-    </div>
-  </header>
-`;
+    </header>
 
-const AltHeader = ({ letter, recommended, title, subtitle }) => html`
-  <div className="flex items-center gap-3 mb-5">
-    <div className=${`w-11 h-11 rounded-full inline-flex items-center justify-center font-mono font-bold text-lg flex-shrink-0 ${recommended ? 'bg-gradient-to-br from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-500/25' : 'bg-teal-100 text-teal-700'}`}>${letter}</div>
-    <div className="flex-1">
-      <h2 className="text-xl text-teal-900">${title}</h2>
-      <div className="text-sm text-teal-700/70">${subtitle}</div>
-    </div>
-    ${recommended && html`
-      <${Chip} variant="shadow" color="primary" size="sm" startContent=${html`<${Star} size=${12} />`}>
-        Raccomandato per iPad
-      </${Chip}>
-    `}
-  </div>
-`;
-
-const FieldLabel = ({ children }) => html`
-  <span className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold">${children}</span>
-`;
-
-const Grammatica = ({ children }) => html`
-  <div className="bg-teal-50 border border-teal-200/60 rounded-lg p-4 text-sm leading-relaxed text-teal-900">
-    <div className="text-[11px] uppercase tracking-wider text-teal-700 font-bold mb-1.5">Grammatica</div>
-    <div>${children}</div>
-  </div>
-`;
-
-const ProCon = ({ items }) => html`
-  <div className="text-sm leading-snug space-y-1.5">
-    ${items.map(([type, text], i) => html`
-      <div key=${i} className="flex items-start gap-2">
-        <span className=${`font-bold flex-shrink-0 ${type === 'pro' ? 'text-emerald-600' : 'text-rose-600'}`}>${type === 'pro' ? '+' : '−'}</span>
-        <span>${text}</span>
+    <div class="bg-white border border-teal-200 rounded-xl shadow-md p-8">
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        React mockup vero
       </div>
-    `)}
-  </div>
-`;
 
-// ============================================================================
-// iPad detail pane mock — comune
-// ============================================================================
+      <h2 class="text-xl text-teal-900 mb-3">Questo sketch è renderizzato dal dev server</h2>
+      <p class="text-sm text-teal-800/80 leading-relaxed mb-6">
+        A differenza degli sketch 1-4 e 6 (HTML+CSS replica HeroUI), il composite Vita usa
+        <strong>HeroUI v3 + Tailwind v4 reali</strong> via mockup React in
+        <code>src/ui/mockups/CompositeVitaMockup.tsx</code>. Questo permette di vedere la
+        densità e i touch target esatti che renderà la app prod, anche su iPad reale.
+      </p>
 
-const IpadHeader = ({ note = 'touch ≥ 44px ✓', noteColor = 'text-emerald-600' }) => html`
-  <div className="ipad-frame-header">
-    <span>iPad · detail pane · 520px</span>
-    <span className=${noteColor}>${note}</span>
-  </div>
-`;
-
-const ElementoHeader = () => html`
-  <div className="flex flex-col gap-2 pb-5 border-b border-slate-200 mb-3">
-    <${Chip} size="sm" color="primary" variant="flat" classNames=${{ base: 'self-start' }}>personaggio</${Chip}>
-    <div className="text-2xl font-semibold text-teal-900 leading-tight">Abraamo</div>
-  </div>
-`;
-
-const SimpleField = ({ label, value }) => html`
-  <div className="flex items-center gap-4 min-h-[48px] py-1 px-2 -mx-2 rounded-md hover:bg-teal-500/5 transition-colors">
-    <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-teal-700 font-semibold">${label}</span>
-    <span className="flex-1 text-[15px] text-teal-900">${value}</span>
-  </div>
-`;
-
-// ============================================================================
-// ALT A — Stacked full-width rows (RECOMMENDED)
-// Two field-rows, each input full-width ~390px
-// Visually coupled via "Vita ›" prefix on label
-// ============================================================================
-
-const StackedVita = () => {
-  const [nascita, setNascita] = useState('2000 a.E.V.');
-  const [morte, setMorte] = useState('1825 a.E.V.');
-  return html`
-    <div className="space-y-1">
-      <div className="flex items-center gap-4 min-h-[48px]">
-        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-teal-700 font-semibold">
-          <span className="opacity-60">Vita ›</span> nato
-        </span>
-        <${Input}
-          size="lg"
-          variant="bordered"
-          color="primary"
-          value=${nascita}
-          onValueChange=${setNascita}
-          classNames=${{ inputWrapper: 'min-h-[48px] h-12 border-1 data-[hover=true]:border-teal-400 group-data-[focus=true]:border-teal-500' }}
-        />
-      </div>
-      <div className="flex items-center gap-4 min-h-[48px]">
-        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-teal-700 font-semibold">
-          <span className="opacity-60">Vita ›</span> morto
-        </span>
-        <${Input}
-          size="lg"
-          variant="bordered"
-          color="primary"
-          value=${morte}
-          onValueChange=${setMorte}
-          placeholder="opzionale"
-          endContent=${html`<${Chip} size="sm" variant="flat" classNames=${{ base: 'bg-slate-100 text-slate-600 font-mono text-[11px]' }}>175 anni</${Chip}>`}
-          classNames=${{ inputWrapper: 'min-h-[48px] h-12 border-1 data-[hover=true]:border-teal-400 group-data-[focus=true]:border-teal-500' }}
-        />
-      </div>
-    </div>
-  `;
-};
-
-// ============================================================================
-// ALT B — Adaptive collapse/expand
-// Idle: compact text. Tap → expands into 2 full-width inputs vertically.
-// ============================================================================
-
-const AdaptiveVita = () => {
-  const [expanded, setExpanded] = useState(true);
-  const [nascita, setNascita] = useState('2000 a.E.V.');
-  const [morte, setMorte] = useState('1825 a.E.V.');
-
-  return html`
-    <div className="flex items-start gap-4 min-h-[48px]">
-      <span className="w-[110px] pt-3 flex-shrink-0 text-[11px] uppercase tracking-wider text-teal-700 font-semibold">Vita</span>
-      <div className="flex-1">
-        ${!expanded && html`
-          <button
-            onClick=${() => setExpanded(true)}
-            className="w-full text-left flex items-center gap-3 min-h-[48px] px-3 py-2 rounded-md hover:bg-teal-50 cursor-text transition-colors"
-          >
-            <span className="text-[15px] text-teal-900">${nascita}</span>
-            <span className="text-slate-400">→</span>
-            <span className="text-[15px] text-teal-900">${morte}</span>
-            <${Chip} size="sm" variant="flat" classNames=${{ base: 'ml-auto bg-slate-100 text-slate-600 font-mono text-[11px]' }}>175 anni</${Chip}>
-          </button>
-        `}
-        ${expanded && html`
-          <div className="space-y-2 p-3 -mx-3 rounded-lg bg-teal-50/60 border border-teal-200/40">
-            <div className="text-[10px] uppercase tracking-wider text-teal-700 font-bold flex items-center gap-2">
-              <span>Vita — modifica</span>
-              <button
-                onClick=${() => setExpanded(false)}
-                className="ml-auto text-[10px] text-teal-600 hover:text-teal-900 normal-case"
-              >chiudi</button>
-            </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-5">
+        <div class="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-2">Come aprirlo</div>
+        <ol class="space-y-3 text-sm">
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-bold inline-flex items-center justify-center font-mono">1</span>
             <div>
-              <div className="text-[10px] uppercase text-slate-500 font-semibold mb-1">nato</div>
-              <${Input}
-                size="lg"
-                variant="bordered"
-                color="primary"
-                value=${nascita}
-                onValueChange=${setNascita}
-                classNames=${{ inputWrapper: 'min-h-[48px] h-12 border-1 bg-white' }}
-              />
+              Lancia il dev server da <code>~/dev/board</code>:
+              <pre class="mt-2 bg-slate-900 text-slate-100 p-3 rounded text-xs font-mono overflow-x-auto">npm run dev</pre>
+              <div class="text-[11px] text-slate-500 mt-1">Vite parte su <code>localhost:5173</code> senza aprire il browser.</div>
             </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-bold inline-flex items-center justify-center font-mono">2</span>
             <div>
-              <div className="text-[10px] uppercase text-slate-500 font-semibold mb-1">morto <span className="opacity-60 normal-case">(opzionale)</span></div>
-              <${Input}
-                size="lg"
-                variant="bordered"
-                color="primary"
-                value=${morte}
-                onValueChange=${setMorte}
-                classNames=${{ inputWrapper: 'min-h-[48px] h-12 border-1 bg-white' }}
-              />
+              Apri nel browser:
+              <pre class="mt-2 bg-slate-900 text-slate-100 p-3 rounded text-xs font-mono overflow-x-auto">http://localhost:5173/dev/mockup-composite-vita</pre>
+              <div class="text-[11px] text-slate-500 mt-1">Route bypassa auth, accesso diretto al review.</div>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-teal-200/40 text-xs">
-              <span className="text-teal-700 font-semibold">Durata calcolata</span>
-              <span className="text-teal-900 font-mono font-semibold">175 anni</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-bold inline-flex items-center justify-center font-mono">3</span>
+            <div>
+              Per testare su iPad reale (stessa LAN):
+              <pre class="mt-2 bg-slate-900 text-slate-100 p-3 rounded text-xs font-mono overflow-x-auto">npm run dev -- --host
+# poi su iPad: http://&lt;tuo-ip&gt;:5173/dev/mockup-composite-vita</pre>
             </div>
-          </div>
-        `}
+          </li>
+        </ol>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded p-4 text-xs text-amber-900 leading-relaxed">
+        <strong>Da rimuovere prima di prod:</strong> la route <code>/dev/mockup-*</code> e il file
+        <code>src/ui/mockups/</code> sono dev-only artifacts. Cleanup in plan 02-03.
       </div>
     </div>
-  `;
-};
 
-// ============================================================================
-// ALT C — Combined notation single input
-// One Input with parsed range syntax: "2000 — 1825 a.E.V."
-// ============================================================================
-
-const CombinedNotationVita = () => {
-  const [val, setVal] = useState('2000 — 1825 a.E.V.');
-  const valid = /\d.*—.*\d/.test(val) || /\d.*-.*\d/.test(val);
-  return html`
-    <div className="flex items-center gap-4 min-h-[48px]">
-      <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-teal-700 font-semibold">Vita</span>
-      <div className="flex-1 flex items-center gap-3">
-        <${Input}
-          size="lg"
-          variant="bordered"
-          color=${valid ? 'primary' : 'warning'}
-          value=${val}
-          onValueChange=${setVal}
-          placeholder="es: 2000 — 1825 a.E.V."
-          description=${html`<span className="text-[10px]">Sintassi: <code className="bg-slate-100 px-1 rounded">nascita — morte</code> (em-dash, morte opzionale)</span>`}
-          classNames=${{ inputWrapper: 'min-h-[48px] h-12 border-1' }}
-        />
-        <${Chip} size="sm" variant="flat" classNames=${{ base: 'bg-slate-100 text-slate-600 font-mono text-[11px] flex-shrink-0' }}>175 anni</${Chip}>
+    <section class="mt-10">
+      <div class="text-xs uppercase tracking-wider text-teal-700 font-semibold mb-3">3 alternative valutate</div>
+      <div class="space-y-2">
+        <div class="bg-white border border-teal-200 rounded-lg p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-600 to-teal-500 text-white inline-flex items-center justify-center font-mono font-bold text-sm">A</div>
+            <div class="flex-1">
+              <div class="font-semibold text-teal-900">Stacked full-width rows</div>
+              <div class="text-xs text-teal-700/70">due field-row separate, ogni input full-width ~390px, coupling via prefisso label "Vita ›"</div>
+            </div>
+            <span class="text-xs px-2 py-1 bg-teal-100 text-teal-700 rounded-full font-semibold uppercase tracking-wider">Raccomandato</span>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 inline-flex items-center justify-center font-mono font-bold text-sm">B</div>
+            <div class="flex-1">
+              <div class="font-semibold text-teal-900">Adaptive collapse/expand</div>
+              <div class="text-xs text-teal-700/70">idle compact 1 row · tap espande in 2 input full-width · blur collassa</div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 inline-flex items-center justify-center font-mono font-bold text-sm">C</div>
+            <div class="flex-1">
+              <div class="font-semibold text-teal-900">Combined notation single input</div>
+              <div class="text-xs text-teal-700/70">un solo Input con sintassi <code class="text-[11px]">"2000 — 1825 a.E.V."</code>, parsing dal dominio</div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  `;
-};
+    </section>
 
-// ============================================================================
-// App
-// ============================================================================
-
-const App = () => html`
-  <${HeroUIProvider}>
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <${Header} />
-
-      <!-- DDD model preview -->
-      <section className="mb-10">
-        <div className="text-xs uppercase tracking-wider text-teal-700 font-semibold mb-2">Modello di dominio</div>
-        <pre className="ddd-box"><code><span className="comment">// shared/value-objects.ts</span>
-<span className="keyword">type</span> <span className="type">Vita</span> = {
-  nascita: <span className="type">DataStorica</span>;
-  morte?: <span className="type">DataStorica</span>;  <span className="comment">// opzionale by construction</span>
-};
-
-<span className="keyword">const</span> <span className="fn">creaVita</span> = (
-  nascita: <span className="type">DataStorica</span>,
-  morte?: <span className="type">DataStorica</span>
-): <span className="type">Result</span>&lt;<span className="type">Vita</span>, <span className="type">VitaError</span>&gt; =&gt;
-  morte && morte.compareTo(nascita) &lt;= <span className="string">0</span>
-    ? err({ tipo: <span className="string">'morte_prima_di_nascita'</span> })
-    : ok({ nascita, morte });</code></pre>
-      </section>
-
-      <!-- ============================================================= -->
-      <!-- A — Stacked full-width rows (RECOMMENDED)                     -->
-      <!-- ============================================================= -->
-      <section>
-        <${AltHeader}
-          letter="A"
-          recommended=${true}
-          title="Stacked full-width rows"
-          subtitle="due field-row separate, ogni input full-width, coupling via prefisso label"
-        />
-        <div className="flex gap-8 items-start">
-          <div className="ipad-frame">
-            <${IpadHeader} />
-            <div className="ipad-frame-body">
-              <${ElementoHeader} />
-              <${SimpleField} label="Tipo" value="personaggio" />
-              <${StackedVita} />
-              <${SimpleField} label="Tribù" value="Ebrei" />
-            </div>
-          </div>
-
-          <div className="flex-1 min-w-0 space-y-5">
-            <${Grammatica}>
-              Due field-row indipendenti, ognuna con <code>&lt;Input size="lg" variant="bordered"&gt;</code> HeroUI vero, full-width (~390px).
-              Label condivide il prefisso <strong>"Vita ›"</strong> + qualifier (<em>nato</em>, <em>morto</em>) → coupling visivo senza chrome.
-              Durata calcolata come <code>&lt;Chip&gt;</code> nell'<code>endContent</code> dell'input morte.
-              Commit blur-to-save per ogni input indipendentemente.
-            </${Grammatica}>
-            <${ProCon} items=${[
-              ['pro', 'Tap target FULL-WIDTH (~390px) — visibilità e click massimi su iPad'],
-              ['pro', 'Funziona identico in landscape e portrait — niente layout fragile'],
-              ['pro', 'Implementazione triviale: due Input HeroUI, no animazioni, no parser'],
-              ['pro', 'Pattern Notion property-style — familiare iPad'],
-              ['pro', 'Cross-validation by construction (VO Vita) garantisce consistency'],
-              ['con', '2 row verticali per "un concetto" — meno densità rispetto a single-row'],
-              ['con', 'Coupling visivo via prefix label è sottile (potrebbe non bastare)'],
-            ]} />
-          </div>
-        </div>
-      </section>
-
-      <div className="alt-divider"></div>
-
-      <!-- ============================================================= -->
-      <!-- B — Adaptive collapse/expand                                   -->
-      <!-- ============================================================= -->
-      <section>
-        <${AltHeader}
-          letter="B"
-          title="Adaptive collapse/expand"
-          subtitle="idle: compact read-mode · tap: espande in 2 input full-width · blur: collassa"
-        />
-        <div className="flex gap-8 items-start">
-          <div className="ipad-frame">
-            <${IpadHeader} />
-            <div className="ipad-frame-body">
-              <${ElementoHeader} />
-              <${SimpleField} label="Tipo" value="personaggio" />
-              <${AdaptiveVita} />
-              <${SimpleField} label="Tribù" value="Ebrei" />
-            </div>
-          </div>
-
-          <div className="flex-1 min-w-0 space-y-5">
-            <${Grammatica}>
-              <strong>Idle</strong>: row compatta read-mode <code>2000 → 1825 · 175 anni</code> (1 row, densità massima).<br />
-              <strong>Tap sulla row</strong> → si espande verticalmente in un <code>&lt;Card&gt;</code> con due Input HeroUI full-width.
-              Bottone "chiudi" in alto destra del card. Blur fuori dal card → collassa back to compact + commit.<br />
-              Best of both worlds: dense quando non editi, comodo quando editi.
-            </${Grammatica}>
-            <${ProCon} items=${[
-              ['pro', 'Densità massima in idle (1 row) — feed Notion compatto'],
-              ['pro', 'Spazio massimo in edit (2 input full-width) — comodo iPad touch'],
-              ['pro', 'Transizione visibile communica "questo è un componente unico"'],
-              ['con', 'Layout shift verticale all\'espansione — può disorientare'],
-              ['con', 'Più complesso da implementare (animazione, focus management, keyboard)'],
-              ['con', '"Tap fuori" deve essere ben definito — collide con altri popover/click target'],
-            ]} />
-          </div>
-        </div>
-      </section>
-
-      <div className="alt-divider"></div>
-
-      <!-- ============================================================= -->
-      <!-- C — Combined notation single input                            -->
-      <!-- ============================================================= -->
-      <section>
-        <${AltHeader}
-          letter="C"
-          title="Combined notation single input"
-          subtitle="un solo Input full-width con sintassi `nascita — morte`, parsing dal dominio"
-        />
-        <div className="flex gap-8 items-start">
-          <div className="ipad-frame">
-            <${IpadHeader} />
-            <div className="ipad-frame-body">
-              <${ElementoHeader} />
-              <${SimpleField} label="Tipo" value="personaggio" />
-              <${CombinedNotationVita} />
-              <${SimpleField} label="Tribù" value="Ebrei" />
-            </div>
-          </div>
-
-          <div className="flex-1 min-w-0 space-y-5">
-            <${Grammatica}>
-              Un solo <code>&lt;Input size="lg"&gt;</code> full-width con sintassi <code>"nascita — morte"</code> (em-dash o trattino).
-              <code>Vita.parse()</code> nel dominio splitta + valida + ritorna <code>Result&lt;Vita, VitaError&gt;</code>.
-              Border diventa warning (orange) se sintassi invalida; placeholder e <code>description</code> aiutano.
-              Durata calcolata come <code>&lt;Chip&gt;</code> a destra.
-            </${Grammatica}>
-            <${ProCon} items=${[
-              ['pro', 'Massima compattezza visiva (1 row, 1 input)'],
-              ['pro', 'Power user: type-and-go, niente Tab tra due input'],
-              ['pro', 'Funziona perfetto in portrait stretto'],
-              ['con', '<strong>Anti-discoverability</strong>: l\'utente deve scoprire la sintassi'],
-              ['con', 'Parser robusto è non triviale (date storiche, "a.E.V.", "circa", range incerti)'],
-              ['con', 'Errore di sintassi a metà digitazione → input rosso costante (rumoroso)'],
-              ['con', 'Nessuna affordance visiva per "morte è opzionale"'],
-            ]} />
-          </div>
-        </div>
-      </section>
-
-      <footer className="mt-14 pt-6 border-t border-teal-200 text-xs text-teal-700/70 leading-relaxed">
-        <div className="font-semibold text-teal-900 mb-1.5">Note iPad-specific</div>
-        <ul className="list-disc list-inside space-y-1 ml-2">
-          <li><strong>Spazio iPad reale:</strong> detail pane 520px − label 110px − gap 16px = ~395px disponibili. Tutti gli input nelle alternative usano questo spazio per intero (no half stretti come la versione precedente).</li>
-          <li><strong>HeroUI vero:</strong> questo sketch usa <code>&lt;Input size="lg"&gt;</code>, <code>&lt;Chip&gt;</code>, <code>&lt;Button&gt;</code>, <code>&lt;HeroUIProvider&gt;</code> reali via esm.sh — non più replicato in CSS. Quello che vedi qui è ciò che renderizzerà la app.</li>
-          <li><strong>POC tecnico:</strong> React 18 + HeroUI v3 + Tailwind v4 senza dev server, senza bundler. Cold load ~2 MB (cached). Se rendering rotto su qualche browser, fallback a HTML replica come gli sketch 1-4.</li>
-          <li><strong>Pattern generalizzabile:</strong> stacked rows funzionano anche per Regno (re), Periodo storico, Profezia (enunciazione → adempimento), tutti come istanze di <code>Intervallo&lt;DataStorica&gt;</code>.</li>
-        </ul>
-      </footer>
-    </div>
-  </${HeroUIProvider}>
-`;
-
-// Boot
-createRoot(document.getElementById('root')).render(html`<${App} />`);
-</script>
-
+    <footer class="mt-10 pt-6 border-t border-teal-200 text-xs text-teal-700/60 leading-relaxed">
+      <strong>Perché React vero?</strong> Le precedenti versioni 05 (compact range / sub-rows / popover)
+      avevano half stretti su iPad: tap difficile, lettura cramped. Le nuove alternative usano
+      input full-width (~390px sul detail pane 520px). Per validare la densità reale serve HeroUI
+      processato da Tailwind v4 — non basta il replicato CSS.
+    </footer>
+  </div>
 </body>
 </html>
