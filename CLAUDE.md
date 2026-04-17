@@ -126,7 +126,7 @@ App nativa iPad, non sito responsive. Riferimenti: Apple Notes/Mail, Things 3, N
 
 ## Convenzioni
 
-- **Target**: solo tablet (768-1024px). No mobile, no desktop. Ultime 2 major di Chrome, Firefox, Safari, iOS Safari.
+- **Target**: solo tablet. **Device di riferimento: iPad 10.9" (iPad Air)** — viewport CSS **1180×820 landscape**, **820×1180 portrait** (DPR 2x). Design baseline = iPad 10.9". Supersets supportati senza extra effort: iPad Pro 11" (1194×834), iPad Pro 13" (1366×1024), iPad standard 10.2" (1080×810). No mobile, no desktop. Ultime 2 major di Chrome, Firefox, Safari, iOS Safari.
 - **i18n**: solo italiano, stringhe hardcoded, no librerie i18n.
 - **Git**: Conventional commits (`feat`/`fix`/`docs`/`refactor`/`test`/`chore`). Feature branches da `main`, squash merge.
 - **Naming**: files `kebab-case.ts` con dot-separated concerns (`elemento.rules.ts`); components `PascalCase.tsx`; hooks `useX.ts`; types PascalCase; const `SCREAMING_SNAKE_CASE`; folders `kebab-case`.
@@ -137,6 +137,7 @@ App nativa iPad, non sito responsive. Riferimenti: Apple Notes/Mail, Things 3, N
 - **GSD-driven**: requisiti in `.planning/REQUIREMENTS.md`, regole dominio e pattern in `.planning/KNOWLEDGE.md`, decisioni in `.planning/DECISIONS.md`. Consultare SEMPRE prima di implementare.
 - **Jazz docs first**: prima di toccare data model o auth, consultare jazz.tools/docs. Jazz è giovane — training data limitati, verificare contro docs correnti.
 - **Incremental delivery**: ogni user story testabile e consegnabile indipendentemente.
+- **Reuse-first**: se esiste già codice che fa il lavoro, riusalo. Prima di creare nuovo componente/funzione/pattern, grep il codebase per simili — estrarre base condivisa batte duplicazione.
 - **YAGNI**: non implementare feature non richieste. Iniziare semplice, aggiungere complessità solo quando giustificata.
 
 ### UI/UX Review Gate

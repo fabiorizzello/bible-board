@@ -1,20 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { Chip, Input, Label, TextField } from "@heroui/react";
+import { Chip, Drawer, Input, Label, Modal, Popover, TextField } from "@heroui/react";
 import { ChevronLeft, Star } from "lucide-react";
 
 /**
- * Mockup S02/R005 — Composite Vita component
+ * Mockup S02/R005 — Composite Vita component (v3 — tablet feel)
  *
- * 3 alternative iPad-space-aware (no half stretti):
- *   A. Stacked full-width rows (RECOMMENDED)
- *   B. Adaptive collapse/expand
- *   C. Combined notation single input
+ * 3 alternative pensate per iPad tablet (no mobile, no web-app):
+ *   A. Right drawer (Pages format inspector style)        ⭐ RECOMMENDED
+ *   B. Centered modal sheet (Numbers/Pages quick edit)
+ *   C. Big anchored popover (Apple Calendar event style)
  *
- * Mounted on /dev/mockup-composite-vita (dev-only route).
- * Usa HeroUI v3 reali + tokens progetto (bg-surface, text-ink, font-heading…).
+ * Vincoli rispettati: idle = testo plain, edit = full-width input,
+ * zero layout shift sul detail pane.
  *
- * Dataset: personaggio Abraamo, parità con altri sketch del set.
+ * Mounted on /dev/mockup-composite-vita.
  */
 
 export function CompositeVitaMockup() {
@@ -45,90 +45,99 @@ const creaVita = (
           </pre>
         </section>
 
-        {/* A — Recommended */}
+        {/* A — Right drawer (RECOMMENDED) */}
         <Alternative
           letter="A"
           recommended
-          title="Stacked full-width rows"
-          subtitle="due field-row separate, ogni input full-width, coupling via prefisso label"
-          mock={<StackedVitaMock />}
+          title="Right drawer (Pages inspector style)"
+          subtitle="tap row → drawer slide-in da destra ~440px · detail pane resta visibile a sinistra · iPad-native"
+          mock={<DrawerRightVitaMock />}
           grammatica={
             <>
-              Due field-row indipendenti, ognuna con <Code>{`<TextField>`}</Code> →{" "}
-              <Code>{`<Label>`}</Code> + <Code>{`<Input>`}</Code> HeroUI vero,
-              full-width (~390px). Label condivide il prefisso{" "}
-              <strong>"Vita ›"</strong> + qualifier (<em>nato</em>, <em>morto</em>) →
-              coupling visivo senza chrome. Durata calcolata come{" "}
-              <Code>{`<Chip>`}</Code> nel <Code>endContent</Code> dell'input morte.
-              Commit blur-to-save per ogni input indipendentemente.
+              Idle: row 48px plain text. Tap row → <Code>{`<Drawer placement="right">`}</Code>{" "}
+              HeroUI slide-in dal bordo destro, ~440px di larghezza. Il detail pane resta
+              visibile a sinistra (overlay con backdrop semi-trasparente).
+              <br />
+              Inspector ha header con titolo + close X, body con 2 <Code>{`<TextField>`}</Code>{" "}
+              full-width grossi (h ~52px), durata calcolata, footer con hint commit.
+              <br />
+              Tap backdrop / tap X / Esc → close + commit. <strong>Pattern Apple Pages
+              format inspector</strong> — il pattern più tablet-iPad che esiste.
             </>
           }
           items={[
-            ["pro", "Tap target FULL-WIDTH (~390px) — visibilità e click massimi su iPad"],
-            ["pro", "Funziona identico in landscape e portrait — niente layout fragile"],
-            ["pro", "Implementazione triviale: due TextField HeroUI, no animazioni, no parser"],
-            ["pro", "Pattern Notion property-style — familiare iPad"],
-            ["pro", "Cross-validation by construction (VO Vita) garantisce consistency"],
-            ["con", "2 row verticali per \"un concetto\" — meno densità rispetto a single-row"],
-            ["con", "Coupling visivo via prefix label è sottile (potrebbe non bastare)"],
+            ["pro", "<strong>Pattern iPad-nativo per eccellenza</strong> — Apple Pages, Numbers, Mail compose"],
+            ["pro", "Inspector ~440px lascia visibile metà detail pane a sinistra (contesto preservato)"],
+            ["pro", "Sfrutta lo spazio orizzontale di iPad landscape (1194-1366px)"],
+            ["pro", "Generalizzabile: stesso inspector per tutti i field complessi (collegamenti, fonti, allegati)"],
+            ["pro", "Input molto grossi (~400px wide, 52px h) — touch comodissimo"],
+            ["con", "iPad portrait (~820px) l'inspector copre quasi tutto il detail pane"],
+            ["con", "1 tap extra per editare un singolo half (no edit diretto inline)"],
+            ["con", "Pattern nuovo per il progetto — primo uso di Drawer placement=right"],
           ]}
         />
 
         <Divider />
 
-        {/* B — Adaptive */}
+        {/* B — Centered modal sheet */}
         <Alternative
           letter="B"
-          title="Adaptive collapse/expand"
-          subtitle="idle: compact read-mode · tap: espande in 2 input full-width · blur: collassa"
-          mock={<AdaptiveVitaMock />}
+          title="Centered modal sheet"
+          subtitle="tap row → modal HeroUI centrato ~520px · backdrop dim · pattern Pages quick add"
+          mock={<ModalCenterVitaMock />}
           grammatica={
             <>
-              <strong>Idle</strong>: row compatta read-mode <Code>2000 → 1825 · 175 anni</Code>{" "}
-              (1 row, densità massima).
+              Idle: row 48px plain text. Tap row → <Code>{`<Modal>`}</Code> HeroUI centrato,
+              ~520px wide × auto-height, backdrop dim al 50%.
               <br />
-              <strong>Tap sulla row</strong> → si espande verticalmente in un Card con due
-              TextField HeroUI full-width. Bottone "chiudi" in alto destra. Blur fuori →
-              collassa back to compact + commit.
+              Header con titolo "Modifica vita" + close X, body con 2 TextField full-width
+              grossi (~52px h), durata calcolata, footer "Salva" o "Annulla".
               <br />
-              Best of both worlds: dense quando non editi, comodo quando editi.
+              Tap backdrop / X / Esc → close + commit. <strong>Pattern Apple Pages
+              quick-add</strong> — formale, focused, atomico.
             </>
           }
           items={[
-            ["pro", "Densità massima in idle (1 row) — feed Notion compatto"],
-            ["pro", "Spazio massimo in edit (2 input full-width) — comodo iPad touch"],
-            ["pro", 'Transizione visibile communica "questo è un componente unico"'],
-            ["con", "Layout shift verticale all'espansione — può disorientare"],
-            ["con", "Più complesso da implementare (animazione, focus management, keyboard)"],
-            ["con", '"Tap fuori" deve essere ben definito — collide con altri popover/click target'],
+            ["pro", "Focus totale sul commit — backdrop attenua il contesto"],
+            ["pro", "Pattern iPad familiare (Pages/Numbers add row, Mail compose modal)"],
+            ["pro", "Funziona identico in landscape e portrait"],
+            ["pro", "Atomicità implicita: i due valori commitano insieme via Salva/Annulla"],
+            ["con", "<strong>Modal pesante</strong> — più web-app che tablet-fluido"],
+            ["con", "Rompe il principio inline per-campo (è un mode swap esplicito)"],
+            ["con", "Necessita pulsanti Salva/Annulla espliciti (più chrome)"],
+            ["con", "Backdrop nasconde il detail pane sotto"],
           ]}
         />
 
         <Divider />
 
-        {/* C — Combined notation */}
+        {/* C — Big anchored popover */}
         <Alternative
           letter="C"
-          title="Combined notation single input"
-          subtitle="un solo Input full-width con sintassi `nascita — morte`, parsing dal dominio"
-          mock={<CombinedNotationMock />}
+          title="Big anchored popover (Calendar event style)"
+          subtitle="tap row → popover HeroUI ancorato ~440px wide con padding generoso · sembra una mini-card iPad"
+          mock={<PopoverBigVitaMock />}
           grammatica={
             <>
-              Un solo <Code>{`<TextField>`}</Code> con <Code>{`<Input>`}</Code> full-width e
-              sintassi <Code>"nascita — morte"</Code> (em-dash o trattino).
-              <Code>Vita.parse()</Code> nel dominio splitta + valida + ritorna{" "}
-              <Code>Result&lt;Vita, VitaError&gt;</Code>. Border passa a warning se sintassi
-              invalida. Durata calcolata come <Code>{`<Chip>`}</Code> a destra.
+              Idle: row 48px plain text. Tap row → <Code>{`<Popover>`}</Code> HeroUI ancorato,
+              ma <strong>large size</strong> (~440px wide) con padding 6-8 generoso, shadow
+              importante, border-radius large.
+              <br />
+              Differenza dal popover classic web: dimensioni e padding tablet, input grossi
+              (h 52px), sembra "una mini-card che galleggia", non un dropdown desktop.
+              <br />
+              Pattern Apple Calendar event quick-edit, iPadOS Notes attachment popover.
             </>
           }
           items={[
-            ["pro", "Massima compattezza visiva (1 row, 1 input)"],
-            ["pro", "Power user: type-and-go, niente Tab tra due input"],
-            ["pro", "Funziona perfetto in portrait stretto"],
-            ["con", "<strong>Anti-discoverability</strong>: l'utente deve scoprire la sintassi"],
-            ["con", 'Parser robusto è non triviale (date storiche, "a.E.V.", "circa", range incerti)'],
-            ["con", "Errore di sintassi a metà digitazione → input warning costante (rumoroso)"],
-            ["con", "Nessuna affordance visiva per \"morte è opzionale\""],
+            ["pro", "Anchored al field — l'utente vede da dove arriva (context preservato)"],
+            ["pro", "Lateralmente compatto — non copre tutto il detail pane"],
+            ["pro", "Pattern Apple Calendar event editor — riconoscibile su iPad"],
+            ["pro", "Stesso primitive HeroUI di sketch 03 (collegamento picker) → coerenza"],
+            ["pro", "iPad-friendly se sized correttamente (440px+ wide, padding 24-28px)"],
+            ["con", "Vicino al bordo destro del detail pane può essere clipped"],
+            ["con", "Visivamente simile a popover web se non curato (rischio look web-app)"],
+            ["con", "iPad portrait con poco spazio orizzontale può sembrare un modal piccolo"],
           ]}
         />
 
@@ -156,18 +165,20 @@ function Header() {
         <Badge>5</Badge>
         <div>
           <h1 className="font-heading text-3xl text-ink-hi leading-tight">
-            Composite Vita component
+            Composite Vita component <span className="text-base text-ink-lo">— v3 tablet</span>
           </h1>
-          <p className="text-sm text-ink-md mt-1.5 max-w-xl">
-            Coppia <strong>nascita + morte (opt)</strong> come componente unico, ottimizzato
-            per spazio iPad reale (full-width input ~390px, no half stretti).
+          <p className="text-sm text-ink-md mt-1.5 max-w-2xl">
+            3 alternative pensate solo iPad tablet (no mobile-feel come bottom sheet, no
+            web-feel come popover stretti). Tutte rispettano: idle = testo, edit = full-width,
+            zero layout shift.
           </p>
         </div>
       </div>
       <div className="mt-6 px-4 py-3 bg-emerald-50 border border-emerald-200 border-l-4 border-l-emerald-500 rounded-md text-xs text-emerald-900 leading-relaxed">
-        <strong>Mockup React vero:</strong> renderizzato dal dev server con HeroUI v3 +
-        Tailwind v4 + tokens progetto (bg-primary, text-ink, font-heading…). Quello che vedi
-        qui è esattamente come renderà la app prod.
+        <strong>Mockup React vero:</strong> renderizzato dal dev server con HeroUI v3
+        (Drawer right, Modal, Popover) + Tailwind v4 + tokens progetto. Il drawer non si
+        vedrà in tutta la sua larghezza nel mock 520px — apri da iPad reale per fedeltà
+        completa con <code>npm run dev -- --host</code>.
       </div>
     </header>
   );
@@ -225,10 +236,10 @@ function Badge({ children, recommended }: { children: ReactNode; recommended?: b
 function IpadFrame({ children }: { children: ReactNode }) {
   return (
     <div
-      className="bg-panel border border-edge rounded-xl shadow-md overflow-hidden flex-shrink-0"
+      className="bg-panel border border-edge rounded-xl shadow-md flex-shrink-0"
       style={{ width: 520 }}
     >
-      <div className="h-9 bg-chrome border-b border-edge flex items-center justify-between px-4 text-[10px] uppercase tracking-wider text-ink-lo font-semibold">
+      <div className="h-9 bg-chrome border-b border-edge flex items-center justify-between px-4 text-[10px] uppercase tracking-wider text-ink-lo font-semibold rounded-t-xl">
         <span>iPad · detail pane · 520px</span>
         <span className="text-emerald-600">touch ≥ 44px ✓</span>
       </div>
@@ -240,12 +251,7 @@ function IpadFrame({ children }: { children: ReactNode }) {
 function ElementoHeader() {
   return (
     <div className="flex flex-col gap-2 pb-5 border-b border-edge mb-3">
-      <Chip
-        size="sm"
-        color="accent"
-        variant="soft"
-        className="self-start"
-      >
+      <Chip size="sm" color="accent" variant="soft" className="self-start">
         personaggio
       </Chip>
       <div className="font-heading text-2xl font-semibold text-ink-hi leading-tight">
@@ -319,23 +325,25 @@ function Divider() {
 function Footer() {
   return (
     <footer className="mt-14 pt-6 border-t border-edge text-xs text-ink-lo leading-relaxed">
-      <div className="font-semibold text-ink-hi mb-1.5">Note iPad-specific</div>
+      <div className="font-semibold text-ink-hi mb-1.5">Note iPad-tablet specific</div>
       <ul className="list-disc list-inside space-y-1 ml-2">
         <li>
-          <strong>Spazio iPad reale:</strong> detail pane 520px − label 110px − gap 16px =
-          ~395px disponibili. Tutti gli input nelle alternative usano questo spazio per
-          intero (no half stretti come la versione precedente).
+          <strong>Pattern tablet vs mobile vs web:</strong> bottom sheet = iOS mobile,
+          dropdown stretto = web desktop, popover anchored grande / right drawer / centered
+          modal = iPad tablet nativo.
         </li>
         <li>
-          <strong>HeroUI vero:</strong> <Code>{`<TextField>`}</Code>,{" "}
-          <Code>{`<Input>`}</Code>, <Code>{`<Chip>`}</Code> reali da{" "}
-          <Code>@heroui/react@3.0.2</Code> + design tokens del progetto. Tailwind v4
-          processato dal dev server.
+          <strong>HeroUI primitives:</strong> A usa <Code>{`<Drawer placement="right">`}</Code>,
+          B usa <Code>{`<Modal>`}</Code>, C usa <Code>{`<Popover>`}</Code> con sizing tablet.
         </li>
         <li>
-          <strong>Pattern generalizzabile:</strong> stacked rows funzionano anche per Regno
-          (re), Periodo storico, Profezia (enunciazione → adempimento), tutti come istanze
-          di <Code>Intervallo&lt;DataStorica&gt;</Code>.
+          <strong>iPad reale:</strong> il mock 520px è la <em>detail pane</em> nel 3-pane
+          layout. In viewport reale (1194-1366px landscape) drawer/modal/popover hanno tutto
+          lo spazio del browser, non solo i 520px del mock.
+        </li>
+        <li>
+          <strong>Test su iPad:</strong> <code>npm run dev -- --host</code> + apri da iPad
+          sulla LAN per validare le proporzioni vere.
         </li>
       </ul>
     </footer>
@@ -343,60 +351,37 @@ function Footer() {
 }
 
 // ============================================================================
-// ALT A — Stacked full-width rows
+// Shared trigger atom (idle = plain text row)
 // ============================================================================
 
-function StackedVitaMock() {
-  const [nascita, setNascita] = useState("2000 a.E.V.");
-  const [morte, setMorte] = useState("1825 a.E.V.");
+interface VitaTriggerProps {
+  nascita: string;
+  morte: string;
+  className?: string;
+}
+
+function VitaTrigger({ nascita, morte, className = "" }: VitaTriggerProps) {
   return (
-    <>
-      <ElementoHeader />
-      <SimpleField label="Tipo" value="personaggio" />
-
-      <div className="space-y-1 my-1">
-        <div className="flex items-start gap-4 min-h-[48px]">
-          <span className="w-[110px] flex-shrink-0 pt-3 text-[11px] uppercase tracking-wider text-primary font-semibold">
-            <span className="opacity-60">Vita ›</span> nato
-          </span>
-          <div className="flex-1">
-            <TextField value={nascita} onChange={setNascita} aria-label="Vita - nascita">
-              <Input className="min-h-[48px]" />
-            </TextField>
-          </div>
-        </div>
-        <div className="flex items-start gap-4 min-h-[48px]">
-          <span className="w-[110px] flex-shrink-0 pt-3 text-[11px] uppercase tracking-wider text-primary font-semibold">
-            <span className="opacity-60">Vita ›</span> morto
-          </span>
-          <div className="flex-1 flex items-center gap-3">
-            <div className="flex-1">
-              <TextField value={morte} onChange={setMorte} aria-label="Vita - morte">
-                <Input placeholder="opzionale" className="min-h-[48px]" />
-              </TextField>
-            </div>
-            <Chip
-              size="sm"
-              variant="soft"
-              className="bg-chip-bg text-ink-lo font-mono text-[11px] flex-shrink-0"
-            >
-              175 anni
-            </Chip>
-          </div>
-        </div>
-      </div>
-
-      <SimpleField label="Tribù" value="Ebrei" />
-    </>
+    <span className={`flex-1 flex items-center gap-3 min-h-[48px] px-3 py-2 -mx-3 rounded-md hover:bg-primary/5 cursor-pointer transition-colors ${className}`}>
+      <span className="text-[15px] text-ink-hi">{nascita}</span>
+      <span className="text-ink-dim">→</span>
+      <span className="text-[15px] text-ink-hi">{morte}</span>
+      <Chip
+        size="sm"
+        variant="soft"
+        className="ml-auto bg-chip-bg text-ink-lo font-mono text-[11px]"
+      >
+        175 anni
+      </Chip>
+    </span>
   );
 }
 
 // ============================================================================
-// ALT B — Adaptive collapse/expand
+// ALT A — Right drawer (Pages inspector style)
 // ============================================================================
 
-function AdaptiveVitaMock() {
-  const [expanded, setExpanded] = useState(true);
+function DrawerRightVitaMock() {
   const [nascita, setNascita] = useState("2000 a.E.V.");
   const [morte, setMorte] = useState("1825 a.E.V.");
 
@@ -405,63 +390,47 @@ function AdaptiveVitaMock() {
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
 
-      <div className="flex items-start gap-4 min-h-[48px] my-1">
-        <span className="w-[110px] flex-shrink-0 pt-3 text-[11px] uppercase tracking-wider text-primary font-semibold">
+      <div className="flex items-center gap-4 min-h-[48px]">
+        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
           Vita
         </span>
-        <div className="flex-1">
-          {!expanded && (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="w-full text-left flex items-center gap-3 min-h-[48px] px-3 py-2 rounded-md hover:bg-primary/5 cursor-text transition-colors"
-            >
-              <span className="text-[15px] text-ink-hi">{nascita}</span>
-              <span className="text-ink-dim">→</span>
-              <span className="text-[15px] text-ink-hi">{morte}</span>
-              <Chip
-                size="sm"
-                variant="soft"
-                className="ml-auto bg-chip-bg text-ink-lo font-mono text-[11px]"
-              >
-                175 anni
-              </Chip>
-            </button>
-          )}
-          {expanded && (
-            <div className="space-y-2 p-3 -mx-1 rounded-lg bg-primary/5 border border-primary/15">
-              <div className="text-[10px] uppercase tracking-wider text-primary font-bold flex items-center gap-2">
-                <span>Vita — modifica</span>
-                <button
-                  type="button"
-                  onClick={() => setExpanded(false)}
-                  className="ml-auto text-[10px] text-primary hover:text-primary/80 normal-case font-medium underline"
-                >
-                  chiudi
-                </button>
-              </div>
-
-              <TextField value={nascita} onChange={setNascita} aria-label="Vita - nascita">
-                <Label className="text-[10px] uppercase text-ink-lo font-semibold mb-1 block">
-                  nato
-                </Label>
-                <Input className="min-h-[48px]" />
-              </TextField>
-
-              <TextField value={morte} onChange={setMorte} aria-label="Vita - morte">
-                <Label className="text-[10px] uppercase text-ink-lo font-semibold mb-1 block">
-                  morto <span className="opacity-60 normal-case">(opzionale)</span>
-                </Label>
-                <Input className="min-h-[48px]" />
-              </TextField>
-
-              <div className="flex justify-between items-center pt-2 border-t border-primary/15 text-xs">
-                <span className="text-primary font-semibold">Durata calcolata</span>
-                <span className="text-ink-hi font-mono font-semibold">175 anni</span>
-              </div>
-            </div>
-          )}
-        </div>
+        <Drawer>
+          <Drawer.Trigger className="flex-1">
+            <VitaTrigger nascita={nascita} morte={morte} />
+          </Drawer.Trigger>
+          <Drawer.Backdrop />
+          <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
+            <Drawer.Dialog>
+              <Drawer.Header className="px-7 py-5 border-b border-edge">
+                <Drawer.Heading className="font-heading text-xl text-ink-hi">
+                  Modifica vita
+                </Drawer.Heading>
+                <Drawer.CloseTrigger />
+              </Drawer.Header>
+              <Drawer.Body className="px-7 py-6 space-y-5">
+                <TextField value={nascita} onChange={setNascita}>
+                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                    Nato (obbligatoria)
+                  </Label>
+                  <Input className="min-h-[52px] text-base" />
+                </TextField>
+                <TextField value={morte} onChange={setMorte}>
+                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                    Morto <span className="opacity-60 normal-case">(opzionale)</span>
+                  </Label>
+                  <Input placeholder="—" className="min-h-[52px] text-base" />
+                </TextField>
+                <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
+                  <span className="text-primary font-semibold">Durata calcolata</span>
+                  <span className="text-ink-hi font-mono font-semibold">175 anni</span>
+                </div>
+              </Drawer.Body>
+              <Drawer.Footer className="px-7 py-3 text-[11px] text-ink-dim border-t border-edge">
+                Tap fuori, Esc, o X per chiudere e salvare
+              </Drawer.Footer>
+            </Drawer.Dialog>
+          </Drawer.Content>
+        </Drawer>
       </div>
 
       <SimpleField label="Tribù" value="Ebrei" />
@@ -470,47 +439,113 @@ function AdaptiveVitaMock() {
 }
 
 // ============================================================================
-// ALT C — Combined notation single input
+// ALT B — Centered modal sheet
 // ============================================================================
 
-function CombinedNotationMock() {
-  const [val, setVal] = useState("2000 — 1825 a.E.V.");
-  const valid = /\d.*[—-].*\d/.test(val);
+function ModalCenterVitaMock() {
+  const [nascita, setNascita] = useState("2000 a.E.V.");
+  const [morte, setMorte] = useState("1825 a.E.V.");
 
   return (
     <>
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
 
-      <div className="flex items-start gap-4 min-h-[48px] my-1">
-        <span className="w-[110px] flex-shrink-0 pt-3 text-[11px] uppercase tracking-wider text-primary font-semibold">
+      <div className="flex items-center gap-4 min-h-[48px]">
+        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
           Vita
         </span>
-        <div className="flex-1 flex items-start gap-3">
-          <div className="flex-1">
-            <TextField
-              value={val}
-              onChange={setVal}
-              isInvalid={!valid}
-              aria-label="Vita - notazione combinata"
-            >
-              <Input
-                placeholder="es: 2000 — 1825 a.E.V."
-                className="min-h-[48px]"
-              />
-            </TextField>
-            <div className="text-[10px] text-ink-lo mt-1">
-              Sintassi: <Code>nascita — morte</Code> (em-dash, morte opzionale)
-            </div>
-          </div>
-          <Chip
-            size="sm"
-            variant="soft"
-            className="bg-chip-bg text-ink-lo font-mono text-[11px] flex-shrink-0 mt-3"
-          >
-            175 anni
-          </Chip>
-        </div>
+        <Modal>
+          <Modal.Trigger className="flex-1">
+            <VitaTrigger nascita={nascita} morte={morte} />
+          </Modal.Trigger>
+          <Modal.Backdrop />
+          <Modal.Container placement="center" size="md">
+            <Modal.Dialog className="w-[520px] max-w-[90vw]">
+              <Modal.Header className="px-7 py-5 border-b border-edge">
+                <Modal.Heading className="font-heading text-xl text-ink-hi">
+                  Modifica vita
+                </Modal.Heading>
+                <Modal.CloseTrigger />
+              </Modal.Header>
+              <Modal.Body className="px-7 py-6 space-y-5">
+                <TextField value={nascita} onChange={setNascita}>
+                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                    Nato (obbligatoria)
+                  </Label>
+                  <Input className="min-h-[52px] text-base" />
+                </TextField>
+                <TextField value={morte} onChange={setMorte}>
+                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                    Morto <span className="opacity-60 normal-case">(opzionale)</span>
+                  </Label>
+                  <Input placeholder="—" className="min-h-[52px] text-base" />
+                </TextField>
+                <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
+                  <span className="text-primary font-semibold">Durata calcolata</span>
+                  <span className="text-ink-hi font-mono font-semibold">175 anni</span>
+                </div>
+              </Modal.Body>
+              <Modal.Footer className="px-7 py-4 border-t border-edge text-[11px] text-ink-dim">
+                Esc o tap fuori per annullare
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal>
+      </div>
+
+      <SimpleField label="Tribù" value="Ebrei" />
+    </>
+  );
+}
+
+// ============================================================================
+// ALT C — Big anchored popover (Calendar event style)
+// ============================================================================
+
+function PopoverBigVitaMock() {
+  const [nascita, setNascita] = useState("2000 a.E.V.");
+  const [morte, setMorte] = useState("1825 a.E.V.");
+
+  return (
+    <>
+      <ElementoHeader />
+      <SimpleField label="Tipo" value="personaggio" />
+
+      <div className="flex items-center gap-4 min-h-[48px]">
+        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
+          Vita
+        </span>
+        <Popover>
+          <Popover.Trigger className="flex-1">
+            <VitaTrigger nascita={nascita} morte={morte} />
+          </Popover.Trigger>
+          <Popover.Content className="w-[440px]">
+            <Popover.Dialog className="bg-panel border border-edge rounded-xl shadow-xl p-6">
+              <Popover.Heading className="font-heading text-lg text-ink-hi mb-4">
+                Modifica vita
+              </Popover.Heading>
+              <div className="space-y-4">
+                <TextField value={nascita} onChange={setNascita}>
+                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                    Nato (obbligatoria)
+                  </Label>
+                  <Input className="min-h-[52px] text-base" />
+                </TextField>
+                <TextField value={morte} onChange={setMorte}>
+                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                    Morto <span className="opacity-60 normal-case">(opzionale)</span>
+                  </Label>
+                  <Input placeholder="—" className="min-h-[52px] text-base" />
+                </TextField>
+                <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
+                  <span className="text-primary font-semibold">Durata calcolata</span>
+                  <span className="text-ink-hi font-mono font-semibold">175 anni</span>
+                </div>
+              </div>
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
       </div>
 
       <SimpleField label="Tribù" value="Ebrei" />
