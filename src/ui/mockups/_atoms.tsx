@@ -1,7 +1,42 @@
 import { Link } from "react-router";
 import { Chip } from "@heroui/react";
-import { ChevronLeft, Star } from "lucide-react";
+import { ChevronLeft, Star, X } from "lucide-react";
 import type { ReactNode } from "react";
+
+/**
+ * RemovableChip — HeroUI Chip + X button per remove.
+ * HeroUI v3 Chip non ha onClose nativo, lo facciamo a mano.
+ */
+export function RemovableChip({
+  children,
+  onRemove,
+  className = "bg-primary/10 text-primary",
+  size = "md",
+}: {
+  children: ReactNode;
+  onRemove: () => void;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  return (
+    <Chip size={size} variant="soft" className={className}>
+      <span className="inline-flex items-center gap-1.5">
+        {children}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          aria-label="Rimuovi"
+          className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-current/20 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+        >
+          <X size={12} />
+        </button>
+      </span>
+    </Chip>
+  );
+}
 
 /**
  * Atoms condivisi per i mockup .tsx in src/ui/mockups/.
