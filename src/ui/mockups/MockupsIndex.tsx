@@ -36,9 +36,9 @@ const MOCKUPS: MockupEntry[] = [
     category: "Flow unificato",
     title: "Add field flow (entry + multi-value + single-value)",
     description:
-      "Flow unificato: '+ aggiungi campo' + sub-flow multi-value (Ruoli, Tags) + sub-flow single-value (Collegamento, Fonte) come UNA decisione UX. 3 alternative al pattern intero: popover content swap, escalation popover→drawer, drawer always.",
-    recommended: "A. Popover unico con content swap",
-    status: "in_review",
+      "Flow unificato: '+ aggiungi campo' + sub-flow multi-value (Ruoli, Tags) + sub-flow single-value (Collegamento, Fonte) come UNA decisione UX. Right drawer 440px sempre con content swap interno — coerente con sketch 5 Vita. Alternative (Popover content swap, Escalation popover→drawer) scartate — vedi storico nel mockup.",
+    recommended: "C. Right drawer always",
+    status: "decided",
   },
   {
     number: "4",

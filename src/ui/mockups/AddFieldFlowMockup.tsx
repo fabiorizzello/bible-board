@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Chip, Drawer, Input, Popover, TextField } from "@heroui/react";
+import { Chip, Drawer, Input, TextField } from "@heroui/react";
 import {
   ChevronLeft,
   FileText,
@@ -13,7 +13,7 @@ import {
 import {
   Alternative,
   Code,
-  Divider,
+  ConsideredAlternatives,
   ElementoHeader,
   MockupFooter,
   MockupHeader,
@@ -51,101 +51,80 @@ export function AddFieldFlowMockup() {
         />
 
         <Alternative
-          letter="A"
+          letter="C"
           recommended
-          title="Popover unico con content swap"
-          subtitle="tutto accade nello stesso popover: categories → sub-view con back navigation"
-          mock={<AltAPopoverInterattivo />}
+          title="Right drawer sempre (single surface)"
+          subtitle="tap + aggiungi → drawer 440px con categories + content swap interno · coerente con sketch 5 Vita"
+          mock={<AltCDrawerAlways />}
           grammatica={
             <>
-              Tap "+ aggiungi campo" → popover HeroUI ~380px.
+              Tap "+ aggiungi" → <Code>{`<Drawer placement="right">`}</Code> 440px si apre
+              immediatamente con la categories view (Field tipizzati + Universali).
               <br />
-              <strong>Categories view</strong>: sezione "Field tipizzati" (filtrate per{" "}
-              <Code>TipoElemento</Code>) + "Universali" (Collegamento, Fonte).
-              <br />
-              <strong>Tap chip categoria</strong> → il contenuto del popover fa{" "}
-              <strong>content swap</strong> alla sub-view:
+              Tap categoria → content swap all'interno del drawer:
               <ul className="list-disc list-inside ml-2 mt-1 space-y-0.5">
                 <li>
-                  Multi-value (Ruoli, Tags) → input text con chip preview + suggestions
-                  dal workspace
+                  Multi-value (Ruoli, Tags) → input text + chip preview + suggestions
                 </li>
                 <li>
                   Single-value (Collegamento, Fonte) → search + grouped list + metadata
                 </li>
               </ul>
-              <strong>Back arrow</strong> in alto torna a categories. Tap fuori / ESC → close.
-              Stesso surface dall'inizio alla fine, zero flicker.
-            </>
-          }
-          items={[
-            ["pro", "<strong>Un solo surface</strong> — zero flicker, fluido"],
-            ["pro", "Back navigation chiara; cambiare idea è immediato"],
-            ["pro", "Lightweight: il popover non è mai > 380px — preserva contesto detail"],
-            ["pro", "Multi-value e single-value riusano lo stesso wrapper"],
-            ["con", "State machine view interno è custom (no primitive HeroUI per nested nav)"],
-            ["con", "Per picker complessi (Fonte con 100+ libri) lo spazio 380px diventa stretto"],
-          ]}
-        />
-
-        <Divider />
-
-        <Alternative
-          letter="B"
-          title="Escalation: popover → right drawer"
-          subtitle="entry lightweight nel popover, single-value complessi escalano a drawer 440px"
-          mock={<AltBEscalation />}
-          grammatica={
-            <>
-              Tap "+ aggiungi" → popover lightweight con categories.
+              Back arrow per tornare a categories. Tap fuori / Esc / X → close.
               <br />
-              <strong>Multi-value</strong> (Ruoli, Tags) → sub-view <em>dentro il popover</em>{" "}
-              (come alt A) — task semplice, spazio sufficiente.
-              <br />
-              <strong>Single-value</strong> (Collegamento, Fonte) → il popover si{" "}
-              <strong>chiude</strong> e apre un <Code>{`<Drawer placement="right">`}</Code>{" "}
-              440px con il picker completo (search, filtri, preview, metadata).
-              <br />
-              Pattern mixed: <em>right tool for right task</em>. Coerente col composite Vita
-              (sketch 5 A) che usa drawer per edit complesso.
-            </>
-          }
-          items={[
-            ["pro", "Spazio massimo per i picker complessi (~440px wide)"],
-            ["pro", "Surface coerente con sketch 5 A (Vita) — pattern 'edit complesso = drawer'"],
-            ["pro", "Lightweight per casi lightweight (chip add)"],
-            ["con", "<strong>2 surface diversi</strong> — l'utente salta da popover a drawer"],
-            ["con", "Transizione close-popover + open-drawer ha flicker visibile"],
-            ["con", "Più complesso da implementare (orchestrazione tra Popover e Drawer state)"],
-          ]}
-        />
-
-        <Divider />
-
-        <Alternative
-          letter="C"
-          title="Right drawer sempre (single surface)"
-          subtitle="tap + aggiungi → drawer 440px con categories + content swap interno"
-          mock={<AltCDrawerAlways />}
-          grammatica={
-            <>
-              Tap "+ aggiungi" → <Code>{`<Drawer placement="right">`}</Code> 440px si apre
-              immediatamente con la categories view.
-              <br />
-              Tap categoria → content swap all'interno del drawer (stesso pattern di alt A
-              ma in drawer invece che popover). Back arrow per tornare a categories.
-              <br />
-              Stesso primitive di sketch 5 A (Vita composite) — pattern <em>unified</em>{" "}
+              <strong>Stesso primitive di sketch 5 A (Vita)</strong> — pattern unified
               tablet-native: ogni edit complesso = right drawer.
             </>
           }
           items={[
-            ["pro", "Consistency totale col composite Vita (sketch 5 A)"],
-            ["pro", "Spazio ampio sempre — picker complessi hanno respiro"],
-            ["pro", "Un solo surface dall'inizio alla fine"],
-            ["con", "<strong>Overkill per task lightweight</strong> (es. aggiungere 1 tag)"],
-            ["con", "Drawer 440px copre metà detail pane su iPad portrait"],
-            ["con", "Aprire-chiudere drawer per ogni add è pesante rispetto a popover"],
+            ["pro", "<strong>Consistency totale</strong> col composite Vita (sketch 5 A) — una regola sola: edit complesso = drawer"],
+            ["pro", "Sfrutta lo spazio orizzontale di iPad 10.9\" landscape (1180px)"],
+            ["pro", "Un solo surface dall'inizio alla fine, content swap interno"],
+            ["pro", "Pattern Apple Pages format inspector — riconoscibile su iPad"],
+            ["pro", "Picker complessi (Collegamento con search+filtri+ruolo) hanno respiro"],
+            ["con", "Overkill per task minimo (es. add 1 tag) — costo basso accettato"],
+            ["con", "iPad portrait (820px) il drawer copre ~50% del detail pane"],
+          ]}
+        />
+
+        <ConsideredAlternatives
+          entries={[
+            {
+              letter: "A",
+              title: "Popover unico con content swap",
+              summary:
+                "Popover ~380px con categories view → sub-view interne con back arrow. Tutto in un solo surface lightweight.",
+              pros: [
+                "Un solo surface, zero flicker, fluido",
+                "Lightweight: popover ≤ 380px preserva contesto detail",
+                "Multi-value e single-value riusano lo stesso wrapper",
+              ],
+              cons: [
+                "Popover 380px è web-feel su iPad landscape",
+                "Spazio stretto per picker complessi (Collegamento con search+grouped+ruolo)",
+                "Inconsistente con sketch 5 (Vita = drawer)",
+              ],
+              whyRejected:
+                "Su iPad landscape (1180px) il popover 380px non sfrutta lo spazio. Inoltre rompe la coerenza con sketch 5 A che usa drawer per edit complesso. Una regola sola (edit complesso = drawer) batte l'ottimizzazione per task type.",
+            },
+            {
+              letter: "B",
+              title: "Escalation: popover → right drawer",
+              summary:
+                "Popover lightweight per multi-value (Ruoli, Tags), drawer 440px per single-value (Collegamento, Fonte) complessi.",
+              pros: [
+                "Spazio massimo per picker complessi via drawer",
+                "Lightweight per task lightweight",
+                "Right tool for right task",
+              ],
+              cons: [
+                "2 surface diversi — cognitive load misto",
+                "Transizione close-popover + open-drawer ha flicker visibile",
+                "Orchestrazione tra Popover e Drawer state più complessa",
+              ],
+              whyRejected:
+                "L'orchestrazione popover→drawer è fragile da implementare bene; la transizione 'visibile' è una piccola UX regression. Una regola sola (C) è più robusta nel tempo.",
+            },
           ]}
         />
 
@@ -253,22 +232,6 @@ function CategoryChip({
       <span className="text-primary">{icon}</span>
       {label}
     </button>
-  );
-}
-
-function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-edge">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-md hover:bg-primary/5 hover:text-primary transition-colors"
-        aria-label="Indietro"
-      >
-        <ChevronLeft size={16} />
-      </button>
-      <div className="text-sm font-semibold text-ink-hi">{title}</div>
-    </div>
   );
 }
 
@@ -498,170 +461,7 @@ function PickerRow({
 }
 
 // ============================================================================
-// ALT A — Popover unico con content swap (recommended)
-// ============================================================================
-
-function AltAPopoverInterattivo() {
-  const [view, setView] = useState<SubFlowView>({ kind: "categories" });
-  const reset = () => setView({ kind: "categories" });
-
-  return (
-    <>
-      <ElementoHeader />
-      <SimpleField label="Tipo" value="personaggio" />
-      <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
-      <SimpleField label="Tribù" value="Ebrei" />
-      <div className="mt-3">
-        <Popover>
-          <Popover.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
-            <Plus size={16} />
-            Aggiungi campo
-          </Popover.Trigger>
-          <Popover.Content className="w-[380px]">
-            <Popover.Dialog className="bg-panel border border-edge rounded-xl shadow-xl">
-              {view.kind === "categories" && <CategoriesContent onPick={setView} />}
-              {view.kind === "ruoli-add" && (
-                <>
-                  <SubHeader title="Aggiungi Ruoli" onBack={reset} />
-                  <MultiChipContent label="ruolo" />
-                </>
-              )}
-              {view.kind === "tags-add" && (
-                <>
-                  <SubHeader title="Aggiungi Tags" onBack={reset} />
-                  <MultiChipContent label="tag" />
-                </>
-              )}
-              {view.kind === "collegamento-pick" && (
-                <>
-                  <SubHeader title="Aggiungi Collegamento" onBack={reset} />
-                  <SingleValueContent kind="collegamento" />
-                </>
-              )}
-              {view.kind === "fonte-pick" && (
-                <>
-                  <SubHeader title="Aggiungi Fonte" onBack={reset} />
-                  <SingleValueContent kind="fonte" />
-                </>
-              )}
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      </div>
-    </>
-  );
-}
-
-// ============================================================================
-// ALT B — Escalation: popover leggero + right drawer per picker complesso
-// ============================================================================
-
-function AltBEscalation() {
-  const [view, setView] = useState<SubFlowView>({ kind: "categories" });
-  const reset = () => setView({ kind: "categories" });
-  const isHeavy =
-    view.kind === "collegamento-pick" || view.kind === "fonte-pick";
-
-  return (
-    <>
-      <ElementoHeader />
-      <SimpleField label="Tipo" value="personaggio" />
-      <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
-      <SimpleField label="Tribù" value="Ebrei" />
-      <div className="mt-3">
-        {!isHeavy ? (
-          <Popover>
-            <Popover.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
-              <Plus size={16} />
-              Aggiungi campo (escalation)
-            </Popover.Trigger>
-            <Popover.Content className="w-[380px]">
-              <Popover.Dialog className="bg-panel border border-edge rounded-xl shadow-xl">
-                {view.kind === "categories" && (
-                  <CategoriesContent onPick={setView} />
-                )}
-                {view.kind === "ruoli-add" && (
-                  <>
-                    <SubHeader title="Aggiungi Ruoli" onBack={reset} />
-                    <MultiChipContent label="ruolo" />
-                  </>
-                )}
-                {view.kind === "tags-add" && (
-                  <>
-                    <SubHeader title="Aggiungi Tags" onBack={reset} />
-                    <MultiChipContent label="tag" />
-                  </>
-                )}
-              </Popover.Dialog>
-            </Popover.Content>
-          </Popover>
-        ) : (
-          <Drawer>
-            <Drawer.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border-2 border-dashed border-primary text-primary text-sm font-semibold bg-primary/5 cursor-pointer transition-colors">
-              <Plus size={16} />
-              Picker esteso ({view.kind === "collegamento-pick" ? "Collegamento" : "Fonte"})
-            </Drawer.Trigger>
-            <Drawer.Backdrop>
-              <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
-                <Drawer.Dialog>
-                  <Drawer.Header className="px-6 py-4 border-b border-edge">
-                    <Drawer.Heading className="font-heading text-lg text-ink-hi">
-                      {view.kind === "collegamento-pick"
-                        ? "Nuovo collegamento"
-                        : "Nuova fonte"}
-                    </Drawer.Heading>
-                    <Drawer.CloseTrigger />
-                  </Drawer.Header>
-                  <Drawer.Body className="px-6 py-5">
-                    <SingleValueContent
-                      kind={view.kind === "collegamento-pick" ? "collegamento" : "fonte"}
-                    />
-                  </Drawer.Body>
-                  <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
-                    Tap fuori per chiudere e salvare
-                  </Drawer.Footer>
-                </Drawer.Dialog>
-              </Drawer.Content>
-            </Drawer.Backdrop>
-          </Drawer>
-        )}
-        <div className="mt-3 text-[11px] text-ink-dim italic">
-          {view.kind === "categories"
-            ? "Tap popover → scegli categoria. Ruoli/Tags = stay inline. Collegamento/Fonte = escalate al drawer."
-            : isHeavy
-            ? "↑ Il drawer è aperto per il picker complesso."
-            : "Flow leggero inline (multi-value)."}
-        </div>
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-1 text-[10px] text-primary underline"
-        >
-          Reset demo
-        </button>
-        <div className="mt-1 flex flex-wrap gap-1">
-          <ForceView label="→ collegamento (drawer)" onClick={() => setView({ kind: "collegamento-pick" })} />
-          <ForceView label="→ fonte (drawer)" onClick={() => setView({ kind: "fonte-pick" })} />
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ForceView({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center px-2 h-6 rounded bg-amber-50 border border-amber-300 text-[10px] text-amber-800 hover:bg-amber-100"
-    >
-      {label}
-    </button>
-  );
-}
-
-// ============================================================================
-// ALT C — Right drawer sempre (single surface, coerente con sketch 5)
+// Recommended implementation — Right drawer sempre
 // ============================================================================
 
 function AltCDrawerAlways() {
