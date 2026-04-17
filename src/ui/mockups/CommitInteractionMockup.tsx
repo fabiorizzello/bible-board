@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input, TextField } from "@heroui/react";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Pencil, Undo2, X } from "lucide-react";
 import {
   Alternative,
   Code,
@@ -39,28 +39,31 @@ export function CommitInteractionMockup() {
         <Alternative
           letter="A"
           recommended
-          title="Blur-to-save (Apple Notes pattern)"
-          subtitle="tap fuori salva, ESC annulla, niente bottoni espliciti"
+          title="Blur-to-save + toast undo non-invasivo"
+          subtitle="tap fuori salva · toast 'Salvato' bottom 5s con bottone Annulla · ESC annulla pre-commit"
           mock={<BlurToSaveMock />}
           grammatica={
             <>
               Tap nel value → diventa <Code>{`<TextField><Input/>`}</Code> HeroUI con focus
               ring teal. Modifichi liberamente.
               <br />
-              <strong>Tap fuori dal campo</strong> (qualunque punto del detail pane o sidebar) →
-              commit silenzioso. <strong>ESC</strong> → annulla e ripristina valore precedente.
+              <strong>Tap fuori dal campo</strong> → commit + <strong>toast non-invasivo
+              bottom-center</strong> con before/after del valore + bottone <strong>Annulla</strong>{" "}
+              (rollback al valore precedente). Toast auto-dismiss dopo 5s.
               <br />
-              Niente chrome aggiunto, niente bottoni: il campo torna a sembrare testo subito
-              dopo il blur.
+              <strong>ESC</strong> → annulla pre-commit (no toast).
+              <br />
+              Pattern iOS Mail/Photos undo — affidabile, dismissibile, non blocca il flow.
             </>
           }
           items={[
-            ["pro", "Zero chrome — coerente con inline per-campo"],
-            ["pro", "Pattern iPad-native: identico ad Apple Notes, Things 3, Notion iPad"],
-            ["pro", "Funziona senza tastiera fisica (Pencil + touch)"],
-            ["pro", "Massima densità — tutti i campi appaiono uguali in idle"],
-            ["con", "Discoverability del commit: serve toast onboarding al primo edit"],
-            ["con", "Richiede undo globale (⌘Z / shake-to-undo) come safety net"],
+            ["pro", "Zero chrome in idle/edit — coerente con inline per-campo"],
+            ["pro", "<strong>Toast undo</strong> dà safety net immediato senza ⌘Z (compatibile Pencil-only)"],
+            ["pro", "Pattern Apple Mail (delete email → 'Annulla 5s'), Photos (cestina → 'Annulla')"],
+            ["pro", "Toast bottom-center fa pill non bloccante, dismissibile con X"],
+            ["pro", "Mostra before/after del valore — l'utente vede esattamente cosa ha cambiato"],
+            ["con", "Per più commit rapidi consecutivi serve queue (mostra solo l'ultimo) o stack"],
+            ["con", "Richiede comunque undo globale (⌘Z) come safety dopo i 5s del toast"],
           ]}
         />
 
@@ -256,21 +259,104 @@ function EditableField({ label, value, onCommit, mode, onTypingChange }: Editabl
   );
 }
 
+interface UndoToastState {
+  field: string;
+  prevValue: string;
+  newValue: string;
+  rollback: () => void;
+  ts: number;
+}
+
 function BlurToSaveMock() {
   const [nascita, setNascita] = useState("2000 a.E.V.");
+  const [toast, setToast] = useState<UndoToastState | null>(null);
+
+  // Auto-dismiss toast after 5s
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  function handleCommit(next: string) {
+    if (next === nascita) return; // no-op
+    const prev = nascita;
+    setNascita(next);
+    setToast({
+      field: "Nascita",
+      prevValue: prev,
+      newValue: next,
+      rollback: () => {
+        setNascita(prev);
+        setToast(null);
+      },
+      ts: Date.now(),
+    });
+  }
+
   return (
-    <>
+    <div className="relative">
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
       <SimpleField label="Descrizione" value="Patriarca dei tre monoteismi." />
-      <EditableField label="Nascita" value={nascita} onCommit={setNascita} mode="blur" />
+      <EditableField label="Nascita" value={nascita} onCommit={handleCommit} mode="blur" />
       <SimpleField label="Morte" value="1825 a.E.V." />
       <SimpleField label="Tribù" value="Ebrei" />
       <div className="mt-3 text-[11px] text-ink-dim italic">
-        ↑ Tap su <strong>Nascita</strong> → entra in edit. Tap fuori → salva. ESC →
-        annulla.
+        ↑ Tap su <strong>Nascita</strong> → entra in edit. Tap fuori → salva +
+        toast undo (5s). ESC → annulla senza salvare.
       </div>
-    </>
+
+      <UndoToast toast={toast} onDismiss={() => setToast(null)} />
+    </div>
+  );
+}
+
+function UndoToast({
+  toast,
+  onDismiss,
+}: {
+  toast: UndoToastState | null;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      aria-live="polite"
+      className={`pointer-events-none absolute left-1/2 -translate-x-1/2 -bottom-4 transition-all duration-200 ${
+        toast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      }`}
+    >
+      {toast && (
+        <div
+          key={toast.ts}
+          className="pointer-events-auto inline-flex items-center gap-3 pl-4 pr-1.5 py-1.5 bg-slate-900/95 backdrop-blur text-white text-xs rounded-full shadow-xl"
+        >
+          <Check size={14} className="text-emerald-400 flex-shrink-0" />
+          <span>
+            <span className="opacity-70">{toast.field}:</span>{" "}
+            <span className="font-mono opacity-60 line-through">{toast.prevValue}</span>{" "}
+            <span className="font-mono">→</span>{" "}
+            <span className="font-mono">{toast.newValue}</span>
+          </span>
+          <button
+            type="button"
+            onClick={toast.rollback}
+            className="inline-flex items-center gap-1 h-7 px-3 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition-colors"
+          >
+            <Undo2 size={12} />
+            Annulla
+          </button>
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label="Chiudi"
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
