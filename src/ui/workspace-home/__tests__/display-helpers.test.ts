@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   TIPO_FILTERS,
   TIPO_ABBREV,
@@ -13,6 +13,15 @@ import {
   CURRENT_AUTORE,
 } from "../display-helpers";
 import { ELEMENTI, ELEMENTO_IDS } from "@/mock/data";
+import {
+  commitElementPatch,
+  resetWorkspaceUiState,
+  softDeleteElement,
+} from "../workspace-ui-store";
+
+beforeEach(() => {
+  resetWorkspaceUiState();
+});
 
 // ── Constants ──
 
@@ -183,6 +192,44 @@ describe("getElementsForView", () => {
     const withEmpty = getElementsForView("tutti", "", "Tutti", []);
     expect(withoutArg.length).toBe(withEmpty.length);
   });
+
+  it("shows session override fields in list results", () => {
+    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
+      titolo: "Abramo (sessione)",
+      tags: ["patriarchi", "promessa"],
+      nascita: { anno: 2020, era: "aev", precisione: "esatta" },
+    });
+
+    const result = getElementsForView("tutti", "sessione", "Tutti");
+    expect(result).toHaveLength(1);
+    expect(result[0]?.titolo).toBe("Abramo (sessione)");
+    expect(result[0]?.tags).toContain("promessa");
+    expect(formatElementDate(result[0]!)).toBe("2020 a.e.v.");
+  });
+
+  it("recomputes dynamic board membership from session tags", () => {
+    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
+      tags: ["messianico"],
+    });
+
+    const result = getElementsForView("board-profeti", "", "Tutti");
+    expect(result.map((element) => element.id)).toContain(ELEMENTO_IDS.abraamo);
+  });
+
+  it("keeps deleted filtering after session overrides", () => {
+    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
+      titolo: "Abramo nascosto",
+    });
+    softDeleteElement(ELEMENTO_IDS.abraamo as string);
+
+    const result = getElementsForView(
+      "tutti",
+      "",
+      "Tutti",
+      [ELEMENTO_IDS.abraamo as string],
+    );
+    expect(result.find((element) => element.id === ELEMENTO_IDS.abraamo)).toBeUndefined();
+  });
 });
 
 // ── Link resolution ──
@@ -229,6 +276,15 @@ describe("resolveBoardsForElement", () => {
     const babilonia = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.babilonia as string))!;
     const boards = resolveBoardsForElement(babilonia);
     expect(boards).toEqual([]);
+  });
+
+  it("uses session tags when resolving boards for an element", () => {
+    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
+      tags: ["messianico"],
+    });
+
+    const abraamo = findElementById(ELEMENTO_IDS.abraamo as string)!;
+    expect(resolveBoardsForElement(abraamo)).toContain("Profeti di Israele");
   });
 });
 
@@ -291,6 +347,17 @@ describe("getAnnotazioniForElement", () => {
     expect(result.mie).toHaveLength(0);
     expect(result.altreCount).toBe(0);
   });
+
+  it("returns session-edited annotation content", () => {
+    commitElementPatch(ELEMENTO_IDS.annotazioneAbraamo as string, {
+      titolo: "Nota aggiornata",
+      descrizione: "Contenuto aggiornato",
+    });
+
+    const result = getAnnotazioniForElement(ELEMENTO_IDS.abraamo as string, CURRENT_AUTORE);
+    expect(result.mie[0]?.titolo).toBe("Nota aggiornata");
+    expect(result.mie[0]?.descrizione).toBe("Contenuto aggiornato");
+  });
 });
 
 // ── Element lookup ──
@@ -304,5 +371,16 @@ describe("findElementById", () => {
 
   it("returns undefined for nonexistent ID", () => {
     expect(findElementById("nonexistent-id")).toBeUndefined();
+  });
+
+  it("returns the merged session element", () => {
+    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
+      titolo: "Abramo unito",
+      tribu: "Ebrei",
+    });
+
+    const result = findElementById(ELEMENTO_IDS.abraamo as string);
+    expect(result?.titolo).toBe("Abramo unito");
+    expect(result?.tribu).toBe("Ebrei");
   });
 });
