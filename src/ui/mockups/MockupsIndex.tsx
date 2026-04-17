@@ -1,11 +1,13 @@
 import { Link } from "react-router";
 import { Chip } from "@heroui/react";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, Star } from "lucide-react";
 
 /**
  * Index dei mockup S02/R005 — punto d'ingresso per il review umano.
  * Mounted on /dev/mockups.
  */
+
+type MockupStatus = "decided" | "in_review";
 
 interface MockupEntry {
   number: string;
@@ -14,6 +16,7 @@ interface MockupEntry {
   title: string;
   description: string;
   recommended: string;
+  status: MockupStatus;
 }
 
 const MOCKUPS: MockupEntry[] = [
@@ -23,8 +26,9 @@ const MOCKUPS: MockupEntry[] = [
     category: "Interazione",
     title: "Commit & touch interaction",
     description:
-      "Tap nel campo Nascita di Abraamo, modifichi. Come si committa? 3 alternative: blur-to-save, ✓/✕ inline, auto-save toast.",
-    recommended: "A. Blur-to-save (Apple Notes pattern)",
+      "Tap nel campo Nascita → edit inline. Blur-to-save + toast undo non-invasivo con rollback 5s. Alternative (✓/✕ inline, auto-save) scartate — vedi storico nel mockup.",
+    recommended: "A. Blur-to-save + toast undo",
+    status: "decided",
   },
   {
     number: "2",
@@ -34,6 +38,7 @@ const MOCKUPS: MockupEntry[] = [
     description:
       "Campi vuoti sempre visibili o on-demand? Dove vive il '+ aggiungi'? 3 alternative: placeholder, popover chips, sticky toolbar.",
     recommended: "B. Riga inline + popover chips",
+    status: "in_review",
   },
   {
     number: "3",
@@ -43,6 +48,7 @@ const MOCKUPS: MockupEntry[] = [
     description:
       "Aggiungi link → Isacco con TipoLink parentela, ruolo figlio. 3 alternative: popover single-step, drawer con filtri, modal command-palette.",
     recommended: "A. Big anchored popover single-step",
+    status: "in_review",
   },
   {
     number: "4",
@@ -50,8 +56,9 @@ const MOCKUPS: MockupEntry[] = [
     category: "Editor",
     title: "Markdown descrizione (Milkdown)",
     description:
-      "Editor Milkdown 7.20 vero (non più sketch statico). Decisione lockata: niente alternative. Da testare su iPad reale per touch selection, Pencil Scribble, performance.",
-    recommended: "Milkdown vero — preset-commonmark + listener",
+      "Editor Milkdown 7.20 vero. Decisione lockata: niente alternative. Da testare su iPad reale per touch selection, Pencil Scribble, performance.",
+    recommended: "Milkdown — preset-commonmark + listener",
+    status: "decided",
   },
   {
     number: "5",
@@ -59,8 +66,9 @@ const MOCKUPS: MockupEntry[] = [
     category: "Composite",
     title: "Vita component (nascita + morte opt)",
     description:
-      "Coppia naturale come componente unico, tablet feel iPad. 3 alternative: right drawer Pages-style, modal centered, big popover.",
-    recommended: "A. Right drawer (Pages inspector style)",
+      "Coppia naturale come componente unico, Right drawer Pages-style. Alternative (Modal centrato, Big popover) scartate — vedi storico nel mockup.",
+    recommended: "A. Right drawer (Pages inspector)",
+    status: "decided",
   },
   {
     number: "6",
@@ -68,10 +76,13 @@ const MOCKUPS: MockupEntry[] = [
     category: "Validation",
     title: "Cross-field validation UX",
     description:
-      "Quando un commit viola un vincolo cross-aggregate, come reagisce l'UI? 3 alternative: hard reject, auto-prompt modal, soft validation persistente.",
-    recommended: "C. Soft validation + drawer review panel",
+      "Soft validation passive (inline icon, header badge, sidebar marker, drawer review). Alternative (Hard reject, Auto-prompt modal) scartate — vedi storico nel mockup.",
+    recommended: "C. Soft validation + drawer review",
+    status: "decided",
   },
 ];
+
+const DECIDED_COUNT = MOCKUPS.filter((m) => m.status === "decided").length;
 
 export function MockupsIndex() {
   return (
@@ -91,6 +102,20 @@ export function MockupsIndex() {
             <Chip size="sm" variant="soft" color="accent">
               {MOCKUPS.length} mockup
             </Chip>
+            <Chip size="sm" variant="soft" color="success">
+              <span className="inline-flex items-center gap-1">
+                <CheckCircle2 size={12} />
+                {DECIDED_COUNT} decisi
+              </span>
+            </Chip>
+            {MOCKUPS.length - DECIDED_COUNT > 0 && (
+              <Chip size="sm" variant="soft">
+                <span className="inline-flex items-center gap-1">
+                  <Circle size={12} />
+                  {MOCKUPS.length - DECIDED_COUNT} in review
+                </span>
+              </Chip>
+            )}
           </div>
           <h1 className="font-heading text-4xl text-ink-hi mt-2 leading-tight">
             Editor app-native — sketches
@@ -98,44 +123,78 @@ export function MockupsIndex() {
           <p className="text-sm text-ink-md mt-3 max-w-2xl leading-relaxed">
             Mockup React + HeroUI vero per la fase R005 (refactor inline per-campo).
             Device baseline: <strong>iPad 10.9" (Air)</strong> 1180×820 landscape ·
-            820×1180 portrait. Apri ognuno, confronta le 3 alternative, poi torna in chat
-            con le scelte.
+            820×1180 portrait. I mockup <strong>decisi</strong> sono consolidati
+            sull'alternativa scelta (alternative scartate nel sotto-sezione storico).
+            Quelli <strong>in review</strong> mostrano ancora 3 alternative da valutare.
           </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {MOCKUPS.map((m) => (
-            <Link
-              key={m.slug}
-              to={`/dev/mockup-${m.slug}`}
-              className="group bg-panel border border-edge rounded-xl p-5 no-underline hover:border-primary/40 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start gap-4 mb-3">
-                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center font-mono font-bold text-lg flex-shrink-0">
-                  {m.number}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-wider text-primary font-semibold">
-                    {m.category}
+          {MOCKUPS.map((m) => {
+            const decided = m.status === "decided";
+            return (
+              <Link
+                key={m.slug}
+                to={`/dev/mockup-${m.slug}`}
+                className={`group relative bg-panel border rounded-xl p-5 no-underline hover:shadow-md transition-all ${
+                  decided
+                    ? "border-emerald-300/50 hover:border-emerald-400"
+                    : "border-edge hover:border-primary/40"
+                }`}
+              >
+                {decided && (
+                  <div className="absolute top-0 right-0 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-100 rounded-bl-xl rounded-tr-xl inline-flex items-center gap-1">
+                    <CheckCircle2 size={12} />
+                    Deciso
                   </div>
-                  <h2 className="font-heading text-lg text-ink-hi mt-0.5 leading-tight">
-                    {m.title}
-                  </h2>
+                )}
+                {!decided && (
+                  <div className="absolute top-0 right-0 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold text-amber-700 bg-amber-100 rounded-bl-xl rounded-tr-xl inline-flex items-center gap-1">
+                    <Circle size={12} />
+                    In review
+                  </div>
+                )}
+                <div className="flex items-start gap-4 mb-3 mt-1">
+                  <div
+                    className={`w-11 h-11 rounded-full inline-flex items-center justify-center font-mono font-bold text-lg flex-shrink-0 ${
+                      decided
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {m.number}
+                  </div>
+                  <div className="flex-1 min-w-0 pr-16">
+                    <div
+                      className={`text-[10px] uppercase tracking-wider font-semibold ${
+                        decided ? "text-emerald-700" : "text-primary"
+                      }`}
+                    >
+                      {m.category}
+                    </div>
+                    <h2 className="font-heading text-lg text-ink-hi mt-0.5 leading-tight">
+                      {m.title}
+                    </h2>
+                  </div>
+                </div>
+                <p className="text-sm text-ink-md leading-relaxed mb-3">{m.description}</p>
+                <div className="flex items-center gap-2 text-xs">
+                  <Star
+                    size={12}
+                    className={decided ? "text-emerald-600 fill-emerald-600" : "text-primary fill-primary"}
+                  />
+                  <span className="text-ink-md">
+                    {decided ? "Scelta: " : "Recommended: "}
+                    <strong className="text-ink-hi">{m.recommended}</strong>
+                  </span>
                 </div>
                 <ArrowRight
                   size={18}
-                  className="text-ink-dim group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0 mt-3"
+                  className="absolute right-5 bottom-5 text-ink-dim group-hover:text-primary group-hover:translate-x-0.5 transition-all"
                 />
-              </div>
-              <p className="text-sm text-ink-md leading-relaxed mb-3">{m.description}</p>
-              <div className="flex items-center gap-2 text-xs">
-                <Star size={12} className="text-primary fill-primary" />
-                <span className="text-ink-md">
-                  Recommended: <strong className="text-ink-hi">{m.recommended}</strong>
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
         <footer className="mt-12 pt-6 border-t border-edge text-xs text-ink-lo leading-relaxed">
