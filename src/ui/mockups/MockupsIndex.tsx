@@ -33,32 +33,12 @@ const MOCKUPS: MockupEntry[] = [
   {
     number: "2",
     slug: "add-field-flow",
-    category: "Flow / Discovery",
-    title: "Add field flow",
+    category: "Flow unificato",
+    title: "Add field flow (entry + multi-value + single-value)",
     description:
-      "Tap '+ aggiungi campo' → popover unificato con content swap. Da categories → multi-chip o single-value picker, con back navigation. Niente popover che si chiudono e riaprono.",
-    recommended: "Nested popover content swap",
-    status: "decided",
-  },
-  {
-    number: "2.5",
-    slug: "multi-value-chip",
-    category: "Array editing",
-    title: "Multi-value chip array (Ruoli, Tags)",
-    description:
-      "Pattern unificato per array di chip inline: HeroUI Chip onClose per remove, popover input per add con suggestions dal workspace. Type+Enter aggiunge, virgola separa multipli.",
-    recommended: "Inline chip + popover add con suggestions",
-    status: "decided",
-  },
-  {
-    number: "3",
-    slug: "single-value-picker",
-    category: "Picker unificato",
-    title: "Single-value picker (Collegamento + Fonte)",
-    description:
-      "Picker unificato per i 2 field universali single-value. Stesso popover ~440px, search + grouped list + metadata sotto. 2 entry points: inline e chained dal mockup 2.",
-    recommended: "Big anchored popover single-step",
-    status: "decided",
+      "Flow unificato: '+ aggiungi campo' + sub-flow multi-value (Ruoli, Tags) + sub-flow single-value (Collegamento, Fonte) come UNA decisione UX. 3 alternative al pattern intero: popover content swap, escalation popover→drawer, drawer always.",
+    recommended: "A. Popover unico con content swap",
+    status: "in_review",
   },
   {
     number: "4",

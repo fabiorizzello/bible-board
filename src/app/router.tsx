@@ -10,8 +10,6 @@ import { DetailLayoutMockup } from "@/ui/mockups/DetailLayoutMockup";
 import { HeaderEditMockup } from "@/ui/mockups/HeaderEditMockup";
 import { MarkdownDescrizioneMockup } from "@/ui/mockups/MarkdownDescrizioneMockup";
 import { MockupsIndex } from "@/ui/mockups/MockupsIndex";
-import { MultiValueChipMockup } from "@/ui/mockups/MultiValueChipMockup";
-import { SingleValuePickerMockup } from "@/ui/mockups/SingleValuePickerMockup";
 import { ValidationUxMockup } from "@/ui/mockups/ValidationUxMockup";
 
 export const appRouter = createBrowserRouter([
@@ -36,8 +34,6 @@ export const appRouter = createBrowserRouter([
   { path: "/dev/mockups", Component: MockupsIndex },
   { path: "/dev/mockup-commit-interaction", Component: CommitInteractionMockup },
   { path: "/dev/mockup-add-field-flow", Component: AddFieldFlowMockup },
-  { path: "/dev/mockup-multi-value-chip", Component: MultiValueChipMockup },
-  { path: "/dev/mockup-single-value-picker", Component: SingleValuePickerMockup },
   { path: "/dev/mockup-markdown-descrizione", Component: MarkdownDescrizioneMockup },
   { path: "/dev/mockup-composite-vita", Component: CompositeVitaMockup },
   { path: "/dev/mockup-validation-ux", Component: ValidationUxMockup },

@@ -1,18 +1,20 @@
-import { useState } from "react";
-import { Chip, Input, Popover, TextField } from "@heroui/react";
+import { useState, type ReactNode } from "react";
+import { Chip, Drawer, Input, Popover, TextField } from "@heroui/react";
 import {
   ChevronLeft,
   FileText,
   Link2,
   Plus,
   Search,
+  Star,
   Tag,
   Users,
 } from "lucide-react";
 import {
+  Alternative,
   Code,
+  Divider,
   ElementoHeader,
-  IpadFrame,
   MockupFooter,
   MockupHeader,
   RemovableChip,
@@ -20,26 +22,17 @@ import {
 } from "./_atoms";
 
 /**
- * Mockup S02/R005 — Sketch 2: Add field flow (entry point unificato)
+ * Mockup S02/R005 — Sketch 2: Add field flow UNIFICATO
  *
- * UNIFICA il flow "+ aggiungi → scegli tipo → riempi". Il popover ha uno stato
- * interno che fa content swap (categories ↔ multi-chip ↔ single-value picker)
- * con back navigation. Niente flicker close+open tra i 2 popover separati.
+ * Il flow completo "+ aggiungi campo" → categories → (multi-chip OR picker) → commit
+ * come UNA decisione. Copriamo entrambi i sub-flow (multi-value tipo Ruoli/Tags +
+ * single-value tipo Collegamento/Fonte) perché sono parti dello stesso gesto utente.
  *
- * Branches:
- *   • Multi-value (Ruoli, Tags) → vedi mockup 2.5 per il pattern dettagliato
- *   • Single-value (Collegamento, Fonte) → vedi mockup 3 per il picker
- *
- * Decisione lockata: nested popover content swap (option a). HeroUI Popover
- * primitive + state machine view interna.
+ * 3 alternative per la intera UX del flow:
+ *   A. Tutto nel popover: content swap interno  ⭐ RECOMMENDED
+ *   B. Escalation: popover leggero → right drawer per picker complesso
+ *   C. Right drawer sempre (stesso primitive di sketch 5 Vita)
  */
-
-type View =
-  | { kind: "categories" }
-  | { kind: "ruoli-add" }
-  | { kind: "tags-add" }
-  | { kind: "collegamento-pick" }
-  | { kind: "fonte-pick" };
 
 export function AddFieldFlowMockup() {
   return (
@@ -47,135 +40,142 @@ export function AddFieldFlowMockup() {
       <div className="max-w-6xl mx-auto px-6 py-10">
         <MockupHeader
           number="2"
-          title="Add field flow"
+          title="Add field flow (unified)"
           subtitle={
             <>
-              Tap "+ aggiungi campo" → popover con categories. Tap categoria → il{" "}
-              <strong>contenuto del popover swap</strong> al picker corrispondente con back
-              navigation. Niente popover che si chiude e riapre.
+              "+ aggiungi campo" + sub-flow multi-value (Ruoli, Tags) + sub-flow
+              single-value (Collegamento, Fonte) come <strong>unica decisione UX</strong>.
+              3 alternative per la intera esperienza.
             </>
           }
         />
 
-        <div className="flex gap-8 items-start flex-wrap">
-          <IpadFrame>
-            <ElementoHeader />
-            <SimpleField label="Tipo" value="personaggio" />
-            <SimpleField label="Descrizione" value="Patriarca dei tre monoteismi." />
-            <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
-            <SimpleField label="Tribù" value="Ebrei" />
-            <div className="mt-3">
-              <AddFieldPopover />
-            </div>
-          </IpadFrame>
-
-          <div className="flex-1 min-w-[320px] space-y-5">
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm leading-relaxed text-ink-hi">
-              <div className="text-[11px] uppercase tracking-wider text-primary font-bold mb-1.5">
-                Grammatica
-              </div>
-              <div>
-                <strong>1. Entry</strong>: row "+ aggiungi campo" 48px, dashed border, tap
-                cursor.
-                <br />
-                <strong>2. Categories</strong>: popover apre con sezioni "Field tipizzati"
-                (filtrate per <Code>TipoElemento</Code>) + "Universali" (Collegamento,
-                Fonte). Chip 44×44 tap target.
-                <br />
-                <strong>3. Content swap</strong>: tap chip categoria → popover{" "}
-                <em>stesso surface</em> mostra picker per quel tipo. Header con back arrow{" "}
-                <ChevronLeft size={12} className="inline" /> + titolo.
-                <br />
-                <strong>4. Confirm</strong>: tap "Aggiungi" → popover close + nuovo
-                field-row in detail pane (in edit state pronta a digitare).
-                <br />
-                <strong>5. ESC / tap fuori</strong>: cancel + close popover.
-              </div>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded-lg p-4 text-sm text-amber-900 leading-relaxed">
-              <div className="text-[11px] uppercase tracking-wider font-bold mb-1.5">
-                Branching su altri mockup
-              </div>
-              <ul className="list-disc list-inside space-y-1 ml-1 text-xs">
+        <Alternative
+          letter="A"
+          recommended
+          title="Popover unico con content swap"
+          subtitle="tutto accade nello stesso popover: categories → sub-view con back navigation"
+          mock={<AltAPopoverInterattivo />}
+          grammatica={
+            <>
+              Tap "+ aggiungi campo" → popover HeroUI ~380px.
+              <br />
+              <strong>Categories view</strong>: sezione "Field tipizzati" (filtrate per{" "}
+              <Code>TipoElemento</Code>) + "Universali" (Collegamento, Fonte).
+              <br />
+              <strong>Tap chip categoria</strong> → il contenuto del popover fa{" "}
+              <strong>content swap</strong> alla sub-view:
+              <ul className="list-disc list-inside ml-2 mt-1 space-y-0.5">
                 <li>
-                  Tap chip <strong>Ruoli</strong> o <strong>Tags</strong> → vedi{" "}
-                  <a
-                    href="/dev/mockup-multi-value-chip"
-                    className="underline font-semibold"
-                  >
-                    Mockup 2.5 Multi-value chip
-                  </a>
+                  Multi-value (Ruoli, Tags) → input text con chip preview + suggestions
+                  dal workspace
                 </li>
                 <li>
-                  Tap chip <strong>Collegamento</strong> o <strong>Fonte</strong> → vedi{" "}
-                  <a
-                    href="/dev/mockup-single-value-picker"
-                    className="underline font-semibold"
-                  >
-                    Mockup 3 Single-value picker
-                  </a>
-                </li>
-                <li>
-                  Qui mostriamo il pattern di <em>content swap</em>; il dettaglio del
-                  picker live in 2.5 e 3.
+                  Single-value (Collegamento, Fonte) → search + grouped list + metadata
                 </li>
               </ul>
-            </div>
+              <strong>Back arrow</strong> in alto torna a categories. Tap fuori / ESC → close.
+              Stesso surface dall'inizio alla fine, zero flicker.
+            </>
+          }
+          items={[
+            ["pro", "<strong>Un solo surface</strong> — zero flicker, fluido"],
+            ["pro", "Back navigation chiara; cambiare idea è immediato"],
+            ["pro", "Lightweight: il popover non è mai > 380px — preserva contesto detail"],
+            ["pro", "Multi-value e single-value riusano lo stesso wrapper"],
+            ["con", "State machine view interno è custom (no primitive HeroUI per nested nav)"],
+            ["con", "Per picker complessi (Fonte con 100+ libri) lo spazio 380px diventa stretto"],
+          ]}
+        />
 
-            <div className="text-sm leading-snug space-y-1.5">
-              <div className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">+</span>
-                <span>
-                  <strong>Un solo surface</strong> dall'inizio alla fine — niente flicker
-                  close/open tra popover separati
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">+</span>
-                <span>
-                  Back navigation chiara — l'utente può cambiare idea (es. da Collegamento
-                  a Fonte) senza ripartire
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">+</span>
-                <span>
-                  Pattern Notion command palette / Linear / iOS Settings drill-down —
-                  familiare
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-rose-600 font-bold">−</span>
-                <span>
-                  Implementazione custom della view state machine dentro il popover (no
-                  primitive HeroUI per nested navigation)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Divider />
+
+        <Alternative
+          letter="B"
+          title="Escalation: popover → right drawer"
+          subtitle="entry lightweight nel popover, single-value complessi escalano a drawer 440px"
+          mock={<AltBEscalation />}
+          grammatica={
+            <>
+              Tap "+ aggiungi" → popover lightweight con categories.
+              <br />
+              <strong>Multi-value</strong> (Ruoli, Tags) → sub-view <em>dentro il popover</em>{" "}
+              (come alt A) — task semplice, spazio sufficiente.
+              <br />
+              <strong>Single-value</strong> (Collegamento, Fonte) → il popover si{" "}
+              <strong>chiude</strong> e apre un <Code>{`<Drawer placement="right">`}</Code>{" "}
+              440px con il picker completo (search, filtri, preview, metadata).
+              <br />
+              Pattern mixed: <em>right tool for right task</em>. Coerente col composite Vita
+              (sketch 5 A) che usa drawer per edit complesso.
+            </>
+          }
+          items={[
+            ["pro", "Spazio massimo per i picker complessi (~440px wide)"],
+            ["pro", "Surface coerente con sketch 5 A (Vita) — pattern 'edit complesso = drawer'"],
+            ["pro", "Lightweight per casi lightweight (chip add)"],
+            ["con", "<strong>2 surface diversi</strong> — l'utente salta da popover a drawer"],
+            ["con", "Transizione close-popover + open-drawer ha flicker visibile"],
+            ["con", "Più complesso da implementare (orchestrazione tra Popover e Drawer state)"],
+          ]}
+        />
+
+        <Divider />
+
+        <Alternative
+          letter="C"
+          title="Right drawer sempre (single surface)"
+          subtitle="tap + aggiungi → drawer 440px con categories + content swap interno"
+          mock={<AltCDrawerAlways />}
+          grammatica={
+            <>
+              Tap "+ aggiungi" → <Code>{`<Drawer placement="right">`}</Code> 440px si apre
+              immediatamente con la categories view.
+              <br />
+              Tap categoria → content swap all'interno del drawer (stesso pattern di alt A
+              ma in drawer invece che popover). Back arrow per tornare a categories.
+              <br />
+              Stesso primitive di sketch 5 A (Vita composite) — pattern <em>unified</em>{" "}
+              tablet-native: ogni edit complesso = right drawer.
+            </>
+          }
+          items={[
+            ["pro", "Consistency totale col composite Vita (sketch 5 A)"],
+            ["pro", "Spazio ampio sempre — picker complessi hanno respiro"],
+            ["pro", "Un solo surface dall'inizio alla fine"],
+            ["con", "<strong>Overkill per task lightweight</strong> (es. aggiungere 1 tag)"],
+            ["con", "Drawer 440px copre metà detail pane su iPad portrait"],
+            ["con", "Aprire-chiudere drawer per ogni add è pesante rispetto a popover"],
+          ]}
+        />
 
         <MockupFooter>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
-              <strong>Sostituisce sketch precedente "empty fields"</strong> — la decisione
-              "riga inline + popover chips" resta, ma adesso il popover è coerente col
-              resto del flow add-field.
+              <strong>Decisione unificata:</strong> questo mockup copre entrambi i sub-flow
+              (multi-value e single-value) perché nell'esperienza utente sono parti dello
+              stesso gesto "aggiungi qualcosa al detail". Scegliere 3 patterns separati
+              sarebbe frammentato.
             </li>
             <li>
-              <strong>Field tipizzati</strong> filtrati per <Code>TipoElemento</Code> via{" "}
-              <Code>features/elemento/rules.ts</Code>: per personaggio = Ruoli/Tags; per
-              evento = Data/Luogo/Partecipanti; per profezia = Enunciazione/Adempimento;
-              etc.
+              <strong>Content swap</strong> (alt A e C): implementazione via state machine{" "}
+              <Code>view: 'categories' | 'ruoli-add' | 'collegamento-pick' | …</Code>{" "}
+              dentro il popover/drawer. Back arrow chiama <Code>setView('categories')</Code>.
             </li>
             <li>
-              <strong>Universali</strong> (Collegamento, Fonte) sempre presenti per ogni
-              TipoElemento, separati da divider nel popover.
+              <strong>Multi-value sub-view</strong>: input text + chip preview +
+              suggestions dal workspace. Type + Enter aggiunge chip, virgola separa
+              multipli. X rimuove chip.
             </li>
             <li>
-              <strong>Composite</strong> (Vita, Regno, Periodo): appaiono come SINGOLA chip
-              nel popover (es. "Vita"), non come 2 chip "Nascita"+"Morte". Vedi sketch 5.
+              <strong>Single-value sub-view</strong>: search + grouped list (per TipoLink
+              per collegamento, per categoria per fonte) + metadata conditional (Ruolo per
+              parentela, pagina per fonte).
+            </li>
+            <li>
+              <strong>Coerenza composite (sketch 5)</strong>: composite appaiono come
+              SINGOLA chip categoria (es. "Vita"), non due chip separati
+              "Nascita"+"Morte".
             </li>
           </ul>
         </MockupFooter>
@@ -185,69 +185,22 @@ export function AddFieldFlowMockup() {
 }
 
 // ============================================================================
-// AddFieldPopover — contiene state machine view interno
+// Shared sub-view atoms (usati da tutte e 3 le alternative)
 // ============================================================================
 
-function AddFieldPopover() {
-  const [view, setView] = useState<View>({ kind: "categories" });
+type SubFlowView =
+  | { kind: "categories" }
+  | { kind: "ruoli-add" }
+  | { kind: "tags-add" }
+  | { kind: "collegamento-pick" }
+  | { kind: "fonte-pick" };
 
-  function reset() {
-    setView({ kind: "categories" });
-  }
-
-  return (
-    <Popover>
-      <Popover.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
-        <Plus size={16} />
-        Aggiungi campo
-      </Popover.Trigger>
-      <Popover.Content className="w-[380px]">
-        <Popover.Dialog className="bg-panel border border-edge rounded-xl shadow-xl">
-          {view.kind === "categories" && <CategoriesView onPick={setView} />}
-          {view.kind === "ruoli-add" && (
-            <SubView title="Aggiungi Ruoli" onBack={reset}>
-              <MultiChipPreview placeholder="es. patriarca, profeta, padre della fede" />
-              <PreviewLink href="/dev/mockup-multi-value-chip">
-                Vedi mockup completo Multi-value chip →
-              </PreviewLink>
-            </SubView>
-          )}
-          {view.kind === "tags-add" && (
-            <SubView title="Aggiungi Tags" onBack={reset}>
-              <MultiChipPreview placeholder="es. genesi, fede, alleanza" />
-              <PreviewLink href="/dev/mockup-multi-value-chip">
-                Vedi mockup completo Multi-value chip →
-              </PreviewLink>
-            </SubView>
-          )}
-          {view.kind === "collegamento-pick" && (
-            <SubView title="Aggiungi Collegamento" onBack={reset}>
-              <SinglePickerPreview placeholder="Cerca elemento da linkare..." />
-              <PreviewLink href="/dev/mockup-single-value-picker">
-                Vedi mockup completo Single-value picker →
-              </PreviewLink>
-            </SubView>
-          )}
-          {view.kind === "fonte-pick" && (
-            <SubView title="Aggiungi Fonte" onBack={reset}>
-              <SinglePickerPreview placeholder="Cerca fonte (libro, articolo, sito)..." />
-              <PreviewLink href="/dev/mockup-single-value-picker">
-                Vedi mockup completo Single-value picker →
-              </PreviewLink>
-            </SubView>
-          )}
-        </Popover.Dialog>
-      </Popover.Content>
-    </Popover>
-  );
-}
-
-function CategoriesView({ onPick }: { onPick: (v: View) => void }) {
+function CategoriesContent({ onPick }: { onPick: (v: SubFlowView) => void }) {
   return (
     <div className="p-4">
-      <Popover.Heading className="text-[11px] uppercase tracking-wider text-primary font-bold mb-3">
+      <div className="text-[11px] uppercase tracking-wider text-primary font-bold mb-3">
         Aggiungi al detail di Abraamo
-      </Popover.Heading>
+      </div>
       <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold mb-2">
         Field tipizzati (personaggio)
       </div>
@@ -287,7 +240,7 @@ function CategoryChip({
   label,
   onClick,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onClick: () => void;
 }) {
@@ -303,125 +256,474 @@ function CategoryChip({
   );
 }
 
-function SubView({
-  title,
-  onBack,
-  children,
-}: {
-  title: string;
-  onBack: () => void;
-  children: React.ReactNode;
-}) {
+function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <>
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-edge">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-md hover:bg-primary/5 hover:text-primary transition-colors"
-          aria-label="Indietro"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <div className="text-sm font-semibold text-ink-hi">{title}</div>
-      </div>
-      <div className="p-4 space-y-3">{children}</div>
-    </>
+    <div className="flex items-center gap-2 px-4 py-3 border-b border-edge">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-md hover:bg-primary/5 hover:text-primary transition-colors"
+        aria-label="Indietro"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      <div className="text-sm font-semibold text-ink-hi">{title}</div>
+    </div>
   );
 }
 
-function MultiChipPreview({ placeholder }: { placeholder: string }) {
+function MultiChipContent({ label }: { label: string }) {
   const [text, setText] = useState("");
-  const [chips, setChips] = useState<string[]>([]);
+  const [chips, setChips] = useState<string[]>(["patriarca", "profeta"]);
+  const suggestions = ["padre della fede", "viandante", "ospite di Mamre"].filter(
+    (s) => !chips.includes(s),
+  );
 
-  function addChip() {
-    if (text.trim()) {
-      setChips([...chips, text.trim()]);
-      setText("");
-    }
-  }
-  function removeChip(idx: number) {
-    setChips(chips.filter((_, i) => i !== idx));
+  function addChip(v: string) {
+    const clean = v.trim();
+    if (clean && !chips.includes(clean)) setChips([...chips, clean]);
+    setText("");
   }
 
   return (
-    <div className="space-y-3">
-      <div className="text-[11px] text-ink-lo">
-        Type + Enter per aggiungere chip. X per rimuovere.
-      </div>
+    <div className="p-4 space-y-3">
       {chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {chips.map((c, i) => (
             <RemovableChip
-              key={i}
+              key={`${c}-${i}`}
               size="sm"
-              onRemove={() => removeChip(i)}
+              onRemove={() => setChips(chips.filter((_, j) => j !== i))}
             >
               {c}
             </RemovableChip>
           ))}
         </div>
       )}
-      <TextField
-        value={text}
-        onChange={setText}
-        aria-label="Nuovo valore"
-      >
-        <Input
-          placeholder={placeholder}
-          className="min-h-[44px]"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addChip();
-            }
-          }}
-        />
-      </TextField>
-    </div>
-  );
-}
-
-function SinglePickerPreview({ placeholder }: { placeholder: string }) {
-  return (
-    <div className="space-y-3">
       <div className="relative">
         <Search
           size={14}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none z-10"
         />
-        <Input
-          placeholder={placeholder}
-          className="min-h-[44px] pl-9 text-sm"
-        />
+        <TextField value={text} onChange={setText} aria-label={`Aggiungi ${label}`}>
+          <Input
+            placeholder={`Aggiungi ${label}…`}
+            className="min-h-[44px] pl-9 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addChip(text);
+              }
+            }}
+          />
+        </TextField>
       </div>
-      <div className="space-y-1 max-h-[180px] overflow-y-auto">
-        <PickerStub name="Isacco" tipo="personaggio" />
-        <PickerStub name="Ismaele" tipo="personaggio" />
-        <PickerStub name="Sara" tipo="personaggio" />
+      {text.length > 0 && (
+        <button
+          type="button"
+          onClick={() => addChip(text)}
+          className="w-full flex items-center gap-2 min-h-[40px] px-2 rounded-md hover:bg-primary/5 text-sm text-primary font-medium cursor-pointer"
+        >
+          <Plus size={12} />
+          Aggiungi "<span className="font-semibold">{text}</span>"
+        </button>
+      )}
+      {suggestions.length > 0 && text.length === 0 && (
+        <>
+          <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold px-2">
+            Suggeriti dal workspace
+          </div>
+          <div className="space-y-0.5">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => addChip(s)}
+                className="w-full text-left flex items-center min-h-[40px] px-2 rounded-md hover:bg-primary/5 text-sm text-ink-hi"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="text-[10px] text-ink-dim pt-2 border-t border-edge">
+        Enter aggiunge · virgola separa multipli
       </div>
     </div>
   );
 }
 
-function PickerStub({ name, tipo }: { name: string; tipo: string }) {
+function SingleValueContent({ kind }: { kind: "collegamento" | "fonte" }) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [ruolo, setRuolo] = useState<string | null>(null);
+
+  const placeholder =
+    kind === "collegamento"
+      ? "Cerca elemento da linkare..."
+      : "Cerca fonte (libro, articolo, web)...";
+
   return (
-    <div className="flex items-center gap-3 min-h-[44px] px-3 rounded-md hover:bg-primary/5 cursor-pointer">
+    <div className="p-4 space-y-3">
+      <div className="relative">
+        <Search
+          size={14}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none z-10"
+        />
+        <TextField value={search} onChange={setSearch} aria-label="Cerca">
+          <Input placeholder={placeholder} className="min-h-[44px] pl-9 text-sm" />
+        </TextField>
+      </div>
+      <div className="max-h-[200px] overflow-y-auto space-y-2 -mx-1">
+        {kind === "collegamento" ? (
+          <>
+            <GroupHeader>Parentela</GroupHeader>
+            <PickerRow
+              name="Isacco"
+              tipo="personaggio"
+              selected={selected === "Isacco"}
+              onSelect={() => setSelected("Isacco")}
+            />
+            <PickerRow
+              name="Ismaele"
+              tipo="personaggio"
+              selected={selected === "Ismaele"}
+              onSelect={() => setSelected("Ismaele")}
+            />
+            <GroupHeader>Adempimento</GroupHeader>
+            <PickerRow
+              name="Promessa della terra"
+              tipo="profezia"
+              selected={selected === "Promessa"}
+              onSelect={() => setSelected("Promessa")}
+            />
+          </>
+        ) : (
+          <>
+            <GroupHeader>Libri</GroupHeader>
+            <PickerRow
+              name="Genesi"
+              tipo="libro biblico"
+              selected={selected === "Genesi"}
+              onSelect={() => setSelected("Genesi")}
+            />
+            <PickerRow
+              name="Storia di Israele"
+              tipo="libro"
+              selected={selected === "Storia"}
+              onSelect={() => setSelected("Storia")}
+            />
+            <GroupHeader>Articoli</GroupHeader>
+            <PickerRow
+              name="L'Akedah nella tradizione rabbinica"
+              tipo="articolo"
+              selected={selected === "Akedah"}
+              onSelect={() => setSelected("Akedah")}
+            />
+          </>
+        )}
+      </div>
+      {selected && kind === "collegamento" && (
+        <div className="pt-3 border-t border-edge">
+          <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold mb-2">
+            Ruolo (parentela)
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {["figlio", "figlia", "padre", "madre", "coniuge"].map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRuolo(r)}
+                className={`inline-flex items-center h-9 px-3 rounded-full text-xs font-medium transition-colors ${
+                  ruolo === r
+                    ? "bg-primary text-white"
+                    : "bg-chip-bg text-ink-md hover:bg-primary/10"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {selected && kind === "fonte" && (
+        <div className="pt-3 border-t border-edge">
+          <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold mb-2">
+            Riferimento (opzionale)
+          </div>
+          <Input
+            placeholder="es. cap. 12, p. 45"
+            className="min-h-[40px] text-sm"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GroupHeader({ children }: { children: ReactNode }) {
+  return (
+    <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold px-2 py-1">
+      {children}
+    </div>
+  );
+}
+
+function PickerRow({
+  name,
+  tipo,
+  selected,
+  onSelect,
+}: {
+  name: string;
+  tipo: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full text-left flex items-center gap-3 min-h-[44px] px-2 rounded-md cursor-pointer transition-colors ${
+        selected ? "bg-primary/15" : "hover:bg-primary/5"
+      }`}
+    >
       <span className="flex-1 text-sm text-ink-hi font-medium">{name}</span>
       <Chip size="sm" variant="soft" className="bg-chip-bg text-ink-lo text-[10px]">
         {tipo}
       </Chip>
-    </div>
+    </button>
   );
 }
 
-function PreviewLink({ href, children }: { href: string; children: React.ReactNode }) {
+// ============================================================================
+// ALT A — Popover unico con content swap (recommended)
+// ============================================================================
+
+function AltAPopoverInterattivo() {
+  const [view, setView] = useState<SubFlowView>({ kind: "categories" });
+  const reset = () => setView({ kind: "categories" });
+
   return (
-    <a
-      href={href}
-      className="block text-[11px] text-primary hover:text-primary/80 font-semibold underline pt-2 border-t border-edge mt-2"
+    <>
+      <ElementoHeader />
+      <SimpleField label="Tipo" value="personaggio" />
+      <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
+      <SimpleField label="Tribù" value="Ebrei" />
+      <div className="mt-3">
+        <Popover>
+          <Popover.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
+            <Plus size={16} />
+            Aggiungi campo
+          </Popover.Trigger>
+          <Popover.Content className="w-[380px]">
+            <Popover.Dialog className="bg-panel border border-edge rounded-xl shadow-xl">
+              {view.kind === "categories" && <CategoriesContent onPick={setView} />}
+              {view.kind === "ruoli-add" && (
+                <>
+                  <SubHeader title="Aggiungi Ruoli" onBack={reset} />
+                  <MultiChipContent label="ruolo" />
+                </>
+              )}
+              {view.kind === "tags-add" && (
+                <>
+                  <SubHeader title="Aggiungi Tags" onBack={reset} />
+                  <MultiChipContent label="tag" />
+                </>
+              )}
+              {view.kind === "collegamento-pick" && (
+                <>
+                  <SubHeader title="Aggiungi Collegamento" onBack={reset} />
+                  <SingleValueContent kind="collegamento" />
+                </>
+              )}
+              {view.kind === "fonte-pick" && (
+                <>
+                  <SubHeader title="Aggiungi Fonte" onBack={reset} />
+                  <SingleValueContent kind="fonte" />
+                </>
+              )}
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </div>
+    </>
+  );
+}
+
+// ============================================================================
+// ALT B — Escalation: popover leggero + right drawer per picker complesso
+// ============================================================================
+
+function AltBEscalation() {
+  const [view, setView] = useState<SubFlowView>({ kind: "categories" });
+  const reset = () => setView({ kind: "categories" });
+  const isHeavy =
+    view.kind === "collegamento-pick" || view.kind === "fonte-pick";
+
+  return (
+    <>
+      <ElementoHeader />
+      <SimpleField label="Tipo" value="personaggio" />
+      <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
+      <SimpleField label="Tribù" value="Ebrei" />
+      <div className="mt-3">
+        {!isHeavy ? (
+          <Popover>
+            <Popover.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
+              <Plus size={16} />
+              Aggiungi campo (escalation)
+            </Popover.Trigger>
+            <Popover.Content className="w-[380px]">
+              <Popover.Dialog className="bg-panel border border-edge rounded-xl shadow-xl">
+                {view.kind === "categories" && (
+                  <CategoriesContent onPick={setView} />
+                )}
+                {view.kind === "ruoli-add" && (
+                  <>
+                    <SubHeader title="Aggiungi Ruoli" onBack={reset} />
+                    <MultiChipContent label="ruolo" />
+                  </>
+                )}
+                {view.kind === "tags-add" && (
+                  <>
+                    <SubHeader title="Aggiungi Tags" onBack={reset} />
+                    <MultiChipContent label="tag" />
+                  </>
+                )}
+              </Popover.Dialog>
+            </Popover.Content>
+          </Popover>
+        ) : (
+          <Drawer>
+            <Drawer.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border-2 border-dashed border-primary text-primary text-sm font-semibold bg-primary/5 cursor-pointer transition-colors">
+              <Plus size={16} />
+              Picker esteso ({view.kind === "collegamento-pick" ? "Collegamento" : "Fonte"})
+            </Drawer.Trigger>
+            <Drawer.Backdrop>
+              <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
+                <Drawer.Dialog>
+                  <Drawer.Header className="px-6 py-4 border-b border-edge">
+                    <Drawer.Heading className="font-heading text-lg text-ink-hi">
+                      {view.kind === "collegamento-pick"
+                        ? "Nuovo collegamento"
+                        : "Nuova fonte"}
+                    </Drawer.Heading>
+                    <Drawer.CloseTrigger />
+                  </Drawer.Header>
+                  <Drawer.Body className="px-6 py-5">
+                    <SingleValueContent
+                      kind={view.kind === "collegamento-pick" ? "collegamento" : "fonte"}
+                    />
+                  </Drawer.Body>
+                  <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
+                    Tap fuori per chiudere e salvare
+                  </Drawer.Footer>
+                </Drawer.Dialog>
+              </Drawer.Content>
+            </Drawer.Backdrop>
+          </Drawer>
+        )}
+        <div className="mt-3 text-[11px] text-ink-dim italic">
+          {view.kind === "categories"
+            ? "Tap popover → scegli categoria. Ruoli/Tags = stay inline. Collegamento/Fonte = escalate al drawer."
+            : isHeavy
+            ? "↑ Il drawer è aperto per il picker complesso."
+            : "Flow leggero inline (multi-value)."}
+        </div>
+        <button
+          type="button"
+          onClick={reset}
+          className="mt-1 text-[10px] text-primary underline"
+        >
+          Reset demo
+        </button>
+        <div className="mt-1 flex flex-wrap gap-1">
+          <ForceView label="→ collegamento (drawer)" onClick={() => setView({ kind: "collegamento-pick" })} />
+          <ForceView label="→ fonte (drawer)" onClick={() => setView({ kind: "fonte-pick" })} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ForceView({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center px-2 h-6 rounded bg-amber-50 border border-amber-300 text-[10px] text-amber-800 hover:bg-amber-100"
     >
-      {children}
-    </a>
+      {label}
+    </button>
+  );
+}
+
+// ============================================================================
+// ALT C — Right drawer sempre (single surface, coerente con sketch 5)
+// ============================================================================
+
+function AltCDrawerAlways() {
+  const [view, setView] = useState<SubFlowView>({ kind: "categories" });
+  const reset = () => setView({ kind: "categories" });
+
+  return (
+    <>
+      <ElementoHeader />
+      <SimpleField label="Tipo" value="personaggio" />
+      <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
+      <SimpleField label="Tribù" value="Ebrei" />
+      <div className="mt-3">
+        <Drawer>
+          <Drawer.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
+            <Plus size={16} />
+            Aggiungi campo (drawer)
+          </Drawer.Trigger>
+          <Drawer.Backdrop>
+            <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
+              <Drawer.Dialog>
+                <Drawer.Header className="px-6 py-4 border-b border-edge">
+                  <Drawer.Heading className="font-heading text-lg text-ink-hi inline-flex items-center gap-2">
+                    {view.kind !== "categories" && (
+                      <button
+                        type="button"
+                        onClick={reset}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-md hover:bg-primary/5 hover:text-primary"
+                        aria-label="Indietro"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                    )}
+                    {view.kind === "categories" && "Aggiungi al detail"}
+                    {view.kind === "ruoli-add" && "Aggiungi Ruoli"}
+                    {view.kind === "tags-add" && "Aggiungi Tags"}
+                    {view.kind === "collegamento-pick" && "Aggiungi Collegamento"}
+                    {view.kind === "fonte-pick" && "Aggiungi Fonte"}
+                  </Drawer.Heading>
+                  <Drawer.CloseTrigger />
+                </Drawer.Header>
+                <Drawer.Body className="px-2 py-3">
+                  {view.kind === "categories" && <CategoriesContent onPick={setView} />}
+                  {view.kind === "ruoli-add" && <MultiChipContent label="ruolo" />}
+                  {view.kind === "tags-add" && <MultiChipContent label="tag" />}
+                  {view.kind === "collegamento-pick" && (
+                    <SingleValueContent kind="collegamento" />
+                  )}
+                  {view.kind === "fonte-pick" && <SingleValueContent kind="fonte" />}
+                </Drawer.Body>
+                <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
+                  Tap fuori / Esc per chiudere
+                </Drawer.Footer>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
+        </Drawer>
+        <div className="mt-3 text-[11px] text-ink-dim italic inline-flex items-center gap-1">
+          <Star size={10} className="text-primary fill-primary" />
+          Stesso primitive Drawer di sketch 5 A (Vita).
+        </div>
+      </div>
+    </>
   );
 }
