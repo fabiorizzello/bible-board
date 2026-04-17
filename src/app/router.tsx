@@ -8,6 +8,7 @@ import { CommitInteractionMockup } from "@/ui/mockups/CommitInteractionMockup";
 import { CompositeVitaMockup } from "@/ui/mockups/CompositeVitaMockup";
 import { EmptyFieldsMockup } from "@/ui/mockups/EmptyFieldsMockup";
 import { MarkdownDescrizioneMockup } from "@/ui/mockups/MarkdownDescrizioneMockup";
+import { MockupsIndex } from "@/ui/mockups/MockupsIndex";
 import { ValidationUxMockup } from "@/ui/mockups/ValidationUxMockup";
 
 export const appRouter = createBrowserRouter([
@@ -29,6 +30,7 @@ export const appRouter = createBrowserRouter([
   },
   // ── Dev-only mockup routes (sketch validation per S02/R005) ─────────────
   // Bypassano auth per accesso diretto al review. Da rimuovere prima di prod.
+  { path: "/dev/mockups", Component: MockupsIndex },
   { path: "/dev/mockup-commit-interaction", Component: CommitInteractionMockup },
   { path: "/dev/mockup-empty-fields", Component: EmptyFieldsMockup },
   { path: "/dev/mockup-collegamento-picker", Component: CollegamentoPickerMockup },
