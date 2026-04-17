@@ -86,9 +86,9 @@ const MOCKUPS: MockupEntry[] = [
     category: "Layout",
     title: "Detail pane layout (no more tabellare)",
     description:
-      "Il 2-col label/value attuale sembra troppo tabellare. 3 alternative: status quo, Apple Calendar label-stacked, Linear chips header + body.",
+      "Layout differenziato per tipologia: metadati brevi in chip header, descrizione full-width prose, array in sezioni dedicate. Alternative (2-col status quo, label-stacked Apple) scartate — vedi storico.",
     recommended: "C. Metadata chips + body (Linear style)",
-    status: "in_review",
+    status: "decided",
   },
 ];
 
