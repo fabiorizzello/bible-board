@@ -17,12 +17,11 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  Type,
 } from "lucide-react";
 import {
   Alternative,
   Code,
-  Divider,
+  ConsideredAlternatives,
   MockupFooter,
   MockupHeader,
   SimpleField,
@@ -31,12 +30,9 @@ import {
 /**
  * Mockup S02/R005 — Sketch 7: Header edit (nome + tipo + actions)
  *
- * Il header del detail pane ha 3 elementi: nome elemento, chip TipoElemento,
- * e actions (rinomina/duplica/elimina). Come si edita ognuno?
- *
- *   A. Inline nome edit + tipo popover + kebab actions    ⭐ RECOMMENDED
- *   B. Inline nome edit + tipo readonly + kebab contains change-type
- *   C. Tutto dietro kebab menu (readonly inline)
+ * Decisione lockata: A. Inline nome edit + tipo popover + kebab actions.
+ * Le alternative B (tipo readonly + change via kebab) e C (tutto dietro
+ * kebab) sono elencate in fondo come storico, non implementate.
  */
 
 const TIPI_ELEMENTO = [
@@ -60,8 +56,8 @@ export function HeaderEditMockup() {
           subtitle={
             <>
               Header del detail pane: nome <strong>Abraamo</strong>, chip{" "}
-              <strong>personaggio</strong>, e azioni (rinomina, cambia tipo, duplica,
-              elimina). Come si edita ciascun pezzo?
+              <strong>personaggio</strong>, e azioni (rinomina, duplica, elimina).
+              Ogni pezzo tappabile direttamente.
             </>
           }
         />
@@ -79,7 +75,7 @@ export function HeaderEditMockup() {
               <br />
               <strong>Chip tipo</strong>: tap → <Code>{`<Popover>`}</Code> con lista
               TipoElemento. Selezione cambia il tipo (operazione atomica, con conferma se
-              distruttiva).
+              distruttiva lato dominio).
               <br />
               <strong>Azioni</strong>: kebab (⋯) HeroUI <Code>{`<Dropdown>`}</Code> top-right
               con Rinomina (focus sul nome), Duplica, Elimina.
@@ -99,79 +95,54 @@ export function HeaderEditMockup() {
           ]}
         />
 
-        <Divider />
-
-        <Alternative
-          letter="B"
-          title="Inline nome + tipo readonly + kebab change-type"
-          subtitle="nome tap-to-edit, chip tipo non cliccabile, kebab contiene Cambia tipo (dialog)"
-          mock={<InlineNomeReadonlyTipoMock />}
-          grammatica={
-            <>
-              <strong>Nome</strong>: identico ad A, tap-to-edit inline.
-              <br />
-              <strong>Chip tipo</strong>: <strong>read-only</strong>. Nessun hover, cursor
-              default. Visivamente un tag di stato.
-              <br />
-              <strong>Azioni</strong>: kebab (⋯) con <em>Cambia tipo</em>, Duplica, Elimina.
-              Cambia tipo apre <Code>{`<Modal>`}</Code> con lista + avviso "potresti perdere
-              campi tipo-specifici".
-              <br />
-              Cambiare tipo è un'azione "strutturale", protetta dietro kebab + modal.
-            </>
-          }
-          items={[
-            ["pro", "<strong>Sicurezza</strong> — cambiare tipo è difficile e richiede conferma esplicita"],
-            ["pro", "Chip tipo pulito visivamente, senza affordance interattiva"],
-            ["pro", "Pattern Things 3 (tag readonly) + Linear (change via menu)"],
-            ["con", "1 tap extra per cambiare tipo (apri kebab + clicca Cambia tipo)"],
-            ["con", "Chi vuole cambiare tipo spesso (es. fase di data entry) friction alta"],
-            ["con", "L'affordance del chip è ambigua: sembra clickable ma non lo è"],
-          ]}
-        />
-
-        <Divider />
-
-        <Alternative
-          letter="C"
-          title="Tutto dietro kebab menu"
-          subtitle="nome e tipo entrambi readonly in header, ogni edit passa dal menu ⋯"
-          mock={<AllBehindKebabMock />}
-          grammatica={
-            <>
-              <strong>Nome</strong>: readonly in header. Non tappabile. Per rinominare:
-              kebab → Rinomina → <Code>{`<Modal>`}</Code> con Input.
-              <br />
-              <strong>Chip tipo</strong>: readonly, come B.
-              <br />
-              <strong>Azioni</strong>: kebab con Rinomina, Cambia tipo, Duplica, Elimina —
-              TUTTE le azioni.
-              <br />
-              Pattern enterprise: nulla cambia per sbaglio, ogni azione esplicita.
-            </>
-          }
-          items={[
-            ["pro", "Zero probabilità di edit accidentale"],
-            ["pro", "Pattern Salesforce / JIRA issue detail"],
-            ["pro", "Azioni raggruppate in un punto solo"],
-            ["con", "<strong>Friction massima</strong> — 3+ tap per rinominare (⋯ + Rinomina + conferma)"],
-            ["con", "Anti inline per-campo: il nome NON si comporta come un field"],
-            ["con", "Su iPad touch-first il kebab nasconde funzionalità primarie — anti-discoverable"],
-            ["con", "Inconsistente con decisione sketch 1 (edit diretto inline)"],
+        <ConsideredAlternatives
+          entries={[
+            {
+              letter: "B",
+              title: "Inline nome + tipo readonly + kebab change-type",
+              summary:
+                "Nome tap-to-edit, chip tipo readonly. Kebab contiene 'Cambia tipo...' con modal di conferma.",
+              pros: [
+                "Sicurezza — cambiare tipo è difficile e richiede conferma esplicita",
+                "Chip tipo pulito visivamente, senza affordance interattiva",
+                "Pattern Things 3 (tag readonly) + Linear (change via menu)",
+              ],
+              cons: [
+                "1 tap extra per cambiare tipo (apri kebab + clicca Cambia tipo)",
+                "Chi vuole cambiare tipo spesso (es. fase data entry) friction alta",
+                "Affordance del chip ambigua: sembra clickable ma non lo è",
+              ],
+              whyRejected:
+                "La 'sicurezza' è coperta meglio dal dialog di conferma cross-field che A fa comunque in caso di cambio distruttivo. Inoltre B è incoerente: nome editable inline, tipo no — l'utente non capisce quale regola si applica.",
+            },
+            {
+              letter: "C",
+              title: "Tutto dietro kebab menu",
+              summary:
+                "Nome e tipo entrambi readonly. Ogni edit passa da Dropdown ⋯ (Rinomina, Cambia tipo, Duplica, Elimina).",
+              pros: [
+                "Zero probabilità di edit accidentale",
+                "Pattern Salesforce / JIRA issue detail",
+                "Azioni raggruppate in un punto solo",
+              ],
+              cons: [
+                "Friction massima — 3+ tap per rinominare (⋯ + Rinomina + conferma)",
+                "Anti inline per-campo: il nome NON si comporta come un field",
+                "Su iPad touch-first il kebab nasconde funzionalità primarie — anti-discoverable",
+                "Inconsistente con decisione sketch 1 (edit diretto inline)",
+              ],
+              whyRejected:
+                "Viola il principio inline per-campo già deciso in sketch 1. Se il nome non è inline editable, perché i field lo sono? Incoerenza rompe il mental model.",
+            },
           ]}
         />
 
         <MockupFooter>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
-              <strong>Coerenza propagata:</strong> scegliere A allinea il nome al pattern
-              degli altri field (tap-to-edit inline + blur-to-save + toast undo). C è
-              esplicitamente incoerente.
-            </li>
-            <li>
-              <strong>Cambio tipo è speciale:</strong> indipendente dall'alternativa,
-              cambiare TipoElemento può distruggere field tipo-specifici. Serve sempre
-              conferma esplicita (dialog con lista field che andranno persi).
+              <strong>Cambio tipo è speciale:</strong> cambiare TipoElemento può distruggere
+              field tipo-specifici. Serve sempre conferma esplicita (dialog con lista field
+              che andranno persi) — logica dominio, non UI.
             </li>
             <li>
               <strong>HeroUI kebab:</strong> <Code>{`<Dropdown>`}</Code> +{" "}
@@ -179,9 +150,12 @@ export function HeaderEditMockup() {
               con icon + <Code>variant="danger"</Code> per Elimina.
             </li>
             <li>
-              <strong>Azioni mancanti da decidere:</strong> Export? Soft delete vs hard
-              delete? Archivia? Sposta in altro workspace? Da coprire in un sketch
-              separato se non banali.
+              <strong>Soft delete:</strong> "Elimina" nel kebab innesca soft delete (da
+              coprire in sketch dedicato). Hard delete non esiste nel modello dominio.
+            </li>
+            <li>
+              <strong>Azioni future:</strong> Export? Archivia? Sposta in altro workspace?
+              Da aggiungere al kebab quando deciso.
             </li>
           </ul>
         </MockupFooter>
@@ -191,17 +165,15 @@ export function HeaderEditMockup() {
 }
 
 // ============================================================================
-// Shared: editable name (blur-to-save, identical to sketch 1)
+// Atoms interni
 // ============================================================================
 
 function EditableName({
   value,
   onCommit,
-  editable,
 }: {
   value: string;
   onCommit: (next: string) => void;
-  editable: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -216,7 +188,6 @@ function EditableName({
   }, [editing]);
 
   function startEdit() {
-    if (!editable) return;
     setDraft(value);
     setEditing(true);
   }
@@ -250,19 +221,14 @@ function EditableName({
     <button
       type="button"
       onClick={startEdit}
-      disabled={!editable}
-      className={`font-heading text-2xl font-semibold text-ink-hi leading-tight text-left rounded-md px-2 -mx-2 transition-colors ${
-        editable ? "hover:bg-primary/5 cursor-text" : "cursor-default"
-      }`}
+      className="font-heading text-2xl font-semibold text-ink-hi leading-tight text-left rounded-md px-2 -mx-2 transition-colors hover:bg-primary/5 cursor-text inline-flex items-center gap-2 group"
     >
       {value}
-      {editable && (
-        <Pencil
-          size={14}
-          className="inline-block ml-2 text-primary/30 opacity-0 hover:opacity-100 transition-opacity"
-          aria-hidden
-        />
-      )}
+      <Pencil
+        size={14}
+        className="text-primary/30 opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-hidden
+      />
     </button>
   );
 }
@@ -327,73 +293,8 @@ function ActionsDropdown() {
   );
 }
 
-function ActionsDropdownWithChangeType() {
-  return (
-    <Dropdown>
-      <Button isIconOnly size="sm" variant="ghost" aria-label="Azioni elemento" className="min-w-10 min-h-10">
-        <MoreHorizontal size={18} />
-      </Button>
-      <Dropdown.Popover>
-        <Dropdown.Menu>
-          <Dropdown.Item id="change-type" textValue="Cambia tipo">
-            <span className="inline-flex items-center gap-2">
-              <Type size={14} /> <Label>Cambia tipo...</Label>
-            </span>
-          </Dropdown.Item>
-          <Dropdown.Item id="duplicate" textValue="Duplica">
-            <span className="inline-flex items-center gap-2">
-              <Copy size={14} /> <Label>Duplica</Label>
-            </span>
-          </Dropdown.Item>
-          <Separator />
-          <Dropdown.Item id="delete" textValue="Elimina" variant="danger">
-            <span className="inline-flex items-center gap-2">
-              <Trash2 size={14} /> <Label>Elimina</Label>
-            </span>
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
-  );
-}
-
-function ActionsDropdownFull() {
-  return (
-    <Dropdown>
-      <Button isIconOnly size="sm" variant="ghost" aria-label="Azioni elemento" className="min-w-10 min-h-10">
-        <MoreHorizontal size={18} />
-      </Button>
-      <Dropdown.Popover>
-        <Dropdown.Menu>
-          <Dropdown.Item id="rename" textValue="Rinomina">
-            <span className="inline-flex items-center gap-2">
-              <Pencil size={14} /> <Label>Rinomina</Label>
-            </span>
-          </Dropdown.Item>
-          <Dropdown.Item id="change-type" textValue="Cambia tipo">
-            <span className="inline-flex items-center gap-2">
-              <Type size={14} /> <Label>Cambia tipo...</Label>
-            </span>
-          </Dropdown.Item>
-          <Dropdown.Item id="duplicate" textValue="Duplica">
-            <span className="inline-flex items-center gap-2">
-              <Copy size={14} /> <Label>Duplica</Label>
-            </span>
-          </Dropdown.Item>
-          <Separator />
-          <Dropdown.Item id="delete" textValue="Elimina" variant="danger">
-            <span className="inline-flex items-center gap-2">
-              <Trash2 size={14} /> <Label>Elimina</Label>
-            </span>
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
-  );
-}
-
 // ============================================================================
-// A — Inline nome + tipo popover + kebab actions (RECOMMENDED)
+// Recommended: Inline nome + tipo popover + kebab actions
 // ============================================================================
 
 function InlineNomePopoverTipoMock() {
@@ -439,65 +340,13 @@ function InlineNomePopoverTipoMock() {
             </Popover.Content>
           </Popover>
         }
-        nameSlot={<EditableName value={nome} onCommit={setNome} editable />}
+        nameSlot={<EditableName value={nome} onCommit={setNome} />}
         actionsSlot={<ActionsDropdown />}
       />
       <FakeBody />
       <div className="mt-3 text-[11px] text-ink-dim italic">
-        ↑ Tap su <strong>Abraamo</strong> → input nome. Tap sul chip <strong>personaggio</strong> →
-        popover TipoElemento. Tap ⋯ → menu Rinomina/Duplica/Elimina.
-      </div>
-    </>
-  );
-}
-
-// ============================================================================
-// B — Inline nome + tipo readonly + kebab change-type
-// ============================================================================
-
-function InlineNomeReadonlyTipoMock() {
-  const [nome, setNome] = useState("Abraamo");
-
-  return (
-    <>
-      <HeaderShell
-        chipSlot={
-          <Chip size="md" color="accent" variant="soft" className="self-start">
-            personaggio
-          </Chip>
-        }
-        nameSlot={<EditableName value={nome} onCommit={setNome} editable />}
-        actionsSlot={<ActionsDropdownWithChangeType />}
-      />
-      <FakeBody />
-      <div className="mt-3 text-[11px] text-ink-dim italic">
-        ↑ Tap su <strong>Abraamo</strong> → input. Chip readonly. Tap ⋯ → menu con Cambia
-        tipo (apre modal con avviso).
-      </div>
-    </>
-  );
-}
-
-// ============================================================================
-// C — Tutto dietro kebab menu
-// ============================================================================
-
-function AllBehindKebabMock() {
-  return (
-    <>
-      <HeaderShell
-        chipSlot={
-          <Chip size="md" color="accent" variant="soft" className="self-start">
-            personaggio
-          </Chip>
-        }
-        nameSlot={<EditableName value="Abraamo" onCommit={() => {}} editable={false} />}
-        actionsSlot={<ActionsDropdownFull />}
-      />
-      <FakeBody />
-      <div className="mt-3 text-[11px] text-ink-dim italic">
-        ↑ Nome e chip entrambi readonly. Tap ⋯ → menu con tutte le azioni (Rinomina, Cambia
-        tipo, Duplica, Elimina).
+        ↑ Tap su <strong>Abraamo</strong> → input nome. Tap sul chip <strong>personaggio</strong>{" "}
+        → popover TipoElemento. Tap ⋯ → menu Rinomina/Duplica/Elimina.
       </div>
     </>
   );

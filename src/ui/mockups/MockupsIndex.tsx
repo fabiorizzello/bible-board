@@ -96,9 +96,9 @@ const MOCKUPS: MockupEntry[] = [
     category: "Header",
     title: "Header edit (nome + tipo + actions)",
     description:
-      "Header del detail pane: come si edita nome, chip TipoElemento, e azioni (rinomina, duplica, elimina). 3 alternative con diverso grado di edit inline vs kebab menu.",
+      "Nome tap-to-edit inline, chip tipo popover con lista TipoElemento, kebab (⋯) per Rinomina/Duplica/Elimina. Alternative (tipo readonly, tutto-dietro-kebab) scartate — vedi storico.",
     recommended: "A. Inline nome + tipo popover + kebab actions",
-    status: "in_review",
+    status: "decided",
   },
   {
     number: "8",
