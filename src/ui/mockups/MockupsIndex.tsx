@@ -50,8 +50,8 @@ const MOCKUPS: MockupEntry[] = [
     category: "Editor",
     title: "Markdown descrizione (Milkdown)",
     description:
-      "Edit chrome sopra Milkdown senza rompere inline per-campo. 3 alternative: bubble menu, drawer editor full, toolbar focus.",
-    recommended: "A. Bubble menu on selection",
+      "Editor Milkdown 7.20 vero (non più sketch statico). Decisione lockata: niente alternative. Da testare su iPad reale per touch selection, Pencil Scribble, performance.",
+    recommended: "Milkdown vero — preset-commonmark + listener",
   },
   {
     number: "5",

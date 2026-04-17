@@ -8,7 +8,6 @@ import { CommitInteractionMockup } from "@/ui/mockups/CommitInteractionMockup";
 import { CompositeVitaMockup } from "@/ui/mockups/CompositeVitaMockup";
 import { EmptyFieldsMockup } from "@/ui/mockups/EmptyFieldsMockup";
 import { MarkdownDescrizioneMockup } from "@/ui/mockups/MarkdownDescrizioneMockup";
-import { MilkdownPocMockup } from "@/ui/mockups/MilkdownPocMockup";
 import { MockupsIndex } from "@/ui/mockups/MockupsIndex";
 import { ValidationUxMockup } from "@/ui/mockups/ValidationUxMockup";
 
@@ -36,7 +35,6 @@ export const appRouter = createBrowserRouter([
   { path: "/dev/mockup-empty-fields", Component: EmptyFieldsMockup },
   { path: "/dev/mockup-collegamento-picker", Component: CollegamentoPickerMockup },
   { path: "/dev/mockup-markdown-descrizione", Component: MarkdownDescrizioneMockup },
-  { path: "/dev/mockup-milkdown-poc", Component: MilkdownPocMockup },
   { path: "/dev/mockup-composite-vita", Component: CompositeVitaMockup },
   { path: "/dev/mockup-validation-ux", Component: ValidationUxMockup },
   { path: "*", Component: NotFoundPage },
