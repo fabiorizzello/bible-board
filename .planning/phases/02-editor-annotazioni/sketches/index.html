@@ -87,18 +87,33 @@
       </p>
     </header>
 
-    <div class="info-banner mb-8">
+    <div class="info-banner mb-6" style="border-left-color:#10b981;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.04));border-color:rgba(16,185,129,0.2);">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <div class="text-xs leading-relaxed text-emerald-900">
+          <div class="font-semibold mb-2">Tutti i 6 sketch ora sono mockup React vero (v3 · 2026-04-15)</div>
+          <p class="mb-2">Stack: <strong>HeroUI v3 + Tailwind v4 + lucide-react</strong> renderizzati dal dev server.
+          Device baseline: <strong>iPad 10.9" (Air)</strong> 1180×820 landscape · 820×1180 portrait.</p>
+          <p class="mb-2">Lancia <code class="bg-white/60 px-1.5 py-0.5 rounded">npm run dev</code> e apri:</p>
+          <ul class="space-y-0.5 ml-1 font-mono text-[11px]">
+            <li>→ <a href="http://localhost:5173/dev/mockup-commit-interaction" class="underline">localhost:5173/dev/mockup-commit-interaction</a></li>
+            <li>→ <a href="http://localhost:5173/dev/mockup-empty-fields" class="underline">localhost:5173/dev/mockup-empty-fields</a></li>
+            <li>→ <a href="http://localhost:5173/dev/mockup-collegamento-picker" class="underline">localhost:5173/dev/mockup-collegamento-picker</a></li>
+            <li>→ <a href="http://localhost:5173/dev/mockup-markdown-descrizione" class="underline">localhost:5173/dev/mockup-markdown-descrizione</a></li>
+            <li>→ <a href="http://localhost:5173/dev/mockup-composite-vita" class="underline">localhost:5173/dev/mockup-composite-vita</a></li>
+            <li>→ <a href="http://localhost:5173/dev/mockup-validation-ux" class="underline">localhost:5173/dev/mockup-validation-ux</a></li>
+          </ul>
+          <p class="mt-2 text-[11px] opacity-75">Per iPad reale (LAN): <code class="bg-white/60 px-1 rounded">npm run dev -- --host</code> + apri <code>http://&lt;ip&gt;:5173/dev/mockup-*</code></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-banner mb-8" style="opacity:0.7;">
       <div class="flex items-start gap-3">
         <svg class="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
         <div class="text-xs leading-relaxed text-teal-900">
-          <div class="font-semibold mb-1">Sketch ricostruiti a scala iPad reale (v2 · 2026-04-15)</div>
-          <ul class="space-y-0.5 ml-1">
-            <li>• Detail pane mock <strong>520px</strong> = larghezza realistica nel 3-pane su iPad landscape (1194px)</li>
-            <li>• Tutti i touch target rispettano <strong>≥44×44px</strong> (Apple HIG + WCAG 2.5.5)</li>
-            <li>• <strong>HeroUI v3 visual idiom</strong> replicato: input 48px, button 44px, radius 10/14, shadow soft teal</li>
-            <li>• Layout verticale (non 3-col) → ogni alternativa confrontabile a scala onesta</li>
-            <li>• <span class="pill pill-recommended" style="vertical-align:middle;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9.91 8.84 3 9l5.46 4.73L7 21l5-3 5 3-1.46-7.27L21 9l-6.91-.16L12 2z"/></svg> Raccomandato</span> marcato visivamente sull'alternativa preferita per ciascuno</li>
-          </ul>
+          <div class="font-semibold mb-1">Le card sotto sono fallback HTML statici</div>
+          <p>Vecchia versione replica HTML+CSS — utile se non vuoi lanciare il dev server. La fonte di verità sono i mockup React qua sopra.</p>
         </div>
       </div>
     </div>
