@@ -465,65 +465,125 @@ function PickerRow({
 // ============================================================================
 
 function AltCDrawerAlways() {
-  const [view, setView] = useState<SubFlowView>({ kind: "categories" });
-  const reset = () => setView({ kind: "categories" });
-
   return (
     <>
       <ElementoHeader />
       <SimpleField label="Tipo" value="personaggio" />
       <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
       <SimpleField label="Tribù" value="Ebrei" />
-      <div className="mt-3">
-        <Drawer>
-          <Drawer.Trigger className="w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors">
-            <Plus size={16} />
-            Aggiungi campo (drawer)
-          </Drawer.Trigger>
-          <Drawer.Backdrop>
-            <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
-              <Drawer.Dialog>
-                <Drawer.Header className="px-6 py-4 border-b border-edge">
-                  <Drawer.Heading className="font-heading text-lg text-ink-hi inline-flex items-center gap-2">
-                    {view.kind !== "categories" && (
-                      <button
-                        type="button"
-                        onClick={reset}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-md hover:bg-primary/5 hover:text-primary"
-                        aria-label="Indietro"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                    )}
-                    {view.kind === "categories" && "Aggiungi al detail"}
-                    {view.kind === "ruoli-add" && "Aggiungi Ruoli"}
-                    {view.kind === "tags-add" && "Aggiungi Tags"}
-                    {view.kind === "collegamento-pick" && "Aggiungi Collegamento"}
-                    {view.kind === "fonte-pick" && "Aggiungi Fonte"}
-                  </Drawer.Heading>
-                  <Drawer.CloseTrigger />
-                </Drawer.Header>
-                <Drawer.Body className="px-2 py-3">
-                  {view.kind === "categories" && <CategoriesContent onPick={setView} />}
-                  {view.kind === "ruoli-add" && <MultiChipContent label="ruolo" />}
-                  {view.kind === "tags-add" && <MultiChipContent label="tag" />}
-                  {view.kind === "collegamento-pick" && (
-                    <SingleValueContent kind="collegamento" />
-                  )}
-                  {view.kind === "fonte-pick" && <SingleValueContent kind="fonte" />}
-                </Drawer.Body>
-                <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
-                  Tap fuori / Esc per chiudere
-                </Drawer.Footer>
-              </Drawer.Dialog>
-            </Drawer.Content>
-          </Drawer.Backdrop>
-        </Drawer>
+
+      {/* Field array già popolati: chip esistenti + inline "+ <addLabel>" trigger */}
+      <div className="flex items-start gap-4 min-h-[48px] py-1 px-2 -mx-2">
+        <span className="w-[110px] flex-shrink-0 pt-2 text-[11px] uppercase tracking-wider text-primary font-semibold">
+          Collegamenti
+        </span>
+        <div className="flex-1 flex flex-wrap items-center gap-2 pt-1">
+          <RemovableChip onRemove={() => {}}>
+            <span className="inline-flex items-center gap-1.5">
+              Sara <span className="text-ink-dim text-[11px]">· coniuge</span>
+            </span>
+          </RemovableChip>
+          <AddDrawer
+            initialView={{ kind: "collegamento-pick" }}
+            triggerLabel="collegamento"
+            triggerStyle="chip"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-start gap-4 min-h-[48px] py-1 px-2 -mx-2">
+        <span className="w-[110px] flex-shrink-0 pt-2 text-[11px] uppercase tracking-wider text-primary font-semibold">
+          Fonti
+        </span>
+        <div className="flex-1 flex flex-wrap items-center gap-2 pt-1">
+          <RemovableChip onRemove={() => {}}>
+            <span className="inline-flex items-center gap-1.5">
+              Genesi 12 <span className="text-ink-dim text-[11px]">· libro</span>
+            </span>
+          </RemovableChip>
+          <AddDrawer
+            initialView={{ kind: "fonte-pick" }}
+            triggerLabel="fonte"
+            triggerStyle="chip"
+          />
+        </div>
+      </div>
+
+      {/* Globale: scopri/crea field nuovo (Ruoli, Tags, etc.) */}
+      <div className="mt-4">
+        <AddDrawer
+          initialView={{ kind: "categories" }}
+          triggerLabel="Aggiungi campo"
+          triggerStyle="row"
+        />
         <div className="mt-3 text-[11px] text-ink-dim italic inline-flex items-center gap-1">
           <Star size={10} className="text-primary fill-primary" />
-          Stesso primitive Drawer di sketch 5 A (Vita).
+          Stesso surface (drawer) per: globale "+ aggiungi campo" e inline "+ collegamento" / "+ fonte". Inline skippa la categories view.
         </div>
       </div>
     </>
+  );
+}
+
+interface AddDrawerProps {
+  initialView: SubFlowView;
+  triggerLabel: string;
+  triggerStyle: "row" | "chip";
+}
+
+function AddDrawer({ initialView, triggerLabel, triggerStyle }: AddDrawerProps) {
+  const [view, setView] = useState<SubFlowView>(initialView);
+  const canBack = view.kind !== "categories" && initialView.kind === "categories";
+
+  const triggerClass =
+    triggerStyle === "row"
+      ? "w-full inline-flex items-center justify-center gap-2 min-h-[48px] px-4 rounded-lg border border-dashed border-primary/40 text-primary/80 text-sm font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors"
+      : "inline-flex items-center gap-1 h-8 px-2.5 rounded-full border border-dashed border-primary/40 text-primary/80 text-xs font-medium hover:bg-primary/5 hover:border-primary cursor-pointer transition-colors";
+
+  return (
+    <Drawer>
+      <Drawer.Trigger className={triggerClass}>
+        <Plus size={triggerStyle === "row" ? 16 : 12} />
+        {triggerLabel}
+      </Drawer.Trigger>
+      <Drawer.Backdrop>
+        <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
+          <Drawer.Dialog>
+            <Drawer.Header className="px-6 py-4 border-b border-edge">
+              <Drawer.Heading className="font-heading text-lg text-ink-hi inline-flex items-center gap-2">
+                {canBack && (
+                  <button
+                    type="button"
+                    onClick={() => setView({ kind: "categories" })}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-md hover:bg-primary/5 hover:text-primary"
+                    aria-label="Indietro"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                )}
+                {view.kind === "categories" && "Aggiungi al detail"}
+                {view.kind === "ruoli-add" && "Aggiungi Ruoli"}
+                {view.kind === "tags-add" && "Aggiungi Tags"}
+                {view.kind === "collegamento-pick" && "Aggiungi Collegamento"}
+                {view.kind === "fonte-pick" && "Aggiungi Fonte"}
+              </Drawer.Heading>
+              <Drawer.CloseTrigger />
+            </Drawer.Header>
+            <Drawer.Body className="px-2 py-3">
+              {view.kind === "categories" && <CategoriesContent onPick={setView} />}
+              {view.kind === "ruoli-add" && <MultiChipContent label="ruolo" />}
+              {view.kind === "tags-add" && <MultiChipContent label="tag" />}
+              {view.kind === "collegamento-pick" && (
+                <SingleValueContent kind="collegamento" />
+              )}
+              {view.kind === "fonte-pick" && <SingleValueContent kind="fonte" />}
+            </Drawer.Body>
+            <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
+              Tap fuori / Esc per chiudere
+            </Drawer.Footer>
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
+    </Drawer>
   );
 }
