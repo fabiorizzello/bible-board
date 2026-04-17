@@ -292,33 +292,34 @@ function SoftValidationMock() {
             Apri pannello "2 da rivedere"
             <ArrowRight size={12} />
           </Drawer.Trigger>
-          <Drawer.Backdrop />
-          <Drawer.Content placement="right" className="w-[400px] max-w-[90vw]">
-            <Drawer.Dialog>
-              <Drawer.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
-                <Drawer.Heading className="font-heading text-lg text-ink-hi inline-flex items-center gap-2">
-                  <AlertTriangle size={18} className="text-amber-600" />
-                  Da rivedere (2)
-                </Drawer.Heading>
-                <Drawer.CloseTrigger />
-              </Drawer.Header>
-              <Drawer.Body className="px-6 py-5 space-y-3">
-                <ReviewItem
-                  field="Evento"
-                  message="Patto di Mamre (2050 a.E.V.) precede la nascita di Abraamo (2000 a.E.V.)"
-                  severity="warning"
-                />
-                <ReviewItem
-                  field="Sepoltura"
-                  message="Hebron non ha riferimenti geografici nel workspace"
-                  severity="info"
-                />
-              </Drawer.Body>
-              <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
-                Tap su un item per saltare al field
-              </Drawer.Footer>
-            </Drawer.Dialog>
-          </Drawer.Content>
+          <Drawer.Backdrop>
+            <Drawer.Content placement="right" className="w-[400px] max-w-[90vw]">
+              <Drawer.Dialog>
+                <Drawer.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
+                  <Drawer.Heading className="font-heading text-lg text-ink-hi inline-flex items-center gap-2">
+                    <AlertTriangle size={18} className="text-amber-600" />
+                    Da rivedere (2)
+                  </Drawer.Heading>
+                  <Drawer.CloseTrigger />
+                </Drawer.Header>
+                <Drawer.Body className="px-6 py-5 space-y-3">
+                  <ReviewItem
+                    field="Evento"
+                    message="Patto di Mamre (2050 a.E.V.) precede la nascita di Abraamo (2000 a.E.V.)"
+                    severity="warning"
+                  />
+                  <ReviewItem
+                    field="Sepoltura"
+                    message="Hebron non ha riferimenti geografici nel workspace"
+                    severity="info"
+                  />
+                </Drawer.Body>
+                <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
+                  Tap su un item per saltare al field
+                </Drawer.Footer>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
         </Drawer>
       </div>
     </>

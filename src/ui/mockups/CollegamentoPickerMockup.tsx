@@ -256,9 +256,9 @@ function DrawerPickerMock() {
             <Plus size={14} />
             collegamento (drawer)
           </Drawer.Trigger>
-          <Drawer.Backdrop />
-          <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
-            <Drawer.Dialog>
+          <Drawer.Backdrop>
+            <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
+              <Drawer.Dialog>
               <Drawer.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
                 <Drawer.Heading className="font-heading text-lg text-ink-hi">
                   Nuovo collegamento
@@ -306,11 +306,12 @@ function DrawerPickerMock() {
                   </div>
                 </div>
               </Drawer.Body>
-              <Drawer.Footer className="px-6 py-4 border-t border-edge text-[11px] text-ink-dim">
-                Tap fuori per annullare · Enter per aggiungere
-              </Drawer.Footer>
-            </Drawer.Dialog>
-          </Drawer.Content>
+                <Drawer.Footer className="px-6 py-4 border-t border-edge text-[11px] text-ink-dim">
+                  Tap fuori per annullare · Enter per aggiungere
+                </Drawer.Footer>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
         </Drawer>
       </div>
     </>
@@ -330,38 +331,39 @@ function ModalPickerMock() {
             <Plus size={14} />
             collegamento (modal)
           </Modal.Trigger>
-          <Modal.Backdrop />
-          <Modal.Container placement="center" size="md">
-            <Modal.Dialog className="w-[520px] max-w-[90vw]">
-              <Modal.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
-                <Modal.Heading className="font-heading text-lg text-ink-hi">
-                  Aggiungi collegamento
-                </Modal.Heading>
-                <Modal.CloseTrigger />
-              </Modal.Header>
-              <Modal.Body className="px-6 py-5 space-y-4">
-                <div className="relative">
-                  <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none z-10" />
-                  <Input
-                    placeholder="Cerca elemento..."
-                    className="min-h-[56px] text-base pl-11"
-                  />
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold">
-                  Recenti
-                </div>
-                <div className="space-y-1">
-                  <PickerRow name="Sara" tipo="personaggio" />
-                  <PickerRow name="Isacco" tipo="personaggio" selected />
-                  <PickerRow name="Ismaele" tipo="personaggio" />
-                </div>
-              </Modal.Body>
-              <Modal.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim flex items-center justify-between">
-                <span>⌘K per riaprire</span>
-                <span>Enter per aggiungere</span>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
+          <Modal.Backdrop>
+            <Modal.Container placement="center" size="md">
+              <Modal.Dialog className="w-[520px] max-w-[90vw]">
+                <Modal.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
+                  <Modal.Heading className="font-heading text-lg text-ink-hi">
+                    Aggiungi collegamento
+                  </Modal.Heading>
+                  <Modal.CloseTrigger />
+                </Modal.Header>
+                <Modal.Body className="px-6 py-5 space-y-4">
+                  <div className="relative">
+                    <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none z-10" />
+                    <Input
+                      placeholder="Cerca elemento..."
+                      className="min-h-[56px] text-base pl-11"
+                    />
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold">
+                    Recenti
+                  </div>
+                  <div className="space-y-1">
+                    <PickerRow name="Sara" tipo="personaggio" />
+                    <PickerRow name="Isacco" tipo="personaggio" selected />
+                    <PickerRow name="Ismaele" tipo="personaggio" />
+                  </div>
+                </Modal.Body>
+                <Modal.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim flex items-center justify-between">
+                  <span>⌘K per riaprire</span>
+                  <span>Enter per aggiungere</span>
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
         </Modal>
       </div>
     </>

@@ -243,38 +243,39 @@ function DrawerEditorMock() {
           <Drawer.Trigger className="flex-1 cursor-pointer text-left p-3 -m-3 rounded-md hover:bg-primary/5 transition-colors">
             <FormattedDescrizione />
           </Drawer.Trigger>
-          <Drawer.Backdrop />
-          <Drawer.Content placement="right" className="w-[480px] max-w-[90vw]">
-            <Drawer.Dialog>
-              <Drawer.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
-                <Drawer.Heading className="font-heading text-lg text-ink-hi">
-                  Modifica descrizione
-                </Drawer.Heading>
-                <Drawer.CloseTrigger />
-              </Drawer.Header>
-              <div className="px-6 py-2 border-b border-edge flex items-center gap-1 bg-chrome">
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Bold size={16} /></button>
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Italic size={16} /></button>
-                <span className="w-px h-5 bg-edge mx-1" />
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Heading1 size={16} /></button>
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><List size={16} /></button>
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Quote size={16} /></button>
-                <span className="w-px h-5 bg-edge mx-1" />
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Link2 size={16} /></button>
-                <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><CodeIcon size={16} /></button>
-              </div>
-              <Drawer.Body className="px-6 py-5">
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  className="w-full min-h-[300px] resize-none border-2 border-primary rounded-lg p-4 font-body text-[15px] leading-relaxed text-ink-hi outline-none shadow-[0_0_0_4px_rgba(20,184,166,0.15)]"
-                />
-              </Drawer.Body>
-              <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
-                Markdown · Tap fuori per salvare
-              </Drawer.Footer>
-            </Drawer.Dialog>
-          </Drawer.Content>
+          <Drawer.Backdrop>
+            <Drawer.Content placement="right" className="w-[480px] max-w-[90vw]">
+              <Drawer.Dialog>
+                <Drawer.Header className="px-6 py-4 border-b border-edge flex items-center justify-between">
+                  <Drawer.Heading className="font-heading text-lg text-ink-hi">
+                    Modifica descrizione
+                  </Drawer.Heading>
+                  <Drawer.CloseTrigger />
+                </Drawer.Header>
+                <div className="px-6 py-2 border-b border-edge flex items-center gap-1 bg-chrome">
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Bold size={16} /></button>
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Italic size={16} /></button>
+                  <span className="w-px h-5 bg-edge mx-1" />
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Heading1 size={16} /></button>
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><List size={16} /></button>
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Quote size={16} /></button>
+                  <span className="w-px h-5 bg-edge mx-1" />
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><Link2 size={16} /></button>
+                  <button className="w-10 h-10 inline-flex items-center justify-center rounded hover:bg-edge text-ink-md"><CodeIcon size={16} /></button>
+                </div>
+                <Drawer.Body className="px-6 py-5">
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    className="w-full min-h-[300px] resize-none border-2 border-primary rounded-lg p-4 font-body text-[15px] leading-relaxed text-ink-hi outline-none shadow-[0_0_0_4px_rgba(20,184,166,0.15)]"
+                  />
+                </Drawer.Body>
+                <Drawer.Footer className="px-6 py-3 border-t border-edge text-[11px] text-ink-dim">
+                  Markdown · Tap fuori per salvare
+                </Drawer.Footer>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
         </Drawer>
       </div>
       <SimpleField label="Nascita" value="2000 a.E.V." />

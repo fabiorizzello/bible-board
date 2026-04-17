@@ -398,38 +398,39 @@ function DrawerRightVitaMock() {
           <Drawer.Trigger className="flex-1">
             <VitaTrigger nascita={nascita} morte={morte} />
           </Drawer.Trigger>
-          <Drawer.Backdrop />
-          <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
-            <Drawer.Dialog>
-              <Drawer.Header className="px-7 py-5 border-b border-edge">
-                <Drawer.Heading className="font-heading text-xl text-ink-hi">
-                  Modifica vita
-                </Drawer.Heading>
-                <Drawer.CloseTrigger />
-              </Drawer.Header>
-              <Drawer.Body className="px-7 py-6 space-y-5">
-                <TextField value={nascita} onChange={setNascita}>
-                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
-                    Nato (obbligatoria)
-                  </Label>
-                  <Input className="min-h-[52px] text-base" />
-                </TextField>
-                <TextField value={morte} onChange={setMorte}>
-                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
-                    Morto <span className="opacity-60 normal-case">(opzionale)</span>
-                  </Label>
-                  <Input placeholder="—" className="min-h-[52px] text-base" />
-                </TextField>
-                <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
-                  <span className="text-primary font-semibold">Durata calcolata</span>
-                  <span className="text-ink-hi font-mono font-semibold">175 anni</span>
-                </div>
-              </Drawer.Body>
-              <Drawer.Footer className="px-7 py-3 text-[11px] text-ink-dim border-t border-edge">
-                Tap fuori, Esc, o X per chiudere e salvare
-              </Drawer.Footer>
-            </Drawer.Dialog>
-          </Drawer.Content>
+          <Drawer.Backdrop>
+            <Drawer.Content placement="right" className="w-[440px] max-w-[90vw]">
+              <Drawer.Dialog>
+                <Drawer.Header className="px-7 py-5 border-b border-edge">
+                  <Drawer.Heading className="font-heading text-xl text-ink-hi">
+                    Modifica vita
+                  </Drawer.Heading>
+                  <Drawer.CloseTrigger />
+                </Drawer.Header>
+                <Drawer.Body className="px-7 py-6 space-y-5">
+                  <TextField value={nascita} onChange={setNascita}>
+                    <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                      Nato (obbligatoria)
+                    </Label>
+                    <Input className="min-h-[52px] text-base" />
+                  </TextField>
+                  <TextField value={morte} onChange={setMorte}>
+                    <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                      Morto <span className="opacity-60 normal-case">(opzionale)</span>
+                    </Label>
+                    <Input placeholder="—" className="min-h-[52px] text-base" />
+                  </TextField>
+                  <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
+                    <span className="text-primary font-semibold">Durata calcolata</span>
+                    <span className="text-ink-hi font-mono font-semibold">175 anni</span>
+                  </div>
+                </Drawer.Body>
+                <Drawer.Footer className="px-7 py-3 text-[11px] text-ink-dim border-t border-edge">
+                  Tap fuori, Esc, o X per chiudere e salvare
+                </Drawer.Footer>
+              </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
         </Drawer>
       </div>
 
@@ -459,38 +460,39 @@ function ModalCenterVitaMock() {
           <Modal.Trigger className="flex-1">
             <VitaTrigger nascita={nascita} morte={morte} />
           </Modal.Trigger>
-          <Modal.Backdrop />
-          <Modal.Container placement="center" size="md">
-            <Modal.Dialog className="w-[520px] max-w-[90vw]">
-              <Modal.Header className="px-7 py-5 border-b border-edge">
-                <Modal.Heading className="font-heading text-xl text-ink-hi">
-                  Modifica vita
-                </Modal.Heading>
-                <Modal.CloseTrigger />
-              </Modal.Header>
-              <Modal.Body className="px-7 py-6 space-y-5">
-                <TextField value={nascita} onChange={setNascita}>
-                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
-                    Nato (obbligatoria)
-                  </Label>
-                  <Input className="min-h-[52px] text-base" />
-                </TextField>
-                <TextField value={morte} onChange={setMorte}>
-                  <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
-                    Morto <span className="opacity-60 normal-case">(opzionale)</span>
-                  </Label>
-                  <Input placeholder="—" className="min-h-[52px] text-base" />
-                </TextField>
-                <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
-                  <span className="text-primary font-semibold">Durata calcolata</span>
-                  <span className="text-ink-hi font-mono font-semibold">175 anni</span>
-                </div>
-              </Modal.Body>
-              <Modal.Footer className="px-7 py-4 border-t border-edge text-[11px] text-ink-dim">
-                Esc o tap fuori per annullare
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
+          <Modal.Backdrop>
+            <Modal.Container placement="center" size="md">
+              <Modal.Dialog className="w-[520px] max-w-[90vw]">
+                <Modal.Header className="px-7 py-5 border-b border-edge">
+                  <Modal.Heading className="font-heading text-xl text-ink-hi">
+                    Modifica vita
+                  </Modal.Heading>
+                  <Modal.CloseTrigger />
+                </Modal.Header>
+                <Modal.Body className="px-7 py-6 space-y-5">
+                  <TextField value={nascita} onChange={setNascita}>
+                    <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                      Nato (obbligatoria)
+                    </Label>
+                    <Input className="min-h-[52px] text-base" />
+                  </TextField>
+                  <TextField value={morte} onChange={setMorte}>
+                    <Label className="block text-[11px] uppercase text-ink-lo font-semibold mb-2">
+                      Morto <span className="opacity-60 normal-case">(opzionale)</span>
+                    </Label>
+                    <Input placeholder="—" className="min-h-[52px] text-base" />
+                  </TextField>
+                  <div className="flex justify-between items-center pt-3 border-t border-edge text-sm">
+                    <span className="text-primary font-semibold">Durata calcolata</span>
+                    <span className="text-ink-hi font-mono font-semibold">175 anni</span>
+                  </div>
+                </Modal.Body>
+                <Modal.Footer className="px-7 py-4 border-t border-edge text-[11px] text-ink-dim">
+                  Esc o tap fuori per annullare
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
         </Modal>
       </div>
 
