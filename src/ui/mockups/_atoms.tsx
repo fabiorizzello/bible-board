@@ -220,3 +220,72 @@ export function MockupFooter({ children }: { children: ReactNode }) {
     </footer>
   );
 }
+
+/**
+ * Summary section per alternative valutate e SCARTATE (solo riferimento storico,
+ * no mock implementato). Compatto, mostra pro/con essenziali.
+ */
+export interface ConsideredEntry {
+  letter: string;
+  title: string;
+  summary: string;
+  pros: string[];
+  cons: string[];
+  whyRejected: string;
+}
+
+export function ConsideredAlternatives({ entries }: { entries: ConsideredEntry[] }) {
+  return (
+    <section className="mt-12 pt-8 border-t border-edge">
+      <div className="mb-4">
+        <div className="text-[11px] uppercase tracking-wider text-ink-lo font-bold mb-1">
+          Storico · alternative considerate
+        </div>
+        <p className="text-sm text-ink-md max-w-2xl">
+          Queste alternative sono state valutate e <strong>scartate</strong>. Mantenute qui per
+          conoscenza delle ragioni — non implementate nel mockup.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {entries.map((e) => (
+          <div
+            key={e.letter}
+            className="bg-panel border border-edge rounded-xl p-4 opacity-75 hover:opacity-100 transition-opacity"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-full bg-ink-dim/20 text-ink-lo inline-flex items-center justify-center font-mono font-bold text-sm flex-shrink-0">
+                {e.letter}
+              </div>
+              <div className="flex-1">
+                <div className="font-heading text-sm text-ink-md line-through decoration-ink-dim/50 decoration-1">
+                  {e.title}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-ink-md mb-3 leading-relaxed">{e.summary}</p>
+            <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold mb-1">
+              Pro
+            </div>
+            <ul className="list-disc list-inside text-[11px] text-ink-md space-y-0.5 mb-2 ml-1">
+              {e.pros.map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+            <div className="text-[10px] uppercase tracking-wider text-ink-lo font-bold mb-1">
+              Contro
+            </div>
+            <ul className="list-disc list-inside text-[11px] text-ink-md space-y-0.5 mb-2 ml-1">
+              {e.cons.map((c, i) => (
+                <li key={i}>{c}</li>
+              ))}
+            </ul>
+            <div className="text-[10px] pt-2 mt-2 border-t border-edge">
+              <span className="uppercase tracking-wider text-rose-600 font-bold">Perché scartata:</span>{" "}
+              <span className="text-ink-md italic">{e.whyRejected}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

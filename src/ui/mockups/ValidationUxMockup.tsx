@@ -1,10 +1,9 @@
-import { Button, Chip, Drawer } from "@heroui/react";
-import { AlertTriangle, ArrowRight, X } from "lucide-react";
+import { Chip, Drawer } from "@heroui/react";
+import { AlertTriangle, ArrowRight } from "lucide-react";
 import {
   Alternative,
   Code,
-  Divider,
-  ElementoHeader,
+  ConsideredAlternatives,
   MockupFooter,
   MockupHeader,
   SimpleField,
@@ -13,12 +12,12 @@ import {
 /**
  * Mockup S02/R005 — Sketch 6: Validation UX cross-field
  *
- * Quando un commit viola una regola cross-aggregate (es. evento referenziato
- * precede vita.nascita del personaggio), come reagisce l'UI?
+ * Decisione lockata: C. Soft validation persistente con drawer review panel.
+ * Le alternative A (Hard reject) e B (Auto-prompt modal) sono elencate in
+ * fondo come storico, non implementate.
  *
- *   A. Hard reject (anti-pattern, blocking)
- *   B. Auto-prompt modal (dismissible)
- *   C. Soft validation persistente con drawer panel    ⭐ RECOMMENDED
+ * Scenario: l'evento "Patto di Mamre" 2050 a.E.V. referenzia Abraamo, ma
+ * precede la sua nascita (2000 a.E.V.). L'UI segnala senza bloccare.
  */
 
 export function ValidationUxMockup() {
@@ -31,62 +30,11 @@ export function ValidationUxMockup() {
           subtitle={
             <>
               Scenario: l'evento <em>"Patto di Mamre" 2050 a.E.V.</em> referenzia Abraamo,
-              ma precede la sua nascita (2000 a.E.V.). Come l'UI segnala l'incoerenza?
+              ma precede la sua nascita (2000 a.E.V.). Soft validation non-bloccante con
+              drawer review panel.
             </>
           }
         />
-
-        <Alternative
-          letter="A"
-          antiPattern
-          title="Hard reject (blocking)"
-          subtitle="commit fallisce, modal di errore, l'utente DEVE risolvere prima di procedere"
-          mock={<HardRejectMock />}
-          grammatica={
-            <>
-              Tap fuori → cross-validation fallisce → <Code>{`<Modal>`}</Code> di errore
-              centrato. Il valore NON è committato.
-              <br />
-              L'utente DEVE correggere o annullare. Tutti gli altri field disabilitati per
-              safety finché non risolto.
-            </>
-          }
-          items={[
-            ["pro", "Garanzia totale: aggregate mai in stato invalido"],
-            ["pro", "Errore visibile e immediato"],
-            ["con", "<strong>Anti-flow</strong>: l'utente deve risolvere PRIMA di altre azioni"],
-            ["con", "Campi disabilitati rompono inline per-campo"],
-            ["con", "Cross-aggregate hard reject + Jazz CRDT sync = problema concorrenza"],
-            ["con", "Anti-Notion / anti-Apple Notes — nessuna app inline ragiona così"],
-          ]}
-        />
-
-        <Divider />
-
-        <Alternative
-          letter="B"
-          title="Auto-prompt modal (dismissible)"
-          subtitle="commit accetta · dopo 200ms appare modal piccolo con suggerimento fix · dismissible"
-          mock={<AutoPromptMock />}
-          grammatica={
-            <>
-              Commit va a buon fine. <Code>{`<Modal size="sm">`}</Code> appare 200ms dopo
-              con titolo "Possibile incoerenza", body con descrizione, 2 bottoni:{" "}
-              <strong>Correggi</strong> (riapre il field) o <strong>Lascia stare</strong>{" "}
-              (dismiss + warning resta).
-            </>
-          }
-          items={[
-            ["pro", "Non bloccante — flow inline preservato"],
-            ["pro", "Educa l'utente sul vincolo violato"],
-            ["pro", "Dismissible — utente esperto può ignorare"],
-            ["con", "<strong>Modal nag</strong>: ogni commit con warning fa apparire modal"],
-            ["con", "Su edit non-lineari (15 modifiche di fila) è rumoroso"],
-            ["con", "Su Jazz sync, peer remoti possono scatenare modal imprevisti"],
-          ]}
-        />
-
-        <Divider />
 
         <Alternative
           letter="C"
@@ -130,26 +78,63 @@ export function ValidationUxMockup() {
           ]}
         />
 
+        <ConsideredAlternatives
+          entries={[
+            {
+              letter: "A",
+              title: "Hard reject (blocking)",
+              summary:
+                "Commit fallisce, modal errore centrato. Tutti field disabilitati finché non risolto.",
+              pros: [
+                "Garanzia totale: aggregate mai in stato invalido",
+                "Errore visibile e immediato",
+              ],
+              cons: [
+                "Anti-flow: l'utente deve risolvere PRIMA di altre azioni",
+                "Campi disabilitati rompono inline per-campo",
+                "Cross-aggregate hard reject + Jazz CRDT sync = problema concorrenza",
+                "Anti-Notion / anti-Apple Notes — nessuna app inline lavora così",
+              ],
+              whyRejected:
+                "Jazz CRDT permette peer remoto di creare stati 'validi localmente, invalidi after merge' — l'hard reject non sa cosa fare. Inoltre blocca il flusso inline per-campo.",
+            },
+            {
+              letter: "B",
+              title: "Auto-prompt modal (dismissible)",
+              summary:
+                "Commit ok · 200ms dopo appare modal con suggerimento fix · dismissible.",
+              pros: [
+                "Non bloccante — flow inline preservato",
+                "Educa l'utente sul vincolo violato",
+                "Dismissible — utente esperto può ignorare",
+              ],
+              cons: [
+                "Modal nag: ogni commit con warning fa apparire modal",
+                "Su edit non-lineari (15 modifiche di fila) è rumoroso",
+                "Su Jazz sync, peer remoti possono scatenare modal imprevisti",
+              ],
+              whyRejected:
+                "Il modal prompt interrompe il flow a ogni commit problematico. Soft validation passive (C) dà la stessa discoverability senza interruzioni.",
+            },
+          ]}
+        />
+
         <MockupFooter>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
               <strong>Strategia ibrida con sketch 5:</strong> i composite (Vita, Regno,
               Periodo) eliminano cross-validation intra-aggregate by construction. La soft
-              validation D si occupa solo di cross-aggregate residuo.
+              validation si occupa solo di cross-aggregate residuo.
             </li>
             <li>
-              <strong>HeroUI mapping:</strong> warning icon è{" "}
-              <Code>{`<Tooltip>`}</Code> + lucide TriangleAlert, header badge è{" "}
+              <strong>HeroUI mapping:</strong> warning icon è span con <Code>title</Code>{" "}
+              tooltip + lucide TriangleAlert, header badge è{" "}
               <Code>{`<Chip color="warning" variant="soft">`}</Code>, drawer review è{" "}
-              <Code>{`<Drawer placement="right">`}</Code>.
-            </li>
-            <li>
-              <strong>Sidebar marker:</strong> 8×8px dot warning. Discreto in idle, immediato
-              da scansionare.
+              <Code>{`<Drawer placement="right">`}</Code> (stesso pattern sketch 5).
             </li>
             <li>
               <strong>Workspace report (futuro):</strong> dashboard "elementi da rivedere"
-              filtrabile — fuori scope di S02/R005, candidato per S04+.
+              filtrabile — fuori scope S02/R005, candidato per S04+.
             </li>
           </ul>
         </MockupFooter>
@@ -159,10 +144,10 @@ export function ValidationUxMockup() {
 }
 
 // ============================================================================
-// Shared: detail pane content with warnings
+// Soft validation mock — recommended implementation
 // ============================================================================
 
-function ElementoConWarnings({ showBadge = false }: { showBadge?: boolean }) {
+function ElementoConWarnings() {
   return (
     <>
       <div className="flex items-start justify-between pb-5 border-b border-edge mb-3 gap-3">
@@ -174,14 +159,12 @@ function ElementoConWarnings({ showBadge = false }: { showBadge?: boolean }) {
             Abraamo
           </div>
         </div>
-        {showBadge && (
-          <Chip color="warning" variant="soft" size="sm">
-            <span className="inline-flex items-center gap-1.5">
-              <AlertTriangle size={12} />
-              2 da rivedere
-            </span>
-          </Chip>
-        )}
+        <Chip color="warning" variant="soft" size="sm">
+          <span className="inline-flex items-center gap-1.5">
+            <AlertTriangle size={12} />
+            2 da rivedere
+          </span>
+        </Chip>
       </div>
       <SimpleField label="Tipo" value="personaggio" />
       <SimpleField label="Vita" value="2000 → 1825 a.E.V. · 175 anni" />
@@ -204,87 +187,11 @@ function ElementoConWarnings({ showBadge = false }: { showBadge?: boolean }) {
   );
 }
 
-function HardRejectMock() {
-  return (
-    <>
-      <ElementoHeader />
-      <SimpleField label="Tipo" value="personaggio" />
-      <SimpleField label="Vita" value="2000 → 1825 a.E.V." />
-      <div className="flex items-center gap-3 min-h-[48px] py-1 opacity-50">
-        <span className="w-[110px] flex-shrink-0 text-[11px] uppercase tracking-wider text-primary font-semibold">
-          Evento
-        </span>
-        <div className="flex-1 px-3 py-2 border-2 border-rose-500 bg-white rounded-md text-[15px] text-ink-hi shadow-[0_0_0_4px_rgba(244,63,94,0.15)]">
-          2050 a.E.V. — Patto di Mamre
-        </div>
-      </div>
-      <SimpleField label="Tribù" value="Ebrei" />
-
-      {/* Modal mockup inline */}
-      <div className="mt-4 mx-auto max-w-md bg-white border border-rose-200 rounded-xl shadow-2xl p-5">
-        <div className="inline-flex items-center justify-center w-10 h-10 bg-rose-100 text-rose-600 rounded-full mb-3">
-          <X size={20} />
-        </div>
-        <div className="font-heading text-base text-ink-hi mb-1">Salvataggio bloccato</div>
-        <div className="text-sm text-ink-md mb-4 leading-relaxed">
-          L'evento non può precedere la nascita del personaggio (2000 a.E.V.). Correggi o
-          annulla per continuare.
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="primary" className="flex-1 min-h-10">
-            Correggi
-          </Button>
-          <Button size="sm" variant="ghost" className="flex-1 min-h-10">
-            Annulla
-          </Button>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function AutoPromptMock() {
-  return (
-    <>
-      <ElementoHeader />
-      <SimpleField label="Tipo" value="personaggio" />
-      <SimpleField label="Vita" value="2000 → 1825 a.E.V." />
-      <SimpleField label="Evento" value="2050 a.E.V. — Patto di Mamre" />
-      <SimpleField label="Tribù" value="Ebrei" />
-
-      {/* Modal-as-bubble */}
-      <div className="mt-4 mx-auto max-w-md bg-white border border-amber-200 rounded-xl shadow-xl p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-9 h-9 bg-amber-100 text-amber-600 rounded-full inline-flex items-center justify-center">
-            <AlertTriangle size={18} />
-          </div>
-          <div className="flex-1">
-            <div className="font-heading text-sm text-ink-hi mb-0.5">Possibile incoerenza</div>
-            <div className="text-xs text-ink-md mb-3 leading-relaxed">
-              <strong>Patto di Mamre</strong> (2050 a.E.V.) precede la nascita di Abraamo.
-              Vuoi correggere?
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="primary" className="min-h-9">
-                Correggi data
-              </Button>
-              <Button size="sm" variant="ghost" className="min-h-9">
-                Lascia stare
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 function SoftValidationMock() {
   return (
     <>
-      <ElementoConWarnings showBadge />
+      <ElementoConWarnings />
 
-      {/* Drawer trigger demo at bottom */}
       <div className="mt-5 pt-4 border-t border-edge">
         <Drawer>
           <Drawer.Trigger className="inline-flex items-center gap-2 text-xs text-amber-700 font-semibold cursor-pointer hover:text-amber-900">
