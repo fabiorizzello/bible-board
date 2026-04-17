@@ -35,7 +35,7 @@ import { useValue } from "@legendapp/state/react";
 
 import {
   workspaceUi$,
-  startEditing,
+  openFieldEditor,
   selectElement,
   softDeleteElement,
   restoreElement,
@@ -92,7 +92,10 @@ export function ActionToolbar({
   const overflow = isFullscreen ? "h-[34px] w-[34px]" : "h-[30px] w-[30px]";
 
   return (
-    <Toolbar className="flex w-full items-center gap-1 border-b border-primary/6 bg-chrome px-4 py-1.5">
+    <Toolbar
+      aria-label="Azioni elemento"
+      className="flex w-full items-center gap-1 border-b border-primary/6 bg-chrome px-4 py-1.5"
+    >
       <Button variant="primary" className={`gap-1 rounded-lg font-semibold ${btn}`} onPress={onModifica}>
         <Pencil className={ico} /> Modifica
       </Button>
@@ -107,14 +110,16 @@ export function ActionToolbar({
       </Button>
       <div className="flex-1" />
       <Dropdown>
-        <Button
-          variant="outline"
-          isIconOnly
-          className={`${overflow} rounded-lg border-edge text-ink-dim hover:bg-chip-bg`}
-          aria-label="Altre azioni"
-        >
-          <Ellipsis className="h-4 w-4" />
-        </Button>
+        <Dropdown.Trigger>
+          <Button
+            variant="outline"
+            isIconOnly
+            className={`${overflow} rounded-lg border-edge text-ink-dim hover:bg-chip-bg`}
+            aria-label="Altre azioni"
+          >
+            <Ellipsis className="h-4 w-4" />
+          </Button>
+        </Dropdown.Trigger>
         <Dropdown.Popover>
           <Dropdown.Menu
             onAction={(key) => {
@@ -287,7 +292,9 @@ export function DetailBody({
 
 export function DetailPane() {
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
-  const isEditing = useValue(workspaceUi$.isEditing);
+  const lastModified = useValue(workspaceUi$.lastModified);
+  const editingFieldId = useValue(workspaceUi$.editingFieldId);
+  void lastModified;
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)
@@ -349,22 +356,17 @@ export function DetailPane() {
         </Card.Header>
       </Card>
 
-      {/* Action toolbar — hidden when editing (editor has own Save/Cancel) */}
-      {!isEditing && (
-        <ActionToolbar
-          isFullscreen={false}
-          onModifica={startEditing}
-          onDelete={() => handleSoftDelete(selectedElement)}
-        />
-      )}
+      <ActionToolbar
+        isFullscreen={false}
+        onModifica={() => openFieldEditor("descrizione")}
+        onDelete={() => handleSoftDelete(selectedElement)}
+      />
 
-      {/* Detail body or inline editor */}
       <ScrollShadow className="flex-1 overflow-y-auto px-4 py-3">
-        {isEditing ? (
-          <ElementoEditor element={selectedElement} />
-        ) : (
-          <DetailBody element={selectedElement} isFullscreen={false} />
-        )}
+        <ElementoEditor
+          element={selectedElement}
+          editingFieldId={editingFieldId}
+        />
       </ScrollShadow>
     </div>
   );

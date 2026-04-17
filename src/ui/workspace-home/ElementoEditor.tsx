@@ -1,666 +1,1370 @@
-/**
- * ElementoEditor — inline edit form for an Elemento.
- *
- * Renders shared fields (titolo, descrizione, tags) and type-specific fields
- * based on elemento.tipo. Uses controlled local state (useState) — edits
- * update local state only. Save validates via normalizeElementoInput(), then
- * closes edit mode (no actual persistence in prototype — mock data immutable).
- *
- * HeroUI v3 RAC composition patterns:
- * - TextField > Label + Input + FieldError
- * - TextField > Label + TextArea + FieldError
- * - Select > Select.Trigger > Select.Value + Select.Popover > ListBox > ListBox.Item
- */
-
-import { useState, useCallback } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import {
   Button,
-  FieldError,
+  Chip,
+  Drawer,
+  Dropdown,
   Input,
   Label,
-  ListBox,
-  Select,
-  TextArea,
+  Popover,
+  Text,
   TextField,
+  toast,
 } from "@heroui/react";
-import { Save, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  Check,
+  ChevronDown,
+  FileText,
+  Link2,
+  MapPin,
+  Plus,
+  Tag,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+import { Editor, defaultValueCtx, rootCtx } from "@milkdown/core";
+import { listener, listenerCtx } from "@milkdown/plugin-listener";
+import { commonmark } from "@milkdown/preset-commonmark";
+import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 
-import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model";
+import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
+import type { ElementoInput } from "@/features/elemento/elemento.rules";
 import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
-import type { DataStorica, DataTemporale } from "@/features/shared/value-objects";
-import { stopEditing } from "./workspace-ui-store";
+import { formatHistoricalEra, type DataStorica, type DataTemporale } from "@/features/shared/value-objects";
+import { ELEMENTI } from "@/mock/data";
+import {
+  closeFieldEditor,
+  commitElementPatch,
+  commitNormalizedElement,
+  openFieldEditor,
+  type EditableFieldId,
+} from "./workspace-ui-store";
+import {
+  CURRENT_AUTORE,
+  formatElementDate,
+  getAnnotazioniForElement,
+  getFontiForElement,
+  resolveBoardsForElement,
+  resolveCollegamenti,
+} from "./display-helpers";
+import "./milkdown-iframe.css";
 
-// ── Local form state ──
+type ValidationWarning = {
+  field: EditableFieldId;
+  label: string;
+  message: string;
+};
 
-interface EditorState {
-  titolo: string;
-  descrizione: string;
-  tags: string;
-  // personaggio
-  nascitaAnno: string;
-  nascitaEra: "aev" | "ev";
-  morteAnno: string;
-  morteEra: "aev" | "ev";
-  tribu: string;
-  ruoli: string;
-  // guerra
-  fazioni: string;
-  esito: string;
-  // profezia
-  statoProfezia: string;
-  // regno
-  dettagliRegno: string;
-  // luogo
-  regione: string;
-  // evento — single date (DataTemporale kind="puntuale")
-  eventoAnno: string;
-  eventoEra: "aev" | "ev";
-  // periodo — range (DataTemporale kind="range")
-  periodoInizioAnno: string;
-  periodoInizioEra: "aev" | "ev";
-  periodoFineAnno: string;
-  periodoFineEra: "aev" | "ev";
-}
-
-function initState(el: Elemento): EditorState {
-  // Extract date components for evento and periodo if present.
-  const eventoPuntuale =
-    el.date?.kind === "puntuale" ? el.date.data : undefined;
-  const periodoRange = el.date?.kind === "range" ? el.date : undefined;
-
-  return {
-    titolo: el.titolo,
-    descrizione: el.descrizione,
-    tags: el.tags.join(", "),
-    nascitaAnno: el.nascita?.anno?.toString() ?? "",
-    nascitaEra: el.nascita?.era ?? "aev",
-    morteAnno: el.morte?.anno?.toString() ?? "",
-    morteEra: el.morte?.era ?? "aev",
-    tribu: el.tribu ?? "",
-    ruoli: (el.ruoli ?? []).join(", "),
-    fazioni: el.fazioni ?? "",
-    esito: el.esito ?? "",
-    statoProfezia: el.statoProfezia ?? "futura",
-    dettagliRegno: el.dettagliRegno ?? "",
-    regione: el.regione ?? "",
-    eventoAnno: eventoPuntuale?.anno?.toString() ?? "",
-    eventoEra: eventoPuntuale?.era ?? "aev",
-    periodoInizioAnno: periodoRange?.inizio.anno?.toString() ?? "",
-    periodoInizioEra: periodoRange?.inizio.era ?? "aev",
-    periodoFineAnno: periodoRange?.fine.anno?.toString() ?? "",
-    periodoFineEra: periodoRange?.fine.era ?? "aev",
-  };
-}
-
-// ── parseDataStorica ──
-// Converts the editor's (annoString, era) pair into a DataStorica, returning
-// undefined when the field is blank (meaning "not set"). Returns a sentinel
-// INVALID_DATA marker when the user typed a non-empty but non-parseable year,
-// so handleSave can distinguish "omit this optional field" from "this field
-// exists but is invalid".
 const INVALID_DATA = Symbol("INVALID_DATA");
-type ParseResult = DataStorica | undefined | typeof INVALID_DATA;
+const TIPO_OPTIONS: readonly ElementoTipo[] = [
+  "personaggio",
+  "guerra",
+  "evento",
+  "luogo",
+  "profezia",
+  "regno",
+  "periodo",
+  "annotazione",
+];
+const PARENTELA_ROLES: readonly RuoloLink[] = ["padre", "madre", "figlio", "figlia", "coniuge"];
+const GENERIC_LINK_TYPES: readonly TipoLink[] = [
+  "correlato",
+  "successione",
+  "causa-effetto",
+  "localizzazione",
+  "adempimento",
+  "parallelo",
+  "residenza",
+];
 
-function parseDataStorica(annoStr: string, era: "aev" | "ev"): ParseResult {
+function parseDataStorica(annoStr: string, era: "aev" | "ev") {
   const trimmed = annoStr.trim();
   if (!trimmed) return undefined;
   const anno = Number(trimmed);
   if (!Number.isInteger(anno) || anno <= 0) return INVALID_DATA;
-  return { anno, era, precisione: "esatta" };
+  return { anno, era, precisione: "esatta" } satisfies DataStorica;
 }
 
-// ── Error messages ──
-
-const ERROR_MESSAGES: Record<string, string> = {
-  titolo_vuoto: "Il titolo è obbligatorio",
-  data_non_valida: "Data non valida",
-  tipo_specifico_non_ammesso: "Campo non valido per questo tipo",
-  elemento_non_trovato: "Elemento non trovato",
-  fonte_non_valida: "Fonte non valida",
-  link_non_valido: "Collegamento non valido",
-  link_duplicato: "Collegamento duplicato",
-  link_auto_riferimento: "Un elemento non può riferire se stesso",
-  link_non_trovato: "Collegamento non trovato",
-  ruolo_mancante_per_parentela: "Ruolo parentela mancante",
-};
-
-// ── Section heading ──
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-lo mt-1">
-      {children}
-    </h3>
-  );
+function toYearString(value?: DataStorica): string {
+  return value?.anno ? String(value.anno) : "";
 }
 
-// ── Component ──
+function formatStoricaShort(value?: DataStorica): string {
+  if (!value) return "—";
+  return `${value.anno} ${formatHistoricalEra(value.era)}`;
+}
 
-export function ElementoEditor({ element }: { element: Elemento }) {
-  const [state, setState] = useState<EditorState>(() => initState(element));
-  const [errors, setErrors] = useState<Record<string, string>>({});
+function formatVita(element: Elemento): string {
+  if (!element.nascita && !element.morte) return "Aggiungi vita";
+  return `${formatStoricaShort(element.nascita)} -> ${formatStoricaShort(element.morte)}`;
+}
 
-  const set = useCallback(
-    <K extends keyof EditorState>(key: K, value: EditorState[K]) => {
-      setState((prev) => ({ ...prev, [key]: value }));
-      // Clear error for this field on change
-      setErrors((prev) => {
-        if (prev[key]) {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        }
-        return prev;
-      });
-    },
-    [],
-  );
+function renderInline(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  const regex = /\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
 
-  function handleSave() {
-    const tipo = element.tipo;
-
-    // Parse nascita / morte (only for personaggio)
-    const nascitaParsed =
-      tipo === "personaggio"
-        ? parseDataStorica(state.nascitaAnno, state.nascitaEra)
-        : undefined;
-    const morteParsed =
-      tipo === "personaggio"
-        ? parseDataStorica(state.morteAnno, state.morteEra)
-        : undefined;
-
-    if (nascitaParsed === INVALID_DATA || morteParsed === INVALID_DATA) {
-      setErrors({ _form: ERROR_MESSAGES.data_non_valida });
-      return;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push(text.slice(last, match.index));
     }
-
-    // Build DataTemporale for evento / periodo (from local state, not element.date).
-    let date: DataTemporale | undefined;
-    if (tipo === "evento") {
-      const eventoParsed = parseDataStorica(state.eventoAnno, state.eventoEra);
-      if (eventoParsed === INVALID_DATA) {
-        setErrors({ _form: ERROR_MESSAGES.data_non_valida });
-        return;
-      }
-      if (eventoParsed !== undefined) {
-        date = { kind: "puntuale", data: eventoParsed };
-      }
-    } else if (tipo === "periodo") {
-      const inizioParsed = parseDataStorica(
-        state.periodoInizioAnno,
-        state.periodoInizioEra,
+    if (match[1]) {
+      parts.push(<strong key={`strong-${key++}`}>{match[1]}</strong>);
+    } else if (match[2]) {
+      parts.push(<em key={`em-${key++}`}>{match[2]}</em>);
+    } else if (match[3] && match[4]) {
+      parts.push(
+        <span key={`link-${key++}`} className="text-primary underline underline-offset-2">
+          {match[3]}
+        </span>,
       );
-      const fineParsed = parseDataStorica(
-        state.periodoFineAnno,
-        state.periodoFineEra,
-      );
-      if (inizioParsed === INVALID_DATA || fineParsed === INVALID_DATA) {
-        setErrors({ _form: ERROR_MESSAGES.data_non_valida });
-        return;
-      }
-      // Both present → build range. Partial (one side) → leave date undefined.
-      if (inizioParsed !== undefined && fineParsed !== undefined) {
-        date = { kind: "range", inizio: inizioParsed, fine: fineParsed };
-      }
     }
-
-    const result = normalizeElementoInput({
-      titolo: state.titolo,
-      descrizione: state.descrizione,
-      tags: state.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      tipo,
-      nascita: tipo === "personaggio" ? nascitaParsed : undefined,
-      morte: tipo === "personaggio" ? morteParsed : undefined,
-      date,
-      tribu: tipo === "personaggio" ? (state.tribu || undefined) : undefined,
-      ruoli:
-        tipo === "personaggio"
-          ? state.ruoli
-              .split(",")
-              .map((r) => r.trim())
-              .filter(Boolean)
-          : undefined,
-      fazioni: tipo === "guerra" ? (state.fazioni || undefined) : undefined,
-      esito: tipo === "guerra" ? (state.esito || undefined) : undefined,
-      statoProfezia:
-        tipo === "profezia" ? (state.statoProfezia || undefined) : undefined,
-      dettagliRegno:
-        tipo === "regno" ? (state.dettagliRegno || undefined) : undefined,
-      regione: tipo === "luogo" ? (state.regione || undefined) : undefined,
-    });
-
-    result.match(
-      () => {
-        // Validation passed — close editor (no persistence in prototype)
-        stopEditing();
-      },
-      (error) => {
-        const msg = ERROR_MESSAGES[error.type] ?? "Errore di validazione";
-        if (error.type === "titolo_vuoto") {
-          setErrors({ titolo: msg });
-        } else {
-          setErrors({ _form: msg });
-        }
-      },
-    );
+    last = regex.lastIndex;
   }
 
-  function handleCancel() {
-    stopEditing();
+  if (last < text.length) {
+    parts.push(text.slice(last));
   }
 
-  const tipo = element.tipo;
+  return parts;
+}
+
+function MarkdownPreview({ value }: { value: string }) {
+  if (!value.trim()) {
+    return <em className="text-sm text-ink-dim">Tap per aggiungere una descrizione…</em>;
+  }
 
   return (
-    <div className="flex flex-col gap-3 text-[13px]">
-      {/* ── Shared Fields ── */}
-      <SectionHeading>Generale</SectionHeading>
-
-      <TextField
-        value={state.titolo}
-        onChange={(v: string) => set("titolo", v)}
-        isRequired
-        isInvalid={!!errors.titolo}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">Titolo</Label>
-        <Input className="min-h-[44px] text-[13px]" />
-        {errors.titolo && (
-          <FieldError className="mt-1 text-xs text-red-600">
-            {errors.titolo}
-          </FieldError>
-        )}
-      </TextField>
-
-      <TextField
-        value={state.descrizione}
-        onChange={(v: string) => set("descrizione", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">Descrizione</Label>
-        <TextArea className="min-h-[88px] text-[13px] resize-y" />
-      </TextField>
-
-      <TextField
-        value={state.tags}
-        onChange={(v: string) => set("tags", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">
-          Tag (separati da virgola)
-        </Label>
-        <Input className="min-h-[44px] text-[13px]" />
-      </TextField>
-
-      {/* ── Type-Specific Fields (exhaustive over ElementoTipo) ── */}
-      {renderTypeSpecificFields(tipo, state, set)}
-
-      {/* ── Form-level error ── */}
-      {errors._form && (
-        <p className="text-xs text-red-600" role="alert">
-          {errors._form}
+    <div className="space-y-3">
+      {value.split(/\n\n+/).map((paragraph, index) => (
+        <p key={`${paragraph}-${index}`} className="text-sm leading-relaxed text-ink-hi">
+          {renderInline(paragraph)}
         </p>
-      )}
-
-      {/* ── Actions ── */}
-      <div className="flex items-center gap-2 pt-2 border-t border-primary/6">
-        <Button
-          variant="primary"
-          className="min-h-[44px] gap-1.5 bg-accent px-4 text-[13px] font-semibold text-white"
-          onPress={handleSave}
-        >
-          <Save className="h-3.5 w-3.5" /> Salva
-        </Button>
-        <Button
-          variant="ghost"
-          className="min-h-[44px] gap-1.5 px-4 text-[13px] font-medium text-ink-lo"
-          onPress={handleCancel}
-        >
-          <X className="h-3.5 w-3.5" /> Annulla
-        </Button>
-      </div>
+      ))}
     </div>
   );
 }
 
-// ── Type-specific field groups ──
-
-interface FieldGroupProps {
-  state: EditorState;
-  set: <K extends keyof EditorState>(key: K, value: EditorState[K]) => void;
-}
-
-function PersonaggioFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Personaggio</SectionHeading>
-
-      <div className="grid grid-cols-2 gap-3">
-        <TextField
-          value={state.nascitaAnno}
-          onChange={(v: string) => set("nascitaAnno", v)}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">
-            Nascita (anno)
-          </Label>
-          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
-        </TextField>
-
-        <Select
-          selectedKey={state.nascitaEra}
-          onSelectionChange={(key) => {
-            if (key === "aev" || key === "ev") set("nascitaEra", key);
-          }}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">Era nascita</Label>
-          <Select.Trigger className="min-h-[44px] text-[13px]">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
-              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <TextField
-          value={state.morteAnno}
-          onChange={(v: string) => set("morteAnno", v)}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">
-            Morte (anno)
-          </Label>
-          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
-        </TextField>
-
-        <Select
-          selectedKey={state.morteEra}
-          onSelectionChange={(key) => {
-            if (key === "aev" || key === "ev") set("morteEra", key);
-          }}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">Era morte</Label>
-          <Select.Trigger className="min-h-[44px] text-[13px]">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
-              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      </div>
-
-      <TextField
-        value={state.tribu}
-        onChange={(v: string) => set("tribu", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">Tribù</Label>
-        <Input className="min-h-[44px] text-[13px]" />
-      </TextField>
-
-      <TextField
-        value={state.ruoli}
-        onChange={(v: string) => set("ruoli", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">
-          Ruoli (separati da virgola)
-        </Label>
-        <Input className="min-h-[44px] text-[13px]" />
-      </TextField>
-    </>
+function MilkdownEditorInline({
+  defaultValue,
+  onChange,
+}: {
+  defaultValue: string;
+  onChange: (markdown: string) => void;
+}) {
+  useEditor((root) =>
+    Editor.make()
+      .config((ctx) => {
+        ctx.set(rootCtx, root);
+        ctx.set(defaultValueCtx, defaultValue);
+        ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => onChange(markdown));
+      })
+      .use(commonmark)
+      .use(listener),
   );
+
+  return <Milkdown />;
 }
 
-function GuerraFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Guerra</SectionHeading>
+function getWarnings(element: Elemento): ValidationWarning[] {
+  const warnings: ValidationWarning[] = [];
 
-      <TextField
-        value={state.fazioni}
-        onChange={(v: string) => set("fazioni", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">Fazioni</Label>
-        <Input className="min-h-[44px] text-[13px]" />
-      </TextField>
+  if (!element.descrizione.trim()) {
+    warnings.push({
+      field: "descrizione",
+      label: "Descrizione",
+      message: "Manca una descrizione markdown. Aggiungila inline senza lasciare il detail pane.",
+    });
+  }
 
-      <TextField
-        value={state.esito}
-        onChange={(v: string) => set("esito", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">Esito</Label>
-        <Input className="min-h-[44px] text-[13px]" />
-      </TextField>
-    </>
-  );
+  if (element.tipo === "personaggio" && (!element.ruoli || element.ruoli.length === 0)) {
+    warnings.push({
+      field: "ruoli",
+      label: "Ruoli",
+      message: "Nessun ruolo visibile. Il mockup canonico prevede chip modificabili per i ruoli principali.",
+    });
+  }
+
+  if (element.tags.length === 0) {
+    warnings.push({
+      field: "tags",
+      label: "Tag",
+      message: "I tag sono vuoti. I board dinamici rispondono ai tag di sessione.",
+    });
+  }
+
+  if (element.link.length === 0) {
+    warnings.push({
+      field: "collegamenti-generici",
+      label: "Collegamenti",
+      message: "Nessun collegamento visibile. Usa il picker inline, non il vecchio form globale.",
+    });
+  }
+
+  return warnings;
 }
 
-function ProfeziaFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Profezia</SectionHeading>
+function buildElementoInput(next: Elemento): ElementoInput {
+  const input: ElementoInput = {
+    titolo: next.titolo,
+    descrizione: next.descrizione,
+    tags: next.tags,
+    tipo: next.tipo,
+  };
 
-      <Select
-        selectedKey={state.statoProfezia}
-        onSelectionChange={(key) => {
-          if (key === "adempiuta" || key === "in corso" || key === "futura") {
-            set("statoProfezia", key);
-          }
-        }}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">
-          Stato profezia
-        </Label>
-        <Select.Trigger className="min-h-[44px] text-[13px]">
-          <Select.Value />
-          <Select.Indicator />
-        </Select.Trigger>
-        <Select.Popover>
-          <ListBox>
-            <ListBox.Item id="adempiuta" textValue="Adempiuta">
-              Adempiuta
-            </ListBox.Item>
-            <ListBox.Item id="in corso" textValue="In corso">
-              In corso
-            </ListBox.Item>
-            <ListBox.Item id="futura" textValue="Futura">
-              Futura
-            </ListBox.Item>
-          </ListBox>
-        </Select.Popover>
-      </Select>
-    </>
-  );
-}
+  if (next.tipo === "evento" || next.tipo === "periodo" || next.tipo === "profezia" || next.tipo === "regno") {
+    input.date = next.date;
+  }
 
-function RegnoFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Regno</SectionHeading>
-
-      <TextField
-        value={state.dettagliRegno}
-        onChange={(v: string) => set("dettagliRegno", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">
-          Dettagli regno
-        </Label>
-        <TextArea className="min-h-[88px] text-[13px] resize-y" />
-      </TextField>
-    </>
-  );
-}
-
-function LuogoFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Luogo</SectionHeading>
-
-      <TextField
-        value={state.regione}
-        onChange={(v: string) => set("regione", v)}
-      >
-        <Label className="font-body text-[12px] text-ink-lo">Regione</Label>
-        <Input className="min-h-[44px] text-[13px]" />
-      </TextField>
-    </>
-  );
-}
-
-function EventoFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Evento</SectionHeading>
-
-      <div className="grid grid-cols-2 gap-3">
-        <TextField
-          value={state.eventoAnno}
-          onChange={(v: string) => set("eventoAnno", v)}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">Anno</Label>
-          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
-        </TextField>
-
-        <Select
-          selectedKey={state.eventoEra}
-          onSelectionChange={(key) => {
-            if (key === "aev" || key === "ev") set("eventoEra", key);
-          }}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">Era</Label>
-          <Select.Trigger className="min-h-[44px] text-[13px]">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
-              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      </div>
-    </>
-  );
-}
-
-function PeriodoFields({ state, set }: FieldGroupProps) {
-  return (
-    <>
-      <SectionHeading>Periodo</SectionHeading>
-
-      <div className="grid grid-cols-2 gap-3">
-        <TextField
-          value={state.periodoInizioAnno}
-          onChange={(v: string) => set("periodoInizioAnno", v)}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">
-            Inizio (anno)
-          </Label>
-          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
-        </TextField>
-
-        <Select
-          selectedKey={state.periodoInizioEra}
-          onSelectionChange={(key) => {
-            if (key === "aev" || key === "ev") set("periodoInizioEra", key);
-          }}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">Era inizio</Label>
-          <Select.Trigger className="min-h-[44px] text-[13px]">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
-              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <TextField
-          value={state.periodoFineAnno}
-          onChange={(v: string) => set("periodoFineAnno", v)}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">
-            Fine (anno)
-          </Label>
-          <Input className="min-h-[44px] text-[13px]" inputMode="numeric" />
-        </TextField>
-
-        <Select
-          selectedKey={state.periodoFineEra}
-          onSelectionChange={(key) => {
-            if (key === "aev" || key === "ev") set("periodoFineEra", key);
-          }}
-        >
-          <Label className="font-body text-[12px] text-ink-lo">Era fine</Label>
-          <Select.Trigger className="min-h-[44px] text-[13px]">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              <ListBox.Item id="aev" textValue="a.e.v.">a.e.v.</ListBox.Item>
-              <ListBox.Item id="ev" textValue="e.v.">e.v.</ListBox.Item>
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      </div>
-    </>
-  );
-}
-
-function AnnotazioneFields() {
-  return (
-    <>
-      <SectionHeading>Annotazione</SectionHeading>
-      <p className="text-[12px] italic text-ink-lo">
-        (Nessun campo aggiuntivo per questo tipo)
-      </p>
-    </>
-  );
-}
-
-// ── Exhaustive dispatcher over ElementoTipo ──
-// Constitution Principle V-bis (Open/Closed): switch on the discriminated
-// union and end with `const _exhaustive: never = tipo` so the compiler flags
-// any future ElementoTipo variant that is added without an editor branch.
-function renderTypeSpecificFields(
-  tipo: ElementoTipo,
-  state: EditorState,
-  set: <K extends keyof EditorState>(key: K, value: EditorState[K]) => void,
-): JSX.Element | null {
-  switch (tipo) {
+  switch (next.tipo) {
     case "personaggio":
-      return <PersonaggioFields state={state} set={set} />;
+      input.nascita = next.nascita;
+      input.morte = next.morte;
+      input.tribu = next.tribu;
+      input.ruoli = next.ruoli;
+      break;
     case "guerra":
-      return <GuerraFields state={state} set={set} />;
+      input.fazioni = next.fazioni;
+      input.esito = next.esito;
+      break;
     case "profezia":
-      return <ProfeziaFields state={state} set={set} />;
+      input.statoProfezia = next.statoProfezia;
+      break;
     case "regno":
-      return <RegnoFields state={state} set={set} />;
+      input.dettagliRegno = next.dettagliRegno;
+      break;
     case "luogo":
-      return <LuogoFields state={state} set={set} />;
+      input.regione = next.regione;
+      break;
     case "evento":
-      return <EventoFields state={state} set={set} />;
     case "periodo":
-      return <PeriodoFields state={state} set={set} />;
     case "annotazione":
-      return <AnnotazioneFields />;
-    default: {
-      const _exhaustive: never = tipo;
-      throw new Error(`Unhandled ElementoTipo: ${String(_exhaustive)}`);
+      break;
+  }
+
+  return input;
+}
+
+function buildTypeResetPatch(nextTipo: ElementoTipo): Partial<Elemento> {
+  const cleared: Partial<Elemento> = {
+    nascita: undefined,
+    morte: undefined,
+    tribu: undefined,
+    ruoli: undefined,
+    fazioni: undefined,
+    esito: undefined,
+    statoProfezia: undefined,
+    dettagliRegno: undefined,
+    regione: undefined,
+  };
+
+  if (nextTipo === "personaggio") {
+    return { ...cleared, date: undefined };
+  }
+
+  return cleared;
+}
+
+function ChipButton({
+  icon,
+  label,
+  value,
+  active,
+  onPress,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      className={`inline-flex min-h-[34px] items-center gap-2 rounded-full border px-3 py-1 text-left transition-colors ${
+        active
+          ? "border-primary/35 bg-primary/8 text-primary"
+          : "border-edge bg-chrome text-ink-md hover:border-primary/25 hover:bg-primary/5"
+      }`}
+    >
+      <span className="text-ink-dim">{icon}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-dim">{label}</span>
+      <span className="text-sm font-medium">{value}</span>
+      <ChevronDown className="h-3.5 w-3.5 text-ink-dim" />
+    </button>
+  );
+}
+
+function SurfaceMessage({ message }: { message: string | null }) {
+  if (!message) return null;
+
+  return (
+    <div className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-sm text-danger">
+      {message}
+    </div>
+  );
+}
+
+export function ElementoEditor({
+  element,
+  editingFieldId,
+  isFullscreen = false,
+}: {
+  element: Elemento;
+  editingFieldId: EditableFieldId | null;
+  isFullscreen?: boolean;
+}) {
+  const [surfaceError, setSurfaceError] = useState<string | null>(null);
+  const [tagDraft, setTagDraft] = useState("");
+  const [ruoloDraft, setRuoloDraft] = useState("");
+  const [familySearch, setFamilySearch] = useState("");
+  const [genericSearch, setGenericSearch] = useState("");
+  const [familyRole, setFamilyRole] = useState<RuoloLink>("coniuge");
+  const [genericType, setGenericType] = useState<TipoLink>("correlato");
+  const [familyTargetId, setFamilyTargetId] = useState("");
+  const [genericTargetId, setGenericTargetId] = useState("");
+
+  const warnings = useMemo(() => getWarnings(element), [element]);
+  const boards = useMemo(() => resolveBoardsForElement(element), [element]);
+  const fonti = useMemo(() => getFontiForElement(element), [element]);
+  const annotazioni = useMemo(
+    () => getAnnotazioniForElement(element.id as string, CURRENT_AUTORE),
+    [element],
+  );
+  const links = useMemo(() => resolveCollegamenti(element), [element]);
+
+  const familyCandidates = useMemo(
+    () =>
+      ELEMENTI.filter(
+        (candidate) =>
+          candidate.id !== element.id &&
+          candidate.tipo === "personaggio" &&
+          candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
+      ),
+    [element.id, familySearch],
+  );
+  const genericCandidates = useMemo(
+    () =>
+      ELEMENTI.filter(
+        (candidate) =>
+          candidate.id !== element.id &&
+          candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
+      ),
+    [element.id, genericSearch],
+  );
+
+  useEffect(() => {
+    setSurfaceError(null);
+  }, [element.id, editingFieldId]);
+
+  function commitPatch(
+    patch: Partial<Elemento>,
+    successMessage: string,
+    options?: { keepEditorOpen?: boolean },
+  ) {
+    const next = { ...element, ...patch };
+    const result = normalizeElementoInput(buildElementoInput(next));
+
+    result.match(
+      (normalized) => {
+        commitNormalizedElement(element.id as string, normalized);
+        if ("link" in patch) {
+          commitElementPatch(element.id as string, { link: patch.link });
+        }
+        toast(successMessage, { variant: "default" });
+        setSurfaceError(null);
+        if (!options?.keepEditorOpen) {
+          closeFieldEditor();
+        }
+      },
+      (error) => {
+        setSurfaceError(error.type.replaceAll("_", " "));
+      },
+    );
+  }
+
+  function commitTitle(nextTitle: string) {
+    commitPatch({ titolo: nextTitle }, "Titolo aggiornato");
+  }
+
+  function commitTipo(nextTipo: ElementoTipo) {
+    commitPatch(
+      {
+        ...buildTypeResetPatch(nextTipo),
+        tipo: nextTipo,
+      },
+      "Tipo aggiornato",
+    );
+  }
+
+  function commitVita(nascita?: DataStorica, morte?: DataStorica) {
+    commitPatch({ nascita, morte }, "Vita aggiornata");
+  }
+
+  function commitDescrizione(nextDescrizione: string) {
+    commitPatch({ descrizione: nextDescrizione }, "Descrizione aggiornata");
+  }
+
+  function commitScalar(field: keyof Elemento, value: string) {
+    commitPatch({ [field]: value || undefined } as Partial<Elemento>, "Campo aggiornato");
+  }
+
+  function addTag() {
+    const clean = tagDraft.trim();
+    if (!clean) return;
+    if (element.tags.includes(clean)) {
+      setSurfaceError("Tag gia presente");
+      return;
+    }
+    commitPatch({ tags: [...element.tags, clean] }, "Tag aggiunto", { keepEditorOpen: true });
+    setTagDraft("");
+  }
+
+  function removeTag(tag: string) {
+    commitPatch({ tags: element.tags.filter((value) => value !== tag) }, "Tag rimosso", {
+      keepEditorOpen: true,
+    });
+  }
+
+  function addRuolo() {
+    const clean = ruoloDraft.trim();
+    const current = element.ruoli ?? [];
+    if (!clean) return;
+    if (current.includes(clean)) {
+      setSurfaceError("Ruolo gia presente");
+      return;
+    }
+    commitPatch({ ruoli: [...current, clean] }, "Ruolo aggiunto", { keepEditorOpen: true });
+    setRuoloDraft("");
+  }
+
+  function removeRuolo(ruolo: string) {
+    commitPatch(
+      { ruoli: (element.ruoli ?? []).filter((value) => value !== ruolo) },
+      "Ruolo rimosso",
+      { keepEditorOpen: true },
+    );
+  }
+
+  function addFamilyLink() {
+    if (!familyTargetId) return;
+    if (element.link.some((link) => link.targetId === familyTargetId && link.tipo === "parentela")) {
+      setSurfaceError("Collegamento famiglia gia presente");
+      return;
+    }
+    commitPatch(
+      {
+        link: [
+          ...element.link,
+          {
+            targetId: familyTargetId,
+            tipo: "parentela",
+            ruolo: familyRole,
+          },
+        ],
+      },
+      "Collegamento familiare aggiunto",
+      { keepEditorOpen: true },
+    );
+    setFamilyTargetId("");
+  }
+
+  function addGenericLink() {
+    if (!genericTargetId) return;
+    if (element.link.some((link) => link.targetId === genericTargetId && link.tipo === genericType)) {
+      setSurfaceError("Collegamento gia presente");
+      return;
+    }
+    commitPatch(
+      {
+        link: [
+          ...element.link,
+          {
+            targetId: genericTargetId,
+            tipo: genericType,
+          },
+        ],
+      },
+      "Collegamento aggiunto",
+      { keepEditorOpen: true },
+    );
+    setGenericTargetId("");
+  }
+
+  function removeLink(targetTitle: string) {
+    const nextLinks = element.link.filter((link) => {
+      const target = ELEMENTI.find((candidate) => candidate.id === link.targetId);
+      return (target?.titolo ?? link.targetId) !== targetTitle;
+    });
+    commitPatch({ link: nextLinks }, "Collegamento rimosso", { keepEditorOpen: true });
+  }
+
+  const familyLinks = links.filter((link, index) => element.link[index]?.tipo === "parentela");
+  const genericLinks = links.filter((link, index) => element.link[index]?.tipo !== "parentela");
+
+  const globalAddOptions: Array<{ field: EditableFieldId; label: string; visible: boolean }> = [
+    { field: "descrizione", label: "Descrizione", visible: !element.descrizione.trim() },
+    { field: "tags", label: "Tag", visible: element.tags.length === 0 },
+    { field: "ruoli", label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
+    { field: "collegamenti-famiglia", label: "Collegamenti famiglia", visible: familyLinks.length === 0 },
+    { field: "collegamenti-generici", label: "Collegamenti", visible: genericLinks.length === 0 },
+  ].filter((option) => option.visible);
+
+  return (
+    <div className={`flex flex-col gap-5 ${isFullscreen ? "px-0" : ""}`}>
+      <SurfaceMessage message={surfaceError} />
+
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-primary/8 pb-4">
+        <InlineTitle
+          value={element.titolo}
+          isEditing={editingFieldId === "titolo"}
+          onStart={() => openFieldEditor("titolo")}
+          onCancel={closeFieldEditor}
+          onCommit={commitTitle}
+        />
+        <div className="flex items-center gap-2">
+          <ReviewDrawer
+            warnings={warnings}
+            isOpen={editingFieldId === "review"}
+            onOpenChange={(open) => (open ? openFieldEditor("review") : closeFieldEditor())}
+            onJump={(field) => openFieldEditor(field)}
+          />
+          <Dropdown>
+            <Dropdown.Trigger>
+              <Button variant="ghost" isIconOnly className="rounded-full border border-edge text-ink-dim">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </Dropdown.Trigger>
+            <Dropdown.Popover>
+              <Dropdown.Menu
+                onAction={(key) => {
+                  if (key === "soft-delete") {
+                    toast("Usa il menu principale per il soft delete", { variant: "default" });
+                  }
+                }}
+              >
+                <Dropdown.Item id="soft-delete" textValue="Soft delete" variant="danger">
+                  <Label>Soft delete</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+      </header>
+
+      <div className="flex flex-wrap gap-2">
+        <TipoChip
+          tipo={element.tipo}
+          open={editingFieldId === "tipo"}
+          onOpenChange={(open) => (open ? openFieldEditor("tipo") : closeFieldEditor())}
+          onCommit={commitTipo}
+        />
+        {element.tipo === "personaggio" && (
+          <>
+            <VitaChip
+              element={element}
+              open={editingFieldId === "vita"}
+              onOpenChange={(open) => (open ? openFieldEditor("vita") : closeFieldEditor())}
+              onCommit={commitVita}
+            />
+            <ScalarChip
+              icon={<Users className="h-3.5 w-3.5" />}
+              label="Tribu"
+              value={element.tribu ?? "Aggiungi tribu"}
+              open={editingFieldId === "tribu"}
+              onOpenChange={(open) => (open ? openFieldEditor("tribu") : closeFieldEditor())}
+              onCommit={(value) => commitScalar("tribu", value)}
+            />
+          </>
+        )}
+        {element.tipo === "luogo" && (
+          <ScalarChip
+            icon={<MapPin className="h-3.5 w-3.5" />}
+            label="Regione"
+            value={element.regione ?? "Aggiungi regione"}
+            open={editingFieldId === "origine"}
+            onOpenChange={(open) => (open ? openFieldEditor("origine") : closeFieldEditor())}
+            onCommit={(value) => commitScalar("regione", value)}
+          />
+        )}
+        {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
+          <Chip className="min-h-[34px] border border-edge bg-chrome px-3 text-sm text-ink-md">
+            <Calendar className="mr-2 h-3.5 w-3.5 text-ink-dim" />
+            {formatElementDate(element) ?? "Data non definita"}
+          </Chip>
+        )}
+      </div>
+
+      <DescrizioneSection
+        value={element.descrizione}
+        isEditing={editingFieldId === "descrizione"}
+        onStart={() => openFieldEditor("descrizione")}
+        onCancel={closeFieldEditor}
+        onCommit={commitDescrizione}
+      />
+
+      {element.tipo === "personaggio" && (
+        <ArraySection
+          icon={<Users className="h-3.5 w-3.5" />}
+          title="Ruoli"
+          items={element.ruoli ?? []}
+          addFieldId="ruoli"
+          addLabel="Aggiungi ruolo"
+          draftValue={ruoloDraft}
+          onDraftChange={setRuoloDraft}
+          onOpenAdd={() => openFieldEditor("ruoli")}
+          onCloseAdd={closeFieldEditor}
+          isAddOpen={editingFieldId === "ruoli"}
+          onAdd={addRuolo}
+          onRemove={removeRuolo}
+        />
+      )}
+
+      <ArraySection
+        icon={<Tag className="h-3.5 w-3.5" />}
+        title="Tag"
+        items={element.tags}
+        addFieldId="tags"
+        addLabel="Aggiungi tag"
+        draftValue={tagDraft}
+        onDraftChange={setTagDraft}
+        onOpenAdd={() => openFieldEditor("tags")}
+        onCloseAdd={closeFieldEditor}
+        isAddOpen={editingFieldId === "tags"}
+        onAdd={addTag}
+        onRemove={removeTag}
+      />
+
+      <LinkSection
+        title="Collegamenti famiglia"
+        links={familyLinks}
+        fieldId="collegamenti-famiglia"
+        open={editingFieldId === "collegamenti-famiglia"}
+        onOpenChange={(open) => (open ? openFieldEditor("collegamenti-famiglia") : closeFieldEditor())}
+        onRemove={removeLink}
+      >
+        <TextField value={familySearch} onChange={setFamilySearch}>
+          <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
+          <Input className="min-h-[40px]" />
+        </TextField>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {familyCandidates.slice(0, 8).map((candidate) => (
+            <Button
+              key={candidate.id}
+              variant={familyTargetId === candidate.id ? "primary" : "outline"}
+              className="justify-start"
+              onPress={() => setFamilyTargetId(candidate.id as string)}
+            >
+              {candidate.titolo}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PARENTELA_ROLES.map((role) => (
+            <Button
+              key={role}
+              variant={familyRole === role ? "primary" : "outline"}
+              size="sm"
+              onPress={() => setFamilyRole(role)}
+            >
+              {role}
+            </Button>
+          ))}
+        </div>
+        <Button variant="primary" onPress={addFamilyLink} isDisabled={!familyTargetId}>
+          Aggiungi collegamento
+        </Button>
+      </LinkSection>
+
+      <LinkSection
+        title="Collegamenti"
+        links={genericLinks}
+        fieldId="collegamenti-generici"
+        open={editingFieldId === "collegamenti-generici"}
+        onOpenChange={(open) => (open ? openFieldEditor("collegamenti-generici") : closeFieldEditor())}
+        onRemove={removeLink}
+      >
+        <TextField value={genericSearch} onChange={setGenericSearch}>
+          <Label className="text-xs text-ink-lo">Cerca elemento</Label>
+          <Input className="min-h-[40px]" />
+        </TextField>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {genericCandidates.slice(0, 8).map((candidate) => (
+            <Button
+              key={candidate.id}
+              variant={genericTargetId === candidate.id ? "primary" : "outline"}
+              className="justify-start"
+              onPress={() => setGenericTargetId(candidate.id as string)}
+            >
+              {candidate.titolo}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {GENERIC_LINK_TYPES.map((type) => (
+            <Button
+              key={type}
+              variant={genericType === type ? "primary" : "outline"}
+              size="sm"
+              onPress={() => setGenericType(type)}
+            >
+              {type}
+            </Button>
+          ))}
+        </div>
+        <Button variant="primary" onPress={addGenericLink} isDisabled={!genericTargetId}>
+          Aggiungi collegamento
+        </Button>
+      </LinkSection>
+
+      <section className="rounded-2xl border border-primary/8 bg-chrome/60 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">
+              + Aggiungi campo
+            </p>
+            <p className="text-sm text-ink-md">Flusso unico per i campi vuoti supportati in S02.</p>
+          </div>
+          <Dropdown>
+            <Dropdown.Trigger>
+              <Button variant="primary" className="gap-2 rounded-full">
+                <Plus className="h-4 w-4" />
+                Aggiungi campo
+              </Button>
+            </Dropdown.Trigger>
+            <Dropdown.Popover placement="bottom end">
+              <Dropdown.Menu
+                onAction={(key) => openFieldEditor(String(key) as EditableFieldId)}
+              >
+                {globalAddOptions.length === 0 && (
+                  <Dropdown.Item id="none" textValue="Nessun campo nascosto" isDisabled>
+                    <Label>Nessun campo nascosto disponibile</Label>
+                  </Dropdown.Item>
+                )}
+                {globalAddOptions.map((option) => (
+                  <Dropdown.Item key={option.field} id={option.field} textValue={option.label}>
+                    <Label>{option.label}</Label>
+                  </Dropdown.Item>
+                ))}
+                <Dropdown.Item id="fonti-deferred" textValue="Fonti completo" isDisabled>
+                  <Label>Fonti completo rimandato a S03</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
+        </div>
+      </section>
+
+      <ReadOnlySection
+        title="Annotazioni"
+        icon={<FileText className="h-3.5 w-3.5" />}
+        emptyLabel="Nessuna annotazione collegata"
+      >
+        {annotazioni.mie.map((annotation) => (
+          <div key={annotation.id as string} className="rounded-xl border border-primary/8 bg-panel px-3 py-2">
+            <p className="text-sm font-medium text-ink-hi">{annotation.titolo}</p>
+            {annotation.descrizione && (
+              <p className="mt-1 text-sm text-ink-md">{annotation.descrizione}</p>
+            )}
+          </div>
+        ))}
+        {annotazioni.altreCount > 0 && (
+          <p className="text-sm text-ink-dim">{annotazioni.altreCount} annotazioni altrui non mostrate qui.</p>
+        )}
+      </ReadOnlySection>
+
+      <ReadOnlySection
+        title="Board"
+        icon={<Users className="h-3.5 w-3.5" />}
+        emptyLabel="Nessuna board dinamica o fissa"
+      >
+        <div className="flex flex-wrap gap-2">
+          {boards.map((board) => (
+            <Chip key={board} className="border border-primary/10 bg-primary/5 px-3 text-sm text-primary">
+              {board}
+            </Chip>
+          ))}
+        </div>
+      </ReadOnlySection>
+
+      <ReadOnlySection
+        title="Fonti"
+        icon={<Link2 className="h-3.5 w-3.5" />}
+        emptyLabel="Nessuna fonte visibile in S02"
+      >
+        <div className="flex flex-wrap gap-2">
+          {fonti.map((fonte) => (
+            <Chip key={fonte} className="border border-edge bg-panel px-3 text-sm text-ink-md">
+              {fonte}
+            </Chip>
+          ))}
+        </div>
+      </ReadOnlySection>
+    </div>
+  );
+}
+
+function InlineTitle({
+  value,
+  isEditing,
+  onStart,
+  onCancel,
+  onCommit,
+}: {
+  value: string;
+  isEditing: boolean;
+  onStart: () => void;
+  onCancel: () => void;
+  onCommit: (next: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value, isEditing]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const id = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [isEditing]);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      onCommit(draft);
+    }
+    if (event.key === "Escape") {
+      onCancel();
     }
   }
+
+  if (isEditing) {
+    return (
+      <TextField value={draft} onChange={setDraft} className="min-w-0 flex-1">
+        <Input
+          ref={inputRef}
+          className="min-h-[52px] text-xl font-semibold"
+          onBlur={() => onCommit(draft)}
+          onKeyDown={handleKeyDown}
+        />
+      </TextField>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onStart}
+      className="min-w-0 flex-1 rounded-xl px-2 py-1 text-left text-xl font-semibold text-ink-hi transition-colors hover:bg-primary/5"
+    >
+      {value}
+    </button>
+  );
+}
+
+function ReviewDrawer({
+  warnings,
+  isOpen,
+  onOpenChange,
+  onJump,
+}: {
+  warnings: ValidationWarning[];
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onJump: (field: EditableFieldId) => void;
+}) {
+  return (
+    <Drawer>
+      <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} className="bg-black/30">
+        <Drawer.Content placement="right">
+          <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
+            <Drawer.Header className="border-b border-primary/8 px-5 py-4">
+              <Drawer.Heading className="inline-flex items-center gap-2 text-lg font-semibold text-ink-hi">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                Da rivedere
+              </Drawer.Heading>
+              <Drawer.CloseTrigger />
+            </Drawer.Header>
+            <Drawer.Body className="space-y-3 px-5 py-4">
+              {warnings.length === 0 && (
+                <p className="text-sm text-ink-md">Nessun warning bloccante. Il dettaglio e allineato al mockup.</p>
+              )}
+              {warnings.map((warning) => (
+                <button
+                  key={warning.label}
+                  type="button"
+                  className="w-full rounded-xl border border-primary/8 bg-chrome p-3 text-left hover:border-primary/25"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onJump(warning.field);
+                  }}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">
+                    {warning.label}
+                  </p>
+                  <p className="mt-1 text-sm text-ink-hi">{warning.message}</p>
+                </button>
+              ))}
+            </Drawer.Body>
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
+      <Button
+        variant={warnings.length > 0 ? "outline" : "ghost"}
+        className={`rounded-full ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
+        onPress={() => onOpenChange(true)}
+      >
+        <AlertTriangle className="h-4 w-4" />
+        {warnings.length > 0 ? `${warnings.length} da rivedere` : "Review"}
+      </Button>
+    </Drawer>
+  );
+}
+
+function TipoChip({
+  tipo,
+  open,
+  onOpenChange,
+  onCommit,
+}: {
+  tipo: ElementoTipo;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCommit: (tipo: ElementoTipo) => void;
+}) {
+  return (
+    <Popover isOpen={open} onOpenChange={onOpenChange}>
+      <Popover.Trigger>
+        <ChipButton
+          icon={<Users className="h-3.5 w-3.5" />}
+          label="Tipo"
+          value={tipo}
+          active={open}
+          onPress={() => onOpenChange(!open)}
+        />
+      </Popover.Trigger>
+      <Popover.Content placement="bottom start" className="w-[260px]">
+        <Popover.Dialog className="space-y-2 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-dim">Tipo elemento</p>
+          {TIPO_OPTIONS.map((option) => (
+            <Button
+              key={option}
+              variant={option === tipo ? "primary" : "ghost"}
+              className="w-full justify-start"
+              onPress={() => onCommit(option)}
+            >
+              {option}
+            </Button>
+          ))}
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
+  );
+}
+
+function VitaChip({
+  element,
+  open,
+  onOpenChange,
+  onCommit,
+}: {
+  element: Elemento;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCommit: (nascita?: DataStorica, morte?: DataStorica) => void;
+}) {
+  const [nascitaAnno, setNascitaAnno] = useState(toYearString(element.nascita));
+  const [nascitaEra, setNascitaEra] = useState<"aev" | "ev">(element.nascita?.era ?? "aev");
+  const [morteAnno, setMorteAnno] = useState(toYearString(element.morte));
+  const [morteEra, setMorteEra] = useState<"aev" | "ev">(element.morte?.era ?? "aev");
+
+  useEffect(() => {
+    setNascitaAnno(toYearString(element.nascita));
+    setNascitaEra(element.nascita?.era ?? "aev");
+    setMorteAnno(toYearString(element.morte));
+    setMorteEra(element.morte?.era ?? "aev");
+  }, [element, open]);
+
+  function submit() {
+    const nascita = parseDataStorica(nascitaAnno, nascitaEra);
+    const morte = parseDataStorica(morteAnno, morteEra);
+    if (nascita === INVALID_DATA || morte === INVALID_DATA) {
+      toast("Usa solo anni interi positivi", { variant: "default" });
+      return;
+    }
+    onCommit(nascita, morte);
+  }
+
+  return (
+    <Drawer>
+      <Button
+        variant="ghost"
+        className="p-0"
+        onPress={() => onOpenChange(true)}
+      >
+        <ChipButton
+          icon={<Calendar className="h-3.5 w-3.5" />}
+          label="Vita"
+          value={formatVita(element)}
+          active={open}
+          onPress={() => onOpenChange(true)}
+        />
+      </Button>
+      <Drawer.Backdrop isOpen={open} onOpenChange={onOpenChange} className="bg-black/30">
+        <Drawer.Content placement="right">
+          <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
+            <Drawer.Header className="border-b border-primary/8 px-5 py-4">
+              <Drawer.Heading className="text-lg font-semibold text-ink-hi">Vita</Drawer.Heading>
+              <Drawer.CloseTrigger />
+            </Drawer.Header>
+            <Drawer.Body className="space-y-4 px-5 py-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <TextField value={nascitaAnno} onChange={setNascitaAnno}>
+                  <Label className="text-xs text-ink-lo">Nascita</Label>
+                  <Input className="min-h-[40px]" />
+                </TextField>
+                <div className="flex gap-2 pt-5">
+                  <Button variant={nascitaEra === "aev" ? "primary" : "outline"} size="sm" onPress={() => setNascitaEra("aev")}>
+                    aev
+                  </Button>
+                  <Button variant={nascitaEra === "ev" ? "primary" : "outline"} size="sm" onPress={() => setNascitaEra("ev")}>
+                    ev
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <TextField value={morteAnno} onChange={setMorteAnno}>
+                  <Label className="text-xs text-ink-lo">Morte</Label>
+                  <Input className="min-h-[40px]" />
+                </TextField>
+                <div className="flex gap-2 pt-5">
+                  <Button variant={morteEra === "aev" ? "primary" : "outline"} size="sm" onPress={() => setMorteEra("aev")}>
+                    aev
+                  </Button>
+                  <Button variant={morteEra === "ev" ? "primary" : "outline"} size="sm" onPress={() => setMorteEra("ev")}>
+                    ev
+                  </Button>
+                </div>
+              </div>
+            </Drawer.Body>
+            <Drawer.Footer className="border-t border-primary/8 px-5 py-4">
+              <Button variant="ghost" onPress={() => onOpenChange(false)}>
+                Annulla
+              </Button>
+              <Button variant="primary" onPress={submit}>
+                Salva vita
+              </Button>
+            </Drawer.Footer>
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
+    </Drawer>
+  );
+}
+
+function ScalarChip({
+  icon,
+  label,
+  value,
+  open,
+  onOpenChange,
+  onCommit,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCommit: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value === `Aggiungi ${label.toLowerCase()}` ? "" : value);
+
+  useEffect(() => {
+    setDraft(value.startsWith("Aggiungi ") ? "" : value);
+  }, [value, open]);
+
+  function submit() {
+    onCommit(draft.trim());
+  }
+
+  return (
+    <Popover isOpen={open} onOpenChange={onOpenChange}>
+      <Popover.Trigger>
+        <ChipButton icon={icon} label={label} value={value} active={open} onPress={() => onOpenChange(!open)} />
+      </Popover.Trigger>
+      <Popover.Content placement="bottom start" className="w-[280px]">
+        <Popover.Dialog className="space-y-3 p-3">
+          <TextField value={draft} onChange={setDraft}>
+            <Label className="text-xs text-ink-lo">{label}</Label>
+            <Input
+              className="min-h-[40px]"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  submit();
+                }
+                if (event.key === "Escape") {
+                  onOpenChange(false);
+                }
+              }}
+            />
+          </TextField>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onPress={() => onOpenChange(false)}>
+              Annulla
+            </Button>
+            <Button variant="primary" size="sm" onPress={submit}>
+              Salva
+            </Button>
+          </div>
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
+  );
+}
+
+function DescrizioneSection({
+  value,
+  isEditing,
+  onStart,
+  onCancel,
+  onCommit,
+}: {
+  value: string;
+  isEditing: boolean;
+  onStart: () => void;
+  onCancel: () => void;
+  onCommit: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value, isEditing]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const id = requestAnimationFrame(() => {
+      containerRef.current?.querySelector<HTMLElement>(".ProseMirror")?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isEditing]);
+
+  function handleBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      onCommit(draft);
+    }
+  }
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">Descrizione</p>
+        {isEditing && (
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onPress={onCancel}>
+              Annulla
+            </Button>
+            <Button variant="primary" size="sm" onPress={() => onCommit(draft)}>
+              <Check className="h-3.5 w-3.5" />
+              Fatto
+            </Button>
+          </div>
+        )}
+      </div>
+      {isEditing ? (
+        <div
+          ref={containerRef}
+          tabIndex={-1}
+          onBlur={handleBlur}
+          className="milkdown-host rounded-2xl border border-primary/20 bg-primary/[0.03] p-3"
+        >
+          <MilkdownProvider>
+            <MilkdownEditorInline defaultValue={value} onChange={setDraft} />
+          </MilkdownProvider>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onStart}
+          className="w-full rounded-2xl border border-primary/8 bg-chrome/60 px-4 py-4 text-left hover:border-primary/20 hover:bg-primary/[0.03]"
+        >
+          <MarkdownPreview value={value} />
+        </button>
+      )}
+    </section>
+  );
+}
+
+function ArraySection({
+  icon,
+  title,
+  items,
+  addLabel,
+  draftValue,
+  onDraftChange,
+  onOpenAdd,
+  onCloseAdd,
+  isAddOpen,
+  onAdd,
+  onRemove,
+}: {
+  icon: ReactNode;
+  title: string;
+  items: readonly string[];
+  addFieldId: EditableFieldId;
+  addLabel: string;
+  draftValue: string;
+  onDraftChange: (value: string) => void;
+  onOpenAdd: () => void;
+  onCloseAdd: () => void;
+  isAddOpen: boolean;
+  onAdd: () => void;
+  onRemove: (value: string) => void;
+}) {
+  return (
+    <section className="rounded-2xl border border-primary/8 bg-chrome/60 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-2">
+          <span className="text-ink-dim">{icon}</span>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
+        </div>
+        <Popover isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
+          <Popover.Trigger>
+            <Button variant="ghost" size="sm" className="rounded-full text-primary" onPress={onOpenAdd}>
+              <Plus className="h-3.5 w-3.5" />
+              {addLabel}
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content placement="bottom end" className="w-[280px]">
+            <Popover.Dialog className="space-y-3 p-3">
+              <TextField value={draftValue} onChange={onDraftChange}>
+                <Label className="text-xs text-ink-lo">{title}</Label>
+                <Input
+                  className="min-h-[40px]"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      onAdd();
+                    }
+                    if (event.key === "Escape") {
+                      onCloseAdd();
+                    }
+                  }}
+                />
+              </TextField>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onPress={onCloseAdd}>
+                  Chiudi
+                </Button>
+                <Button variant="primary" size="sm" onPress={onAdd}>
+                  Aggiungi
+                </Button>
+              </div>
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {items.length === 0 && <p className="text-sm text-ink-dim">Nessun valore impostato.</p>}
+        {items.map((item) => (
+          <Chip
+            key={item}
+            className="border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            onClose={() => onRemove(item)}
+          >
+            {item}
+          </Chip>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LinkSection({
+  title,
+  links,
+  fieldId,
+  open,
+  onOpenChange,
+  onRemove,
+  children,
+}: {
+  title: string;
+  links: ReadonlyArray<{ titolo: string; tipo: string }>;
+  fieldId: EditableFieldId;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onRemove: (title: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-primary/8 bg-chrome/60 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
+        <Popover isOpen={open} onOpenChange={onOpenChange}>
+          <Popover.Trigger>
+            <Button variant="ghost" size="sm" className="rounded-full text-primary" onPress={() => onOpenChange(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Aggiungi
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content placement="bottom end" className="w-[360px]">
+            <Popover.Dialog className="space-y-3 p-3">{children}</Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {links.length === 0 && <p className="text-sm text-ink-dim">Nessun collegamento in questo gruppo.</p>}
+        {links.map((link) => (
+          <Chip
+            key={`${fieldId}-${link.titolo}-${link.tipo}`}
+            className="border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            onClose={() => onRemove(link.titolo)}
+          >
+            {link.titolo}
+            <span className="ml-2 text-xs text-ink-dim">{link.tipo}</span>
+          </Chip>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ReadOnlySection({
+  title,
+  icon,
+  emptyLabel,
+  children,
+}: {
+  title: string;
+  icon: ReactNode;
+  emptyLabel: string;
+  children: ReactNode;
+}) {
+  const isEmpty = Array.isArray(children) ? children.length === 0 : !children;
+
+  return (
+    <section className="rounded-2xl border border-primary/8 bg-chrome/40 p-4">
+      <div className="mb-3 inline-flex items-center gap-2">
+        <span className="text-ink-dim">{icon}</span>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
+      </div>
+      {isEmpty ? <p className="text-sm text-ink-dim">{emptyLabel}</p> : children}
+    </section>
+  );
 }

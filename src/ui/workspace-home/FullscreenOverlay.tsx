@@ -19,15 +19,17 @@ import {
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
-import { workspaceUi$, startEditing } from "./workspace-ui-store";
+import { openFieldEditor, workspaceUi$ } from "./workspace-ui-store";
 import { findElementById, formatElementDate } from "./display-helpers";
-import { ActionToolbar, DetailBody, handleSoftDelete } from "./DetailPane";
+import { ActionToolbar, handleSoftDelete } from "./DetailPane";
 import { ElementoEditor } from "./ElementoEditor";
 
 export function FullscreenOverlay() {
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
   const fullscreen = useValue(workspaceUi$.fullscreen);
-  const isEditing = useValue(workspaceUi$.isEditing);
+  const lastModified = useValue(workspaceUi$.lastModified);
+  const editingFieldId = useValue(workspaceUi$.editingFieldId);
+  void lastModified;
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)
@@ -87,22 +89,19 @@ export function FullscreenOverlay() {
         </Tooltip>
       </header>
 
-      {/* Action toolbar — hidden when editing (editor has own Save/Cancel) */}
-      {!isEditing && (
-        <ActionToolbar
-          isFullscreen
-          onModifica={startEditing}
-          onDelete={() => handleSoftDelete(selectedElement)}
-        />
-      )}
+      <ActionToolbar
+        isFullscreen
+        onModifica={() => openFieldEditor("descrizione")}
+        onDelete={() => handleSoftDelete(selectedElement)}
+      />
 
       <ScrollShadow className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-6 py-6">
-          {isEditing ? (
-            <ElementoEditor element={selectedElement} />
-          ) : (
-            <DetailBody element={selectedElement} isFullscreen />
-          )}
+          <ElementoEditor
+            element={selectedElement}
+            editingFieldId={editingFieldId}
+            isFullscreen
+          />
         </div>
       </ScrollShadow>
     </div>
