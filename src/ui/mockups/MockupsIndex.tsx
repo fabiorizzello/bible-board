@@ -90,6 +90,26 @@ const MOCKUPS: MockupEntry[] = [
     recommended: "C. Soft validation + drawer review",
     status: "decided",
   },
+  {
+    number: "7",
+    slug: "header-edit",
+    category: "Header",
+    title: "Header edit (nome + tipo + actions)",
+    description:
+      "Header del detail pane: come si edita nome, chip TipoElemento, e azioni (rinomina, duplica, elimina). 3 alternative con diverso grado di edit inline vs kebab menu.",
+    recommended: "A. Inline nome + tipo popover + kebab actions",
+    status: "in_review",
+  },
+  {
+    number: "8",
+    slug: "detail-layout",
+    category: "Layout",
+    title: "Detail pane layout (no more tabellare)",
+    description:
+      "Il 2-col label/value attuale sembra troppo tabellare. 3 alternative: status quo, Apple Calendar label-stacked, Linear chips header + body.",
+    recommended: "C. Metadata chips + body (Linear style)",
+    status: "in_review",
+  },
 ];
 
 const DECIDED_COUNT = MOCKUPS.filter((m) => m.status === "decided").length;

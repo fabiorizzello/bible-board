@@ -6,6 +6,8 @@ import { NotFoundPage } from "@/ui/not-found/NotFoundPage";
 import { AddFieldFlowMockup } from "@/ui/mockups/AddFieldFlowMockup";
 import { CommitInteractionMockup } from "@/ui/mockups/CommitInteractionMockup";
 import { CompositeVitaMockup } from "@/ui/mockups/CompositeVitaMockup";
+import { DetailLayoutMockup } from "@/ui/mockups/DetailLayoutMockup";
+import { HeaderEditMockup } from "@/ui/mockups/HeaderEditMockup";
 import { MarkdownDescrizioneMockup } from "@/ui/mockups/MarkdownDescrizioneMockup";
 import { MockupsIndex } from "@/ui/mockups/MockupsIndex";
 import { MultiValueChipMockup } from "@/ui/mockups/MultiValueChipMockup";
@@ -39,5 +41,7 @@ export const appRouter = createBrowserRouter([
   { path: "/dev/mockup-markdown-descrizione", Component: MarkdownDescrizioneMockup },
   { path: "/dev/mockup-composite-vita", Component: CompositeVitaMockup },
   { path: "/dev/mockup-validation-ux", Component: ValidationUxMockup },
+  { path: "/dev/mockup-header-edit", Component: HeaderEditMockup },
+  { path: "/dev/mockup-detail-layout", Component: DetailLayoutMockup },
   { path: "*", Component: NotFoundPage },
 ]);
