@@ -3,14 +3,12 @@
  *
  * Extracted from WorkspacePreviewPage monolith.
  * Reads shared state via Legend State workspace-ui-store.
- * Reuses DetailBody and ActionToolbar from DetailPane.
+ * Reuses the same unified detail shell as the standard pane.
  */
 
 import {
   Button,
-  Chip,
   ScrollShadow,
-  Text,
   Tooltip,
 } from "@heroui/react";
 import {
@@ -19,9 +17,9 @@ import {
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
-import { openFieldEditor, workspaceUi$ } from "./workspace-ui-store";
-import { findElementById, formatElementDate } from "./display-helpers";
-import { ActionToolbar, handleSoftDelete } from "./DetailPane";
+import { workspaceUi$ } from "./workspace-ui-store";
+import { findElementById } from "./display-helpers";
+import { handleSoftDelete } from "./DetailPane";
 import { ElementoEditor } from "./ElementoEditor";
 
 export function FullscreenOverlay() {
@@ -35,8 +33,6 @@ export function FullscreenOverlay() {
     ? findElementById(selectedElementId)
     : undefined;
 
-  const dateStr = selectedElement ? formatElementDate(selectedElement) : undefined;
-
   // Render nothing if no element selected (overlay won't be visible anyway)
   if (!selectedElement) return null;
 
@@ -48,38 +44,25 @@ export function FullscreenOverlay() {
           : "opacity-0 translate-y-4 pointer-events-none"
       }`}
     >
-      <header className="flex items-center gap-3 border-b border-primary/10 px-4 min-h-[48px]">
+      <header className="flex min-h-[56px] items-center gap-3 border-b border-primary/10 px-4">
         <Tooltip>
           <Button
             variant="ghost"
-            isIconOnly
-            className="h-[36px] w-[36px] rounded-lg text-ink-lo hover:bg-primary/6"
+            className="min-h-[40px] gap-2 rounded-full px-4 text-sm font-medium text-ink-lo hover:bg-primary/6"
             onPress={() => workspaceUi$.fullscreen.set(false)}
             aria-label="Torna alla lista"
           >
             <ArrowLeft className="h-4 w-4" />
+            Torna
           </Button>
           <Tooltip.Content>Torna alla lista</Tooltip.Content>
         </Tooltip>
-        <Text className="font-heading text-base font-semibold text-ink-hi truncate">
-          {selectedElement.titolo}
-        </Text>
-        <div className="flex items-center gap-1.5">
-          <Chip size="sm" className="bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-            {selectedElement.tipo}
-          </Chip>
-          {dateStr && (
-            <Text className="font-heading text-[11px] text-ink-dim">
-              {dateStr}
-            </Text>
-          )}
-        </div>
         <div className="flex-1" />
         <Tooltip>
           <Button
             variant="ghost"
             isIconOnly
-            className="h-[36px] w-[36px] rounded-lg text-ink-lo hover:bg-primary/6"
+            className="h-10 w-10 rounded-full text-ink-lo hover:bg-primary/6"
             onPress={() => workspaceUi$.fullscreen.set(false)}
             aria-label="Esci da schermo intero"
           >
@@ -89,18 +72,13 @@ export function FullscreenOverlay() {
         </Tooltip>
       </header>
 
-      <ActionToolbar
-        isFullscreen
-        onModifica={() => openFieldEditor("descrizione")}
-        onDelete={() => handleSoftDelete(selectedElement)}
-      />
-
       <ScrollShadow className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-6 py-6">
+        <div className="mx-auto max-w-3xl px-6 py-6 md:px-8">
           <ElementoEditor
             element={selectedElement}
             editingFieldId={editingFieldId}
             isFullscreen
+            onDelete={() => handleSoftDelete(selectedElement)}
           />
         </div>
       </ScrollShadow>

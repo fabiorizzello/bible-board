@@ -21,12 +21,14 @@ import {
 } from "@heroui/react";
 import {
   AlertTriangle,
+  Copy,
   Calendar,
   Check,
   ChevronDown,
   FileText,
   Link2,
   MapPin,
+  MoreHorizontal,
   Plus,
   Tag,
   Trash2,
@@ -58,7 +60,7 @@ import {
   resolveBoardsForElement,
   resolveCollegamenti,
 } from "./display-helpers";
-import "./milkdown-iframe.css";
+import "../mockups/milkdown-iframe.css";
 
 type ValidationWarning = {
   field: EditableFieldId;
@@ -295,7 +297,7 @@ function ChipButton({
     <button
       type="button"
       onClick={onPress}
-      className={`inline-flex min-h-[34px] items-center gap-2 rounded-full border px-3 py-1 text-left transition-colors ${
+      className={`inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-left transition-colors ${
         active
           ? "border-primary/35 bg-primary/8 text-primary"
           : "border-edge bg-chrome text-ink-md hover:border-primary/25 hover:bg-primary/5"
@@ -303,7 +305,7 @@ function ChipButton({
     >
       <span className="text-ink-dim">{icon}</span>
       <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-dim">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
+      <span className="text-[13px] font-medium leading-none">{value}</span>
       <ChevronDown className="h-3.5 w-3.5 text-ink-dim" />
     </button>
   );
@@ -323,10 +325,12 @@ export function ElementoEditor({
   element,
   editingFieldId,
   isFullscreen = false,
+  onDelete,
 }: {
   element: Elemento;
   editingFieldId: EditableFieldId | null;
   isFullscreen?: boolean;
+  onDelete?: () => void;
 }) {
   const [surfaceError, setSurfaceError] = useState<string | null>(null);
   const [tagDraft, setTagDraft] = useState("");
@@ -525,89 +529,72 @@ export function ElementoEditor({
   ].filter((option) => option.visible);
 
   return (
-    <div className={`flex flex-col gap-5 ${isFullscreen ? "px-0" : ""}`}>
+    <div className={`flex flex-col gap-6 ${isFullscreen ? "px-0" : ""}`}>
       <SurfaceMessage message={surfaceError} />
 
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-primary/8 pb-4">
-        <InlineTitle
-          value={element.titolo}
-          isEditing={editingFieldId === "titolo"}
-          onStart={() => openFieldEditor("titolo")}
-          onCancel={closeFieldEditor}
-          onCommit={commitTitle}
-        />
-        <div className="flex items-center gap-2">
-          <ReviewDrawer
-            warnings={warnings}
-            isOpen={editingFieldId === "review"}
-            onOpenChange={(open) => (open ? openFieldEditor("review") : closeFieldEditor())}
-            onJump={(field) => openFieldEditor(field)}
+      <header className="border-b border-primary/8 pb-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <InlineTitle
+            value={element.titolo}
+            isEditing={editingFieldId === "titolo"}
+            onStart={() => openFieldEditor("titolo")}
+            onCancel={closeFieldEditor}
+            onCommit={commitTitle}
           />
-          <Dropdown>
-            <Dropdown.Trigger>
-              <Button variant="ghost" isIconOnly className="rounded-full border border-edge text-ink-dim">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </Dropdown.Trigger>
-            <Dropdown.Popover>
-              <Dropdown.Menu
-                onAction={(key) => {
-                  if (key === "soft-delete") {
-                    toast("Usa il menu principale per il soft delete", { variant: "default" });
-                  }
-                }}
-              >
-                <Dropdown.Item id="soft-delete" textValue="Soft delete" variant="danger">
-                  <Label>Soft delete</Label>
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown>
+          <div className="flex items-center gap-2">
+            <ReviewDrawer
+              warnings={warnings}
+              isOpen={editingFieldId === "review"}
+              onOpenChange={(open) => (open ? openFieldEditor("review") : closeFieldEditor())}
+              onJump={(field) => openFieldEditor(field)}
+            />
+            <HeaderActionsMenu onDelete={onDelete} />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <TipoChip
+            tipo={element.tipo}
+            open={editingFieldId === "tipo"}
+            onOpenChange={(open) => (open ? openFieldEditor("tipo") : closeFieldEditor())}
+            onCommit={commitTipo}
+          />
+          {element.tipo === "personaggio" && (
+            <>
+              <VitaChip
+                element={element}
+                open={editingFieldId === "vita"}
+                onOpenChange={(open) => (open ? openFieldEditor("vita") : closeFieldEditor())}
+                onCommit={commitVita}
+              />
+              <ScalarChip
+                icon={<Users className="h-3.5 w-3.5" />}
+                label="Tribu"
+                value={element.tribu ?? "Aggiungi tribu"}
+                open={editingFieldId === "tribu"}
+                onOpenChange={(open) => (open ? openFieldEditor("tribu") : closeFieldEditor())}
+                onCommit={(value) => commitScalar("tribu", value)}
+              />
+            </>
+          )}
+          {element.tipo === "luogo" && (
+            <ScalarChip
+              icon={<MapPin className="h-3.5 w-3.5" />}
+              label="Regione"
+              value={element.regione ?? "Aggiungi regione"}
+              open={editingFieldId === "origine"}
+              onOpenChange={(open) => (open ? openFieldEditor("origine") : closeFieldEditor())}
+              onCommit={(value) => commitScalar("regione", value)}
+            />
+          )}
+          {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
+            <Chip className="min-h-[38px] border border-edge bg-chrome px-3.5 text-sm text-ink-md">
+              <Calendar className="mr-2 h-3.5 w-3.5 text-ink-dim" />
+              {formatElementDate(element) ?? "Data non definita"}
+            </Chip>
+          )}
         </div>
       </header>
-
-      <div className="flex flex-wrap gap-2">
-        <TipoChip
-          tipo={element.tipo}
-          open={editingFieldId === "tipo"}
-          onOpenChange={(open) => (open ? openFieldEditor("tipo") : closeFieldEditor())}
-          onCommit={commitTipo}
-        />
-        {element.tipo === "personaggio" && (
-          <>
-            <VitaChip
-              element={element}
-              open={editingFieldId === "vita"}
-              onOpenChange={(open) => (open ? openFieldEditor("vita") : closeFieldEditor())}
-              onCommit={commitVita}
-            />
-            <ScalarChip
-              icon={<Users className="h-3.5 w-3.5" />}
-              label="Tribu"
-              value={element.tribu ?? "Aggiungi tribu"}
-              open={editingFieldId === "tribu"}
-              onOpenChange={(open) => (open ? openFieldEditor("tribu") : closeFieldEditor())}
-              onCommit={(value) => commitScalar("tribu", value)}
-            />
-          </>
-        )}
-        {element.tipo === "luogo" && (
-          <ScalarChip
-            icon={<MapPin className="h-3.5 w-3.5" />}
-            label="Regione"
-            value={element.regione ?? "Aggiungi regione"}
-            open={editingFieldId === "origine"}
-            onOpenChange={(open) => (open ? openFieldEditor("origine") : closeFieldEditor())}
-            onCommit={(value) => commitScalar("regione", value)}
-          />
-        )}
-        {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
-          <Chip className="min-h-[34px] border border-edge bg-chrome px-3 text-sm text-ink-md">
-            <Calendar className="mr-2 h-3.5 w-3.5 text-ink-dim" />
-            {formatElementDate(element) ?? "Data non definita"}
-          </Chip>
-        )}
-      </div>
 
       <DescrizioneSection
         value={element.descrizione}
@@ -731,17 +718,19 @@ export function ElementoEditor({
         </Button>
       </LinkSection>
 
-      <section className="rounded-2xl border border-primary/8 bg-chrome/60 p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <div>
+      <section className="border-t border-primary/8 pt-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">
               + Aggiungi campo
             </p>
-            <p className="text-sm text-ink-md">Flusso unico per i campi vuoti supportati in S02.</p>
+            <p className="max-w-xl text-sm leading-relaxed text-ink-md">
+              Campi secondari e vuoti restano nel flusso del body. Fonti e cataloghi completi restano rimandati a S03.
+            </p>
           </div>
           <Dropdown>
             <Dropdown.Trigger>
-              <Button variant="primary" className="gap-2 rounded-full">
+              <Button variant="primary" className="min-h-[42px] gap-2 rounded-full px-4">
                 <Plus className="h-4 w-4" />
                 Aggiungi campo
               </Button>
@@ -813,8 +802,57 @@ export function ElementoEditor({
             </Chip>
           ))}
         </div>
+        <p className="mt-3 text-xs text-ink-ghost">Editing fonti completo rimandato a S03.</p>
       </ReadOnlySection>
     </div>
+  );
+}
+
+function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
+  return (
+    <Dropdown>
+      <Dropdown.Trigger>
+        <Button
+          variant="ghost"
+          isIconOnly
+          className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+          aria-label="Azioni elemento"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </Dropdown.Trigger>
+      <Dropdown.Popover placement="bottom end" className="min-w-[220px]">
+        <Dropdown.Menu
+          onAction={(key) => {
+            if (key === "duplicate") {
+              toast("Duplicazione rimandata a una fase successiva", { variant: "default" });
+            }
+            if (key === "delete") {
+              onDelete?.();
+            }
+          }}
+        >
+          <Dropdown.Item id="duplicate" textValue="Duplica">
+            <span className="inline-flex items-center gap-2">
+              <Copy className="h-4 w-4" />
+              <Label>Duplica</Label>
+            </span>
+          </Dropdown.Item>
+          <Dropdown.Item id="link" textValue="Link" isDisabled>
+            <span className="inline-flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              <Label>Link avanzati in S03</Label>
+            </span>
+          </Dropdown.Item>
+          <Dropdown.Item id="delete" textValue="Elimina" variant="danger">
+            <span className="inline-flex items-center gap-2">
+              <Trash2 className="h-4 w-4" />
+              <Label>Elimina</Label>
+            </span>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   );
 }
 
@@ -858,7 +896,7 @@ function InlineTitle({
       <TextField value={draft} onChange={setDraft} className="min-w-0 flex-1">
         <Input
           ref={inputRef}
-          className="min-h-[52px] text-xl font-semibold"
+          className="min-h-[56px] text-[1.65rem] font-semibold"
           onBlur={() => onCommit(draft)}
           onKeyDown={handleKeyDown}
         />
@@ -870,7 +908,7 @@ function InlineTitle({
     <button
       type="button"
       onClick={onStart}
-      className="min-w-0 flex-1 rounded-xl px-2 py-1 text-left text-xl font-semibold text-ink-hi transition-colors hover:bg-primary/5"
+      className="min-w-0 flex-1 rounded-xl px-2 py-1.5 text-left text-[1.65rem] font-semibold leading-tight text-ink-hi transition-colors hover:bg-primary/5"
     >
       {value}
     </button>
@@ -926,7 +964,7 @@ function ReviewDrawer({
       </Drawer.Backdrop>
       <Button
         variant={warnings.length > 0 ? "outline" : "ghost"}
-        className={`rounded-full ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
+        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
         onPress={() => onOpenChange(true)}
       >
         <AlertTriangle className="h-4 w-4" />
@@ -1202,7 +1240,7 @@ function DescrizioneSection({
         <button
           type="button"
           onClick={onStart}
-          className="w-full rounded-2xl border border-primary/8 bg-chrome/60 px-4 py-4 text-left hover:border-primary/20 hover:bg-primary/[0.03]"
+          className="w-full rounded-2xl border border-primary/8 bg-chrome/40 px-4 py-4 text-left transition-colors hover:border-primary/20 hover:bg-primary/[0.03]"
         >
           <MarkdownPreview value={value} />
         </button>
@@ -1238,7 +1276,7 @@ function ArraySection({
   onRemove: (value: string) => void;
 }) {
   return (
-    <section className="rounded-2xl border border-primary/8 bg-chrome/60 p-4">
+    <section className="border-t border-primary/8 pt-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-2">
           <span className="text-ink-dim">{icon}</span>
@@ -1246,7 +1284,7 @@ function ArraySection({
         </div>
         <Popover isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
           <Popover.Trigger>
-            <Button variant="ghost" size="sm" className="rounded-full text-primary" onPress={onOpenAdd}>
+            <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
               <Plus className="h-3.5 w-3.5" />
               {addLabel}
             </Button>
@@ -1284,7 +1322,7 @@ function ArraySection({
         {items.map((item) => (
           <Chip
             key={item}
-            className="border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
             onClose={() => onRemove(item)}
           >
             {item}
@@ -1313,12 +1351,12 @@ function LinkSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-primary/8 bg-chrome/60 p-4">
+    <section className="border-t border-primary/8 pt-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
         <Popover isOpen={open} onOpenChange={onOpenChange}>
           <Popover.Trigger>
-            <Button variant="ghost" size="sm" className="rounded-full text-primary" onPress={() => onOpenChange(true)}>
+            <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
               <Plus className="h-3.5 w-3.5" />
               Aggiungi
             </Button>
@@ -1333,7 +1371,7 @@ function LinkSection({
         {links.map((link) => (
           <Chip
             key={`${fieldId}-${link.titolo}-${link.tipo}`}
-            className="border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
             onClose={() => onRemove(link.titolo)}
           >
             {link.titolo}
@@ -1359,7 +1397,7 @@ function ReadOnlySection({
   const isEmpty = Array.isArray(children) ? children.length === 0 : !children;
 
   return (
-    <section className="rounded-2xl border border-primary/8 bg-chrome/40 p-4">
+    <section className="border-t border-primary/8 pt-4">
       <div className="mb-3 inline-flex items-center gap-2">
         <span className="text-ink-dim">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>

@@ -1,13 +1,13 @@
 import { Link } from "react-router";
 import { Chip } from "@heroui/react";
-import { ArrowRight, CheckCircle2, Circle, Star } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, Sparkles, Star } from "lucide-react";
 
 /**
  * Index dei mockup S02/R005 — punto d'ingresso per il review umano.
  * Mounted on /dev/mockups.
  */
 
-type MockupStatus = "decided" | "in_review";
+type MockupStatus = "decided" | "in_review" | "integration";
 
 interface MockupEntry {
   number: string;
@@ -90,9 +90,21 @@ const MOCKUPS: MockupEntry[] = [
     recommended: "C. Metadata chips + body (Linear style)",
     status: "decided",
   },
+  {
+    number: "9",
+    slug: "unified-editor",
+    category: "Integration",
+    title: "Unified editor (tutte le decisioni insieme)",
+    description:
+      "Sintesi delle 8 decisioni in un singolo detail pane interattivo: nome inline + tipo dropdown + kebab (7), metadata chips + array sezioni (8), Vita right drawer (5), Milkdown lazy-mount (4), dual-entry add field (2), toast undo unificato (1), soft validation + review drawer (6).",
+    recommended: "Synthesis — non un'alternativa",
+    status: "integration",
+  },
 ];
 
 const DECIDED_COUNT = MOCKUPS.filter((m) => m.status === "decided").length;
+const INTEGRATION_COUNT = MOCKUPS.filter((m) => m.status === "integration").length;
+const SKETCH_COUNT = MOCKUPS.length - INTEGRATION_COUNT;
 
 export function MockupsIndex() {
   return (
@@ -105,12 +117,12 @@ export function MockupsIndex() {
           >
             ← Torna alla app
           </Link>
-          <div className="mt-4 flex items-baseline gap-3">
+          <div className="mt-4 flex items-baseline gap-3 flex-wrap">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">
               Phase 02 · S02 · R005
             </div>
             <Chip size="sm" variant="soft" color="accent">
-              {MOCKUPS.length} mockup
+              {SKETCH_COUNT} sketch
             </Chip>
             <Chip size="sm" variant="soft" color="success">
               <span className="inline-flex items-center gap-1">
@@ -118,11 +130,19 @@ export function MockupsIndex() {
                 {DECIDED_COUNT} decisi
               </span>
             </Chip>
-            {MOCKUPS.length - DECIDED_COUNT > 0 && (
+            {SKETCH_COUNT - DECIDED_COUNT > 0 && (
               <Chip size="sm" variant="soft">
                 <span className="inline-flex items-center gap-1">
                   <Circle size={12} />
-                  {MOCKUPS.length - DECIDED_COUNT} in review
+                  {SKETCH_COUNT - DECIDED_COUNT} in review
+                </span>
+              </Chip>
+            )}
+            {INTEGRATION_COUNT > 0 && (
+              <Chip size="sm" variant="soft" color="accent">
+                <span className="inline-flex items-center gap-1">
+                  <Sparkles size={12} />
+                  {INTEGRATION_COUNT} integration
                 </span>
               </Chip>
             )}
@@ -142,23 +162,31 @@ export function MockupsIndex() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {MOCKUPS.map((m) => {
             const decided = m.status === "decided";
+            const integration = m.status === "integration";
+            const borderClass = integration
+              ? "border-primary/50 hover:border-primary bg-gradient-to-br from-primary/5 to-secondary/5 md:col-span-2"
+              : decided
+                ? "border-emerald-300/50 hover:border-emerald-400"
+                : "border-edge hover:border-primary/40";
             return (
               <Link
                 key={m.slug}
                 to={`/dev/mockup-${m.slug}`}
-                className={`group relative bg-panel border rounded-xl p-5 no-underline hover:shadow-md transition-all ${
-                  decided
-                    ? "border-emerald-300/50 hover:border-emerald-400"
-                    : "border-edge hover:border-primary/40"
-                }`}
+                className={`group relative bg-panel border rounded-xl p-5 no-underline hover:shadow-md transition-all ${borderClass}`}
               >
-                {decided && (
+                {integration && (
+                  <div className="absolute top-0 right-0 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold text-white bg-gradient-to-br from-primary to-secondary rounded-bl-xl rounded-tr-xl inline-flex items-center gap-1 shadow-sm shadow-primary/25">
+                    <Sparkles size={12} />
+                    Integration
+                  </div>
+                )}
+                {!integration && decided && (
                   <div className="absolute top-0 right-0 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-100 rounded-bl-xl rounded-tr-xl inline-flex items-center gap-1">
                     <CheckCircle2 size={12} />
                     Deciso
                   </div>
                 )}
-                {!decided && (
+                {!integration && !decided && (
                   <div className="absolute top-0 right-0 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold text-amber-700 bg-amber-100 rounded-bl-xl rounded-tr-xl inline-flex items-center gap-1">
                     <Circle size={12} />
                     In review
@@ -167,17 +195,23 @@ export function MockupsIndex() {
                 <div className="flex items-start gap-4 mb-3 mt-1">
                   <div
                     className={`w-11 h-11 rounded-full inline-flex items-center justify-center font-mono font-bold text-lg flex-shrink-0 ${
-                      decided
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-primary/10 text-primary"
+                      integration
+                        ? "bg-gradient-to-br from-primary to-secondary text-white shadow-sm shadow-primary/25"
+                        : decided
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-primary/10 text-primary"
                     }`}
                   >
                     {m.number}
                   </div>
-                  <div className="flex-1 min-w-0 pr-16">
+                  <div className="flex-1 min-w-0 pr-24">
                     <div
                       className={`text-[10px] uppercase tracking-wider font-semibold ${
-                        decided ? "text-emerald-700" : "text-primary"
+                        integration
+                          ? "text-primary"
+                          : decided
+                            ? "text-emerald-700"
+                            : "text-primary"
                       }`}
                     >
                       {m.category}
@@ -191,10 +225,16 @@ export function MockupsIndex() {
                 <div className="flex items-center gap-2 text-xs">
                   <Star
                     size={12}
-                    className={decided ? "text-emerald-600 fill-emerald-600" : "text-primary fill-primary"}
+                    className={
+                      integration
+                        ? "text-primary fill-primary"
+                        : decided
+                          ? "text-emerald-600 fill-emerald-600"
+                          : "text-primary fill-primary"
+                    }
                   />
                   <span className="text-ink-md">
-                    {decided ? "Scelta: " : "Recommended: "}
+                    {integration ? "Synthesis: " : decided ? "Scelta: " : "Recommended: "}
                     <strong className="text-ink-hi">{m.recommended}</strong>
                   </span>
                 </div>

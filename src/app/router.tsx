@@ -10,6 +10,7 @@ import { DetailLayoutMockup } from "@/ui/mockups/DetailLayoutMockup";
 import { HeaderEditMockup } from "@/ui/mockups/HeaderEditMockup";
 import { MarkdownDescrizioneMockup } from "@/ui/mockups/MarkdownDescrizioneMockup";
 import { MockupsIndex } from "@/ui/mockups/MockupsIndex";
+import { UnifiedEditorMockup } from "@/ui/mockups/UnifiedEditorMockup";
 import { ValidationUxMockup } from "@/ui/mockups/ValidationUxMockup";
 
 export const appRouter = createBrowserRouter([
@@ -39,5 +40,6 @@ export const appRouter = createBrowserRouter([
   { path: "/dev/mockup-validation-ux", Component: ValidationUxMockup },
   { path: "/dev/mockup-header-edit", Component: HeaderEditMockup },
   { path: "/dev/mockup-detail-layout", Component: DetailLayoutMockup },
+  { path: "/dev/mockup-unified-editor", Component: UnifiedEditorMockup },
   { path: "*", Component: NotFoundPage },
 ]);

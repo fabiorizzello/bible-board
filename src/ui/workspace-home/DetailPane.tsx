@@ -3,39 +3,32 @@
  *
  * Extracted from WorkspacePreviewPage monolith.
  * Reads shared state via Legend State workspace-ui-store.
- * Exports DetailBody and ActionToolbar for reuse by FullscreenOverlay.
+ * Exports DetailBody and shared delete handling for reuse by FullscreenOverlay.
  */
 
 import {
   Button,
   Card,
   Chip,
-  Dropdown,
   EmptyState,
   Kbd,
-  Label,
   Link,
   ScrollShadow,
-  Separator,
   Text,
   toast,
-  Toolbar,
   Tooltip,
 } from "@heroui/react";
 import {
   BookOpen,
-  Ellipsis,
   LayoutGrid,
   Link2,
   Maximize2,
   MessageSquareText,
-  Pencil,
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
 import {
   workspaceUi$,
-  openFieldEditor,
   selectElement,
   softDeleteElement,
   restoreElement,
@@ -73,73 +66,6 @@ export function handleSoftDelete(element: Elemento): void {
       onPress: () => restoreElement(elementId),
     },
   });
-}
-
-/** Render the action toolbar: Modifica, Link, Fonte, Board + overflow menu. */
-export function ActionToolbar({
-  isFullscreen,
-  onModifica,
-  onDelete,
-}: {
-  isFullscreen: boolean;
-  onModifica?: () => void;
-  onDelete?: () => void;
-}) {
-  const btn = isFullscreen
-    ? "min-h-[34px] px-3 py-1.5 text-[12px]"
-    : "min-h-[30px] px-2.5 py-1 text-[11px]";
-  const ico = isFullscreen ? "h-3.5 w-3.5" : "h-3 w-3";
-  const overflow = isFullscreen ? "h-[34px] w-[34px]" : "h-[30px] w-[30px]";
-
-  return (
-    <Toolbar
-      aria-label="Azioni elemento"
-      className="flex w-full items-center gap-1 border-b border-primary/6 bg-chrome px-4 py-1.5"
-    >
-      <Button variant="primary" className={`gap-1 rounded-lg font-semibold ${btn}`} onPress={onModifica}>
-        <Pencil className={ico} /> Modifica
-      </Button>
-      <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
-        <Link2 className={ico} /> Link
-      </Button>
-      <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
-        <BookOpen className={ico} /> Fonte
-      </Button>
-      <Button variant="outline" className={`gap-1 rounded-lg border-primary/10 font-medium text-ink-lo hover:bg-primary/6 ${btn}`}>
-        <LayoutGrid className={ico} /> Board
-      </Button>
-      <div className="flex-1" />
-      <Dropdown>
-        <Dropdown.Trigger>
-          <Button
-            variant="outline"
-            isIconOnly
-            className={`${overflow} rounded-lg border-edge text-ink-dim hover:bg-chip-bg`}
-            aria-label="Altre azioni"
-          >
-            <Ellipsis className="h-4 w-4" />
-          </Button>
-        </Dropdown.Trigger>
-        <Dropdown.Popover>
-          <Dropdown.Menu
-            onAction={(key) => {
-              if (key === "delete" && onDelete) {
-                onDelete();
-              }
-            }}
-          >
-            <Dropdown.Item id="duplicate" textValue="Duplica">
-              <Label>Duplica</Label>
-            </Dropdown.Item>
-            <Separator />
-            <Dropdown.Item id="delete" textValue="Elimina" variant="danger">
-              <Label>Elimina</Label>
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown>
-    </Toolbar>
-  );
 }
 
 /** Render the detail body sections: Descrizione, Collegamenti, Fonti, Board. */
@@ -300,8 +226,6 @@ export function DetailPane() {
     ? findElementById(selectedElementId)
     : undefined;
 
-  const dateStr = selectedElement ? formatElementDate(selectedElement) : undefined;
-
   if (!selectedElement) {
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -317,55 +241,27 @@ export function DetailPane() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Detail header — Card structure */}
-      <Card className="border-none shadow-none rounded-none border-b border-primary/6 bg-transparent">
-        <Card.Header className="px-4 pt-3 pb-2">
-          <div className="flex items-start justify-between">
-            <Card.Title className="font-heading text-lg font-semibold text-ink-hi">
-              {selectedElement.titolo}
-            </Card.Title>
-            <Tooltip>
-              <Button
-                variant="ghost"
-                isIconOnly
-                className="h-[30px] w-[30px] rounded-md text-ink-dim hover:bg-primary/6"
-                onPress={() => workspaceUi$.fullscreen.set(true)}
-                aria-label="Schermo intero"
-              >
-                <Maximize2 className="h-3.5 w-3.5" />
-              </Button>
-              <Tooltip.Content>Schermo intero</Tooltip.Content>
-            </Tooltip>
-          </div>
-          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-            <Chip size="sm" className="bg-primary/10 px-1.5 py-px text-[10px] font-semibold text-primary">
-              {selectedElement.tipo}
-            </Chip>
-            {selectedElement.tags.map((tag) => (
-              <Chip key={tag} size="sm" className="bg-chip-bg px-1.5 py-px text-[10px] font-medium text-ink-lo">
-                {tag}
-              </Chip>
-            ))}
-            {dateStr && (
-              <Text className="font-heading text-[11px] text-ink-dim">
-                {dateStr}
-              </Text>
-            )}
-          </div>
-        </Card.Header>
-      </Card>
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="pointer-events-none absolute right-4 top-4 z-10">
+        <Tooltip>
+          <Button
+            variant="ghost"
+            isIconOnly
+            className="pointer-events-auto h-10 w-10 rounded-full border border-edge bg-panel/88 text-ink-dim shadow-sm backdrop-blur-sm transition-colors hover:bg-primary/6"
+            onPress={() => workspaceUi$.fullscreen.set(true)}
+            aria-label="Apri in fullscreen"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+          <Tooltip.Content>Schermo intero</Tooltip.Content>
+        </Tooltip>
+      </div>
 
-      <ActionToolbar
-        isFullscreen={false}
-        onModifica={() => openFieldEditor("descrizione")}
-        onDelete={() => handleSoftDelete(selectedElement)}
-      />
-
-      <ScrollShadow className="flex-1 overflow-y-auto px-4 py-3">
+      <ScrollShadow className="flex-1 overflow-y-auto px-4 py-4">
         <ElementoEditor
           element={selectedElement}
           editingFieldId={editingFieldId}
+          onDelete={() => handleSoftDelete(selectedElement)}
         />
       </ScrollShadow>
     </div>

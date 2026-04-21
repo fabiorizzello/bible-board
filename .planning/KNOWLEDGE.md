@@ -271,6 +271,12 @@ Ogni componente UI nuovo o modifica visiva significativa richiede approvazione u
 
 Auto-mode usa un workflow **mockup-first**: prima il look, poi il wiring. Ogni task UI si divide in due fasi:
 
+**Eccezione canonica per mockup unificati**
+
+- Quando esiste un mockup di integrazione esplicitamente promosso a riferimento canonico del progetto o della fase, quel file diventa la fonte primaria delle decisioni UX/UI.
+- Nel repository attuale, `src/ui/mockups/UnifiedEditorMockup.tsx` è il riferimento canonico per il refactor R005 / Phase 02: gli altri mockup restano rationale storico e supporto review, non fonti concorrenti se divergono.
+- In questi casi il wiring non può "reinterpretare" il mockup: shell, gerarchia visiva, interaction model e affordance principali devono riallinearsi al mockup canonico, non solo preservarne il comportamento funzionale.
+
 **Fase 1 — Mockup (task dedicato, veloce)**
 
 1. **Skill obbligatoria**: caricare `ui-ux-pro-max` SKILL.md.
@@ -279,8 +285,8 @@ Auto-mode usa un workflow **mockup-first**: prima il look, poi il wiring. Ogni t
    - Token del design system (`text-ink-hi`, `bg-panel`, `font-heading`, etc.)
    - Tailwind del progetto (stessi spacing, sizing, colori)
    - **Dati hardcoded** — nessun import da store, adapter, domain, o mock/data.ts
-   - Props inline, nessun wiring, nessuna validazione
-3. Montare il mockup in una route dev temporanea: aggiungere a `src/app/routes.tsx` una route `/dev/mockup-<nome>` che renderizza il componente.
+   - Props inline, nessun wiring di dominio; è ammessa validazione locale/mock se serve a rappresentare fedelmente l'interaction model deciso
+3. Montare il mockup in una route dev temporanea: aggiungere a `src/app/router.tsx` una route `/dev/mockup-<nome>` che renderizza il componente.
 4. **Avviare dev server**, navigare alla route, fare screenshot con `browser_screenshot`.
 5. Nel task summary:
    - Includere la route del mockup (es. `http://localhost:5173/dev/mockup-editor`)
@@ -296,16 +302,29 @@ Auto-mode usa un workflow **mockup-first**: prima il look, poi il wiring. Ogni t
 1. Spostare il componente da `src/ui/mockups/` alla posizione definitiva (es. `src/ui/workspace-home/`)
 2. Sostituire dati hardcoded con props/store/adapter reali
 3. Aggiungere validazione, event handler, state management
-4. Rimuovere la route dev `/dev/mockup-*`
+4. Rimuovere la route dev `/dev/mockup-*` solo se non esiste una decisione di milestone che richiede di preservare i mockup dev-only come riferimento review
 5. Il look visivo NON DEVE cambiare — il wiring è trasparente all'utente
 
 **Regole mockup:**
 
 - Il mockup DEVE usare gli stessi componenti HeroUI e token Tailwind del prodotto finale — niente CDN, niente HTML puro, niente stili diversi.
 - I dati hardcoded DEVONO essere realistici (nomi italiani del dominio, date storiche vere, etc.) — non "Lorem ipsum" o "Test".
-- La directory `src/ui/mockups/` è temporanea — i file vengono spostati al wiring e la directory resta vuota.
-- Le route `/dev/mockup-*` vanno rimosse dopo il wiring. In produzione non devono esistere.
+- Quando una fase dichiara un mockup unificato come riferimento canonico, quel mockup va trattato come design contract: niente toolbar aggiuntive, gerarchie alternative o fallback "quasi uguali" senza una nuova decisione esplicita.
+- La directory `src/ui/mockups/` è normalmente temporanea; fa eccezione il caso in cui lo stato della milestone richieda di mantenere i mockup dev-only disponibili come riferimento fino a fine milestone.
+- Le route `/dev/mockup-*` sono dev-only e non devono arrivare in produzione; possono però restare vive durante la milestone se servono come supporto review/canone visivo.
 - Per aggiungere una route mockup: importare il componente da `@/ui/mockups/` e aggiungere `{ path: "/dev/mockup-<nome>", element: <Componente /> }` in `src/app/router.tsx` prima della catch-all `*`. Le route dev NON richiedono `RequireAuth`.
+
+### Contratto visivo corrente: Unified Editor Mockup (R005 / S02)
+
+Quando il riferimento è `src/ui/mockups/UnifiedEditorMockup.tsx`, le aspettative visive minime sono:
+
+- header integrato con titolo inline-editable, badge review/warning e menu azioni; niente toolbar separata sopra o sotto
+- prima fascia operativa composta da metadata chips, non da form stacked save/cancel
+- `tipo` via popover, `vita` e flow complessi via right drawer, edit semplici via popover o inline field
+- body ordinato come `descrizione` full-width prima, poi sezioni array leggere (`ruoli`, `tags`, collegamenti) con chip rimovibili e add localized
+- `+ Aggiungi campo` globale coerente col body e non presentato come blocco form separato
+- validazione soft e passiva: warning inline + badge header + review drawer; niente modal bloccanti o hard reject preventivo
+- touch target primari almeno `44px`; chip compatti possono restare più densi se la hit area resta comoda
 
 ---
 

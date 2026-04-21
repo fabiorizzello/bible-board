@@ -49,3 +49,5 @@ vendor/
 
 # ── gsd-cc migration archive (2026-04-10) ──
 .archive-gsd-cc-2026-04-10/
+# heroui-agents-md
+.heroui-docs/
