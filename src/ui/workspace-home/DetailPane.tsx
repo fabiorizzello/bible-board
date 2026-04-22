@@ -20,7 +20,6 @@ import {
 } from "@heroui/react";
 import {
   LayoutGrid,
-  Maximize2,
   MessageSquareText,
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
@@ -239,26 +238,12 @@ export function DetailPane() {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
-      <div className="pointer-events-none absolute right-4 top-4 z-10">
-        <Tooltip>
-          <Button
-            variant="ghost"
-            isIconOnly
-            className="pointer-events-auto h-10 w-10 rounded-full border border-edge bg-panel/88 text-ink-dim shadow-sm backdrop-blur-sm transition-colors hover:bg-primary/6"
-            onPress={() => workspaceUi$.fullscreen.set(true)}
-            aria-label="Apri in fullscreen"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-          <Tooltip.Content>Schermo intero</Tooltip.Content>
-        </Tooltip>
-      </div>
-
       <ScrollShadow className="flex-1 overflow-y-auto px-4 py-4">
         <ElementoEditor
           element={selectedElement}
           editingFieldId={editingFieldId}
           onDelete={() => handleSoftDelete(selectedElement)}
+          onExpand={() => workspaceUi$.fullscreen.set(true)}
         />
       </ScrollShadow>
     </div>

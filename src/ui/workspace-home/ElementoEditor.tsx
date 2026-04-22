@@ -27,6 +27,7 @@ import {
   FileText,
   Link2,
   MapPin,
+  Maximize2,
   MoreHorizontal,
   Plus,
   Tag,
@@ -322,11 +323,13 @@ export function ElementoEditor({
   editingFieldId,
   isFullscreen = false,
   onDelete,
+  onExpand,
 }: {
   element: Elemento;
   editingFieldId: EditableFieldId | null;
   isFullscreen?: boolean;
   onDelete?: () => void;
+  onExpand?: () => void;
 }) {
   const [surfaceError, setSurfaceError] = useState<string | null>(null);
   const [tagDraft, setTagDraft] = useState("");
@@ -542,15 +545,15 @@ export function ElementoEditor({
     { field: "descrizione" as EditableFieldId, label: "Descrizione", visible: !element.descrizione.trim() },
     { field: "tags" as EditableFieldId, label: "Tag", visible: element.tags.length === 0 },
     { field: "ruoli" as EditableFieldId, label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
-    { field: "collegamenti-famiglia" as EditableFieldId, label: "Collegamenti famiglia", visible: familyLinks.length === 0 },
+    { field: "collegamenti-famiglia" as EditableFieldId, label: "Familiari", visible: familyLinks.length === 0 },
     { field: "collegamenti-generici" as EditableFieldId, label: "Collegamenti", visible: genericLinks.length === 0 },
   ].filter((option) => option.visible);
 
   return (
-    <div className={`flex flex-col gap-6 ${isFullscreen ? "px-0" : ""}`}>
+    <div className={`flex flex-col gap-4 ${isFullscreen ? "px-0" : ""}`}>
       <SurfaceMessage message={surfaceError} />
 
-      <header className="border-b border-primary/8 pb-5">
+      <header className="border-b border-primary/8 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <InlineTitle
             value={element.titolo}
@@ -566,11 +569,22 @@ export function ElementoEditor({
               onOpenChange={(open) => (open ? openFieldEditor("review") : closeFieldEditor())}
               onJump={(field) => openFieldEditor(field)}
             />
+            {!isFullscreen && onExpand && (
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+                onPress={onExpand}
+                aria-label="Apri in fullscreen"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            )}
             <HeaderActionsMenu onDelete={onDelete} />
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <TipoChip
             tipo={element.tipo}
             open={editingFieldId === "tipo"}
@@ -655,7 +669,7 @@ export function ElementoEditor({
       />
 
       <LinkSection
-        title="Collegamenti famiglia"
+        title="Familiari"
         links={familyLinks}
         fieldId="collegamenti-famiglia"
         open={editingFieldId === "collegamenti-famiglia"}
@@ -736,20 +750,12 @@ export function ElementoEditor({
         </Button>
       </LinkSection>
 
-      <section className="border-t border-primary/8 pt-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">
-              + Aggiungi campo
-            </p>
-            <p className="max-w-xl text-sm leading-relaxed text-ink-md">
-              Campi secondari e vuoti restano nel flusso del body. Fonti e cataloghi completi restano rimandati a S03.
-            </p>
-          </div>
+      {globalAddOptions.length > 0 && (
+        <div className="border-t border-primary/8 pt-3 flex justify-end">
           <Dropdown>
             <Dropdown.Trigger>
-              <Button variant="primary" className="min-h-[42px] gap-2 rounded-full px-4">
-                <Plus className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="min-h-[36px] gap-1.5 rounded-full px-3 text-primary">
+                <Plus className="h-3.5 w-3.5" />
                 Aggiungi campo
               </Button>
             </Dropdown.Trigger>
@@ -757,24 +763,16 @@ export function ElementoEditor({
               <Dropdown.Menu
                 onAction={(key) => openFieldEditor(String(key) as EditableFieldId)}
               >
-                {globalAddOptions.length === 0 && (
-                  <Dropdown.Item id="none" textValue="Nessun campo nascosto" isDisabled>
-                    <Label>Nessun campo nascosto disponibile</Label>
-                  </Dropdown.Item>
-                )}
                 {globalAddOptions.map((option) => (
                   <Dropdown.Item key={option.field} id={option.field} textValue={option.label}>
                     <Label>{option.label}</Label>
                   </Dropdown.Item>
                 ))}
-                <Dropdown.Item id="fonti-deferred" textValue="Fonti completo" isDisabled>
-                  <Label>Fonti completo rimandato a S03</Label>
-                </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown.Popover>
           </Dropdown>
         </div>
-      </section>
+      )}
 
       <ReadOnlySection
         title="Annotazioni"
@@ -820,7 +818,6 @@ export function ElementoEditor({
             </Chip>
           ))}
         </div>
-        <p className="mt-3 text-xs text-ink-ghost">Editing fonti completo rimandato a S03.</p>
       </ReadOnlySection>
     </div>
   );
@@ -854,12 +851,6 @@ function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
             <span className="inline-flex items-center gap-2">
               <Copy className="h-4 w-4" />
               <Label>Duplica</Label>
-            </span>
-          </Dropdown.Item>
-          <Dropdown.Item id="link" textValue="Link" isDisabled>
-            <span className="inline-flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              <Label>Link avanzati in S03</Label>
             </span>
           </Dropdown.Item>
           <Dropdown.Item id="delete" textValue="Elimina" variant="danger">
@@ -945,7 +936,15 @@ function ReviewDrawer({
   onJump: (field: EditableFieldId) => void;
 }) {
   return (
-    <Drawer>
+    <>
+      <Button
+        variant={warnings.length > 0 ? "outline" : "ghost"}
+        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
+        onPress={() => onOpenChange(true)}
+      >
+        <AlertTriangle className="h-4 w-4" />
+        {warnings.length > 0 ? `${warnings.length} da rivedere` : "Review"}
+      </Button>
       <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} className="bg-black/30">
         <Drawer.Content placement="right">
           <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
@@ -980,15 +979,7 @@ function ReviewDrawer({
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>
-      <Button
-        variant={warnings.length > 0 ? "outline" : "ghost"}
-        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
-        onPress={() => onOpenChange(true)}
-      >
-        <AlertTriangle className="h-4 w-4" />
-        {warnings.length > 0 ? `${warnings.length} da rivedere` : "Review"}
-      </Button>
-    </Drawer>
+    </>
   );
 }
 
@@ -1014,9 +1005,8 @@ function TipoChip({
           onPress={() => onOpenChange(!open)}
         />
       </Popover.Trigger>
-      <Popover.Content placement="bottom start" className="w-[260px]">
-        <Popover.Dialog className="space-y-2 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-dim">Tipo elemento</p>
+      <Popover.Content placement="bottom" className="w-[220px]">
+        <Popover.Dialog className="space-y-1 p-2">
           {TIPO_OPTIONS.map((option) => (
             <Button
               key={option}
@@ -1067,7 +1057,7 @@ function VitaChip({
   }
 
   return (
-    <Drawer>
+    <>
       <Button
         variant="ghost"
         className="p-0"
@@ -1129,7 +1119,7 @@ function VitaChip({
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>
-    </Drawer>
+    </>
   );
 }
 
@@ -1157,7 +1147,13 @@ function ScalarChip({
   }, [value, open]);
 
   function submit() {
-    onCommit(draft.trim());
+    const trimmed = draft.trim();
+    const original = value.startsWith("Aggiungi ") ? "" : value;
+    if (trimmed === original) {
+      onOpenChange(false);
+      return;
+    }
+    onCommit(trimmed);
   }
 
   return (
@@ -1295,46 +1291,41 @@ function ArraySection({
   onRemove: (value: string) => void;
 }) {
   return (
-    <section className="border-t border-primary/8 pt-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-2">
           <span className="text-ink-dim">{icon}</span>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
         </div>
-        <Popover isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
-          <Popover.Trigger>
-            <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
-              <Plus className="h-3.5 w-3.5" />
-              {addLabel}
+        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
+          <Plus className="h-3.5 w-3.5" />
+          {addLabel}
+        </Button>
+        <FieldDrawer title={addLabel} isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
+          <TextField value={draftValue} onChange={onDraftChange}>
+            <Label className="text-xs text-ink-lo">{title}</Label>
+            <Input
+              className="min-h-[40px]"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  onAdd();
+                }
+                if (event.key === "Escape") {
+                  onCloseAdd();
+                }
+              }}
+            />
+          </TextField>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onPress={onCloseAdd}>
+              Chiudi
             </Button>
-          </Popover.Trigger>
-          <Popover.Content placement="bottom end" className="w-[280px]">
-            <Popover.Dialog className="space-y-3 p-3">
-              <TextField value={draftValue} onChange={onDraftChange}>
-                <Label className="text-xs text-ink-lo">{title}</Label>
-                <Input
-                  className="min-h-[40px]"
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      onAdd();
-                    }
-                    if (event.key === "Escape") {
-                      onCloseAdd();
-                    }
-                  }}
-                />
-              </TextField>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onPress={onCloseAdd}>
-                  Chiudi
-                </Button>
-                <Button variant="primary" size="sm" onPress={onAdd}>
-                  Aggiungi
-                </Button>
-              </div>
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
+            <Button variant="primary" size="sm" onPress={onAdd}>
+              Aggiungi
+            </Button>
+          </div>
+        </FieldDrawer>
       </div>
       <div className="flex flex-wrap gap-2">
         {items.length === 0 && <p className="text-sm text-ink-dim">Nessun valore impostato.</p>}
@@ -1379,20 +1370,16 @@ function LinkSection({
   children: ReactNode;
 }) {
   return (
-    <section className="border-t border-primary/8 pt-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
-        <Popover isOpen={open} onOpenChange={onOpenChange}>
-          <Popover.Trigger>
-            <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Aggiungi
-            </Button>
-          </Popover.Trigger>
-          <Popover.Content placement="bottom end" className="w-[360px]">
-            <Popover.Dialog className="space-y-3 p-3">{children}</Popover.Dialog>
-          </Popover.Content>
-        </Popover>
+        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
+          <Plus className="h-3.5 w-3.5" />
+          Aggiungi
+        </Button>
+        <FieldDrawer title={`Aggiungi: ${title}`} isOpen={open} onOpenChange={onOpenChange}>
+          {children}
+        </FieldDrawer>
       </div>
       <div className="flex flex-wrap gap-2">
         {links.length === 0 && <p className="text-sm text-ink-dim">Nessun collegamento in questo gruppo.</p>}
@@ -1420,6 +1407,32 @@ function LinkSection({
   );
 }
 
+function FieldDrawer({
+  title,
+  isOpen,
+  onOpenChange,
+  children,
+}: {
+  title: string;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} className="bg-black/30">
+      <Drawer.Content placement="right">
+        <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
+          <Drawer.Header className="border-b border-primary/8 px-5 py-4">
+            <Drawer.Heading className="text-lg font-semibold text-ink-hi">{title}</Drawer.Heading>
+            <Drawer.CloseTrigger />
+          </Drawer.Header>
+          <Drawer.Body className="space-y-4 px-5 py-4">{children}</Drawer.Body>
+        </Drawer.Dialog>
+      </Drawer.Content>
+    </Drawer.Backdrop>
+  );
+}
+
 function ReadOnlySection({
   title,
   icon,
@@ -1434,8 +1447,8 @@ function ReadOnlySection({
   const isEmpty = Array.isArray(children) ? children.length === 0 : !children;
 
   return (
-    <section className="border-t border-primary/8 pt-4">
-      <div className="mb-3 inline-flex items-center gap-2">
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 inline-flex items-center gap-2">
         <span className="text-ink-dim">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
       </div>

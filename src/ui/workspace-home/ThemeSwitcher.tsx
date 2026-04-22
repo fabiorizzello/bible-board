@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Button, Tooltip } from "@heroui/react";
-import { Palette, X, Check, Sun, Moon } from "lucide-react";
+import { Button, Popover } from "@heroui/react";
+import { Palette, Check, Sun, Moon } from "lucide-react";
 
 // ── Palette data ──
 
@@ -143,7 +143,6 @@ function applyTheme(palette: PaletteConfig, isDark: boolean) {
 // ── Component ──
 
 export function ThemeSwitcher() {
-  const [open, setOpen] = useState(false);
   const [activePalette, setActivePalette] = useState("Teal");
   const [isDark, setIsDark] = useState(false);
 
@@ -160,56 +159,53 @@ export function ThemeSwitcher() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      {open && (
-        <div className="mb-2 w-[280px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
-          {/* Header */}
+    <Popover>
+      <Popover.Trigger>
+        <Button
+          isIconOnly
+          variant="ghost"
+          className="h-[36px] w-[36px] rounded-lg text-ink-dim hover:bg-primary/6"
+          aria-label="Cambia palette colori"
+        >
+          <Palette className="h-4 w-4" />
+        </Button>
+      </Popover.Trigger>
+      <Popover.Content placement="right end" className="w-[280px]">
+        <Popover.Dialog className="p-3">
           <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-ink-dim">
               Palette colori
             </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                isIconOnly
-                className="h-7 w-7 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
-                onPress={handleToggleMode}
-                aria-label={isDark ? "Modalità chiara" : "Modalità scura"}
-              >
-                {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-              </Button>
-              <Button
-                variant="ghost"
-                isIconOnly
-                className="h-7 w-7 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
-                onPress={() => setOpen(false)}
-                aria-label="Chiudi palette"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              isIconOnly
+              className="h-7 w-7 rounded-lg text-ink-dim hover:bg-primary/6 cursor-pointer"
+              onPress={handleToggleMode}
+              aria-label={isDark ? "Modalità chiara" : "Modalità scura"}
+            >
+              {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            </Button>
           </div>
 
-          {/* Mode indicator */}
-          <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1">
-            <span className={`h-2 w-2 rounded-full ${isDark ? "bg-indigo-400" : "bg-amber-400"}`} />
-            <span className="text-[10px] font-medium text-slate-500">
+          <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-chrome px-2 py-1">
+            <span className={`h-2 w-2 rounded-full ${isDark ? "bg-secondary" : "bg-warning"}`} />
+            <span className="text-[10px] font-medium text-ink-dim">
               {isDark ? "Dark mode" : "Light mode"}
             </span>
           </div>
 
-          {/* Palette grid */}
           <div className="grid grid-cols-2 gap-1">
             {PALETTES.map((p) => {
               const colors = isDark ? p.dark : p.light;
               return (
                 <button
                   key={p.name}
+                  type="button"
                   onClick={() => handleSelect(p)}
                   className={`flex items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors cursor-pointer ${
                     activePalette === p.name
-                      ? "bg-slate-100 ring-1 ring-slate-300"
-                      : "hover:bg-slate-50"
+                      ? "bg-primary/10 ring-1 ring-primary/20"
+                      : "hover:bg-primary/5"
                   }`}
                 >
                   <div className="flex gap-0.5 flex-shrink-0">
@@ -222,32 +218,18 @@ export function ThemeSwitcher() {
                       style={{ background: colors.accent }}
                     />
                   </div>
-                  <span className="text-[11px] font-medium text-slate-600 flex-1 truncate">
+                  <span className="text-[11px] font-medium text-ink-md flex-1 truncate">
                     {p.name}
                   </span>
                   {activePalette === p.name && (
-                    <Check className="h-3 w-3 text-slate-500 flex-shrink-0" />
+                    <Check className="h-3 w-3 text-primary flex-shrink-0" />
                   )}
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
-      <div className="flex justify-end">
-        <Tooltip>
-          <Button
-            isIconOnly
-            variant="primary"
-            onPress={() => setOpen(!open)}
-            className="h-11 w-11 rounded-full bg-slate-800 text-white shadow-lg hover:bg-slate-700 cursor-pointer"
-            aria-label="Cambia palette colori"
-          >
-            <Palette className="h-5 w-5" />
-          </Button>
-          <Tooltip.Content>Cambia palette colori</Tooltip.Content>
-        </Tooltip>
-      </div>
-    </div>
+        </Popover.Dialog>
+      </Popover.Content>
+    </Popover>
   );
 }

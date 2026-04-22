@@ -8,14 +8,17 @@
 import {
   Button,
   Chip,
+  Dropdown,
   EmptyState,
   Kbd,
+  Label,
   ListBox,
   ScrollShadow,
   SearchField,
   Tag,
   TagGroup,
   Text,
+  toast,
   Tooltip,
 } from "@heroui/react";
 import {
@@ -25,6 +28,18 @@ import {
 import { useValue } from "@legendapp/state/react";
 
 import { workspaceUi$, navigateToView, selectElement } from "./workspace-ui-store";
+import type { ElementoTipo } from "@/features/elemento/elemento.model";
+
+const TIPO_OPTIONS: readonly ElementoTipo[] = [
+  "personaggio",
+  "guerra",
+  "evento",
+  "luogo",
+  "profezia",
+  "regno",
+  "periodo",
+  "annotazione",
+];
 import type { ViewId } from "./workspace-ui-store";
 import {
   TIPO_FILTERS,
@@ -97,17 +112,34 @@ export function ListPane() {
           {listCount}
         </Text>
         <div className="flex-1" />
-        <Tooltip>
-          <Button
-            variant="ghost"
-            isIconOnly
-            className="h-[30px] w-[30px] rounded-md border border-dashed border-accent/30 text-accent hover:bg-accent/5 hover:border-accent hover:border-solid"
-            aria-label="Nuovo elemento"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-          <Tooltip.Content>Nuovo elemento</Tooltip.Content>
-        </Tooltip>
+        <Dropdown>
+          <Tooltip>
+            <Dropdown.Trigger>
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-[30px] w-[30px] rounded-md border border-dashed border-accent/30 text-accent hover:bg-accent/5 hover:border-accent hover:border-solid"
+                aria-label="Nuovo elemento"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </Dropdown.Trigger>
+            <Tooltip.Content>Nuovo elemento</Tooltip.Content>
+          </Tooltip>
+          <Dropdown.Popover placement="bottom end" className="min-w-[200px]">
+            <Dropdown.Menu
+              onAction={(key) => {
+                toast(`Nuovo ${key} — funzionalità prossimamente`, { variant: "default" });
+              }}
+            >
+              {TIPO_OPTIONS.map((tipo) => (
+                <Dropdown.Item key={tipo} id={tipo} textValue={tipo}>
+                  <Label>{tipo}</Label>
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
       </div>
 
       {/* Search bar — HeroUI SearchField */}
