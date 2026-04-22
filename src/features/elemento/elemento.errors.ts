@@ -8,4 +8,5 @@ export type ElementoError =
   | { type: "link_auto_riferimento" }
   | { type: "link_non_trovato" }
   | { type: "ruolo_mancante_per_parentela" }
-  | { type: "tipo_specifico_non_ammesso" };
+  | { type: "tipo_specifico_non_ammesso" }
+  | { type: "parentela_non_ammessa" };

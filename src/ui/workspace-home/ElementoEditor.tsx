@@ -571,7 +571,7 @@ export function ElementoEditor({
     { field: "descrizione" as EditableFieldId, label: "Descrizione", visible: !element.descrizione.trim() },
     { field: "tags" as EditableFieldId, label: "Tag", visible: element.tags.length === 0 },
     { field: "ruoli" as EditableFieldId, label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
-    { field: "collegamenti-famiglia" as EditableFieldId, label: "Familiari", visible: familyLinks.length === 0 },
+    { field: "collegamenti-famiglia" as EditableFieldId, label: "Familiari", visible: element.tipo === "personaggio" && familyLinks.length === 0 },
     { field: "collegamenti-generici" as EditableFieldId, label: "Collegamenti", visible: genericLinks.length === 0 },
   ].filter((option) => option.visible);
 
@@ -692,49 +692,51 @@ export function ElementoEditor({
         onRemove={removeTag}
       />
 
-      <LinkSection
-        title="Familiari"
-        links={familyLinks}
-        fieldId="collegamenti-famiglia"
-        open={editingFieldId === "collegamenti-famiglia"}
-        onOpenChange={(open) => (open ? openFieldEditor("collegamenti-famiglia") : closeFieldEditor())}
-        onRemove={(targetId, tipo) => removeLink(targetId, tipo)}
-      >
-        <TextField value={familySearch} onChange={setFamilySearch}>
-          <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
-          <Input className="min-h-[40px]" />
-        </TextField>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {familyCandidates.length === 0 && (
-            <p className="col-span-2 text-sm text-ink-dim">Nessun risultato.</p>
-          )}
-          {familyCandidates.slice(0, 8).map((candidate) => (
-            <Button
-              key={candidate.id}
-              variant={familyTargetId === candidate.id ? "primary" : "outline"}
-              className="justify-start"
-              onPress={() => setFamilyTargetId(candidate.id as string)}
-            >
-              {candidate.titolo}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {PARENTELA_ROLES.map((role) => (
-            <Button
-              key={role}
-              variant={familyRole === role ? "primary" : "outline"}
-              size="sm"
-              onPress={() => setFamilyRole(role)}
-            >
-              {role}
-            </Button>
-          ))}
-        </div>
-        <Button variant="primary" onPress={addFamilyLink} isDisabled={!familyTargetId}>
-          Aggiungi collegamento
-        </Button>
-      </LinkSection>
+      {element.tipo === "personaggio" && (
+        <LinkSection
+          title="Familiari"
+          links={familyLinks}
+          fieldId="collegamenti-famiglia"
+          open={editingFieldId === "collegamenti-famiglia"}
+          onOpenChange={(open) => (open ? openFieldEditor("collegamenti-famiglia") : closeFieldEditor())}
+          onRemove={(targetId, tipo) => removeLink(targetId, tipo)}
+        >
+          <TextField value={familySearch} onChange={setFamilySearch}>
+            <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
+            <Input className="min-h-[40px]" />
+          </TextField>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {familyCandidates.length === 0 && (
+              <p className="col-span-2 text-sm text-ink-dim">Nessun risultato.</p>
+            )}
+            {familyCandidates.slice(0, 8).map((candidate) => (
+              <Button
+                key={candidate.id}
+                variant={familyTargetId === candidate.id ? "primary" : "outline"}
+                className="justify-start"
+                onPress={() => setFamilyTargetId(candidate.id as string)}
+              >
+                {candidate.titolo}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PARENTELA_ROLES.map((role) => (
+              <Button
+                key={role}
+                variant={familyRole === role ? "primary" : "outline"}
+                size="sm"
+                onPress={() => setFamilyRole(role)}
+              >
+                {role}
+              </Button>
+            ))}
+          </div>
+          <Button variant="primary" onPress={addFamilyLink} isDisabled={!familyTargetId}>
+            Aggiungi collegamento
+          </Button>
+        </LinkSection>
+      )}
 
       <LinkSection
         title="Collegamenti"
@@ -807,7 +809,6 @@ export function ElementoEditor({
       <ReadOnlySection
         title="Annotazioni"
         icon={<FileText className="h-3.5 w-3.5" />}
-        emptyLabel="Nessuna annotazione collegata"
       >
         {(annotazioni.mie.length > 0 || annotazioni.altreCount > 0) && (
           <>
@@ -829,7 +830,6 @@ export function ElementoEditor({
       <ReadOnlySection
         title="Board"
         icon={<Users className="h-3.5 w-3.5" />}
-        emptyLabel="Nessuna board dinamica o fissa"
       >
         {boards.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -845,7 +845,6 @@ export function ElementoEditor({
       <ReadOnlySection
         title="Fonti"
         icon={<Link2 className="h-3.5 w-3.5" />}
-        emptyLabel="Nessuna fonte visibile in S02"
       >
         {fonti.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -1321,6 +1320,7 @@ function ArraySection({
   onAdd: () => void;
   onRemove: (value: string) => void;
 }) {
+  if (items.length === 0 && !isAddOpen) return null;
   return (
     <section className="border-t border-primary/8 pt-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -1359,7 +1359,6 @@ function ArraySection({
         </FieldDrawer>
       </div>
       <div className="flex flex-wrap gap-2">
-        {items.length === 0 && <p className="text-sm text-ink-dim">Nessun valore impostato.</p>}
         {items.map((item) => (
           <Chip
             key={item}
@@ -1400,6 +1399,7 @@ function LinkSection({
   onRemove: (targetId: string, tipo: string) => void;
   children: ReactNode;
 }) {
+  if (links.length === 0 && !open) return null;
   return (
     <section className="border-t border-primary/8 pt-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -1413,7 +1413,6 @@ function LinkSection({
         </FieldDrawer>
       </div>
       <div className="flex flex-wrap gap-2">
-        {links.length === 0 && <p className="text-sm text-ink-dim">Nessun collegamento in questo gruppo.</p>}
         {links.map((link) => (
           <Chip
             key={`${fieldId}-${link.targetId}-${link.tipo}`}
@@ -1467,15 +1466,14 @@ function FieldDrawer({
 function ReadOnlySection({
   title,
   icon,
-  emptyLabel,
   children,
 }: {
   title: string;
   icon: ReactNode;
-  emptyLabel: string;
   children: ReactNode;
 }) {
   const isEmpty = Array.isArray(children) ? children.length === 0 : !children;
+  if (isEmpty) return null;
 
   return (
     <section className="border-t border-primary/8 pt-3">
@@ -1483,7 +1481,7 @@ function ReadOnlySection({
         <span className="text-ink-dim">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
       </div>
-      {isEmpty ? <p className="text-sm text-ink-dim">{emptyLabel}</p> : children}
+      {children}
     </section>
   );
 }

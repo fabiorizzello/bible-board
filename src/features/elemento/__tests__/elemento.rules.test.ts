@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
+import { normalizeElementoInput, validateLinkTipoPermission } from "@/features/elemento/elemento.rules";
 import type { DataStorica } from "@/features/shared/value-objects";
 
 const DS = (anno: number, era: "aev" | "ev" = "aev"): DataStorica => ({
@@ -108,6 +108,33 @@ describe("normalizeElementoInput — tipo/field consistency", () => {
     });
     expect(result.isOk()).toBe(true);
     if (result.isOk()) expect(result.value.regione).toBe("Giudea");
+  });
+});
+
+describe("validateLinkTipoPermission — parentela constraint", () => {
+  it("allows parentela on a personaggio", () => {
+    const result = validateLinkTipoPermission("personaggio", "parentela");
+    expect(result.isOk()).toBe(true);
+  });
+
+  it("rejects parentela on an evento with parentela_non_ammessa", () => {
+    const result = validateLinkTipoPermission("evento", "parentela");
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("parentela_non_ammessa");
+  });
+
+  it("rejects parentela on a luogo", () => {
+    const result = validateLinkTipoPermission("luogo", "parentela");
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("parentela_non_ammessa");
+  });
+
+  it("allows non-parentela link types on all elementi tipos", () => {
+    const tipos = ["evento", "luogo", "guerra", "profezia", "regno", "periodo", "annotazione"] as const;
+    for (const tipo of tipos) {
+      expect(validateLinkTipoPermission(tipo, "correlato").isOk()).toBe(true);
+      expect(validateLinkTipoPermission(tipo, "successione").isOk()).toBe(true);
+    }
   });
 });
 

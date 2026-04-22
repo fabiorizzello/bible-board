@@ -195,6 +195,16 @@ const RUOLO_INVERSO: Record<RuoloLink, RuoloLink> = {
   coniuge: "coniuge",
 };
 
+export function validateLinkTipoPermission(
+  sourceTipo: ElementoTipo,
+  linkTipo: TipoLink
+): Result<void, ElementoError> {
+  if (linkTipo === "parentela" && sourceTipo !== "personaggio") {
+    return err({ type: "parentela_non_ammessa" });
+  }
+  return ok(undefined);
+}
+
 export function validateLink(
   sourceId: string,
   input: LinkInput
