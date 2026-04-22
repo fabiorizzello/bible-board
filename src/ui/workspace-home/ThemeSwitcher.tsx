@@ -170,7 +170,7 @@ export function ThemeSwitcher() {
           <Palette className="h-4 w-4" />
         </Button>
       </Popover.Trigger>
-      <Popover.Content placement="right end" className="w-[280px]">
+      <Popover.Content placement="right" className="w-[280px]">
         <Popover.Dialog className="p-3">
           <div className="mb-2.5 flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-ink-dim">

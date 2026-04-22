@@ -200,7 +200,7 @@ function getWarnings(element: Elemento): ValidationWarning[] {
     });
   }
 
-  if (element.tags.length === 0) {
+  if (element.tipo !== "annotazione" && element.tags.length === 0) {
     warnings.push({
       field: "tags",
       label: "Tag",
@@ -208,7 +208,7 @@ function getWarnings(element: Elemento): ValidationWarning[] {
     });
   }
 
-  if (element.link.length === 0) {
+  if (element.tipo !== "annotazione" && element.link.length === 0) {
     warnings.push({
       field: "collegamenti-generici",
       label: "Collegamenti",
@@ -350,29 +350,54 @@ export function ElementoEditor({
   );
   const links = useMemo(() => resolveCollegamenti(element), [element]);
 
+  const alreadyLinkedFamilyIds = useMemo(
+    () => new Set(element.link.filter((l) => l.tipo === "parentela").map((l) => l.targetId)),
+    [element.link],
+  );
+  const alreadyLinkedGenericIds = useMemo(
+    () => new Set(element.link.map((l) => l.targetId)),
+    [element.link],
+  );
+
   const familyCandidates = useMemo(
     () =>
       ELEMENTI.filter(
         (candidate) =>
           candidate.id !== element.id &&
+          !alreadyLinkedFamilyIds.has(candidate.id as string) &&
           candidate.tipo === "personaggio" &&
           candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
       ),
-    [element.id, familySearch],
+    [element.id, alreadyLinkedFamilyIds, familySearch],
   );
   const genericCandidates = useMemo(
     () =>
       ELEMENTI.filter(
         (candidate) =>
           candidate.id !== element.id &&
+          !alreadyLinkedGenericIds.has(candidate.id as string) &&
           candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
       ),
-    [element.id, genericSearch],
+    [element.id, alreadyLinkedGenericIds, genericSearch],
   );
 
   useEffect(() => {
     setSurfaceError(null);
   }, [element.id, editingFieldId]);
+
+  useEffect(() => {
+    if (editingFieldId === "collegamenti-famiglia") {
+      setFamilySearch("");
+      setFamilyTargetId("");
+    }
+  }, [editingFieldId]);
+
+  useEffect(() => {
+    if (editingFieldId === "collegamenti-generici") {
+      setGenericSearch("");
+      setGenericTargetId("");
+    }
+  }, [editingFieldId]);
 
   function commitPatch(
     patch: Partial<Elemento>,
@@ -506,6 +531,7 @@ export function ElementoEditor({
       { keepEditorOpen: true },
     );
     setFamilyTargetId("");
+    setFamilySearch("");
   }
 
   function addGenericLink() {
@@ -528,13 +554,13 @@ export function ElementoEditor({
       { keepEditorOpen: true },
     );
     setGenericTargetId("");
+    setGenericSearch("");
   }
 
-  function removeLink(targetTitle: string) {
-    const nextLinks = element.link.filter((link) => {
-      const target = ELEMENTI.find((candidate) => candidate.id === link.targetId);
-      return (target?.titolo ?? link.targetId) !== targetTitle;
-    });
+  function removeLink(targetId: string, tipo: string) {
+    const nextLinks = element.link.filter(
+      (link) => !(link.targetId === targetId && link.tipo === tipo),
+    );
     commitPatch({ link: nextLinks }, "Collegamento rimosso", { keepEditorOpen: true });
   }
 
@@ -641,7 +667,6 @@ export function ElementoEditor({
           icon={<Users className="h-3.5 w-3.5" />}
           title="Ruoli"
           items={element.ruoli ?? []}
-          addFieldId="ruoli"
           addLabel="Aggiungi ruolo"
           draftValue={ruoloDraft}
           onDraftChange={setRuoloDraft}
@@ -657,7 +682,6 @@ export function ElementoEditor({
         icon={<Tag className="h-3.5 w-3.5" />}
         title="Tag"
         items={element.tags}
-        addFieldId="tags"
         addLabel="Aggiungi tag"
         draftValue={tagDraft}
         onDraftChange={setTagDraft}
@@ -674,13 +698,16 @@ export function ElementoEditor({
         fieldId="collegamenti-famiglia"
         open={editingFieldId === "collegamenti-famiglia"}
         onOpenChange={(open) => (open ? openFieldEditor("collegamenti-famiglia") : closeFieldEditor())}
-        onRemove={removeLink}
+        onRemove={(targetId, tipo) => removeLink(targetId, tipo)}
       >
         <TextField value={familySearch} onChange={setFamilySearch}>
           <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
           <Input className="min-h-[40px]" />
         </TextField>
         <div className="grid gap-2 sm:grid-cols-2">
+          {familyCandidates.length === 0 && (
+            <p className="col-span-2 text-sm text-ink-dim">Nessun risultato.</p>
+          )}
           {familyCandidates.slice(0, 8).map((candidate) => (
             <Button
               key={candidate.id}
@@ -715,13 +742,16 @@ export function ElementoEditor({
         fieldId="collegamenti-generici"
         open={editingFieldId === "collegamenti-generici"}
         onOpenChange={(open) => (open ? openFieldEditor("collegamenti-generici") : closeFieldEditor())}
-        onRemove={removeLink}
+        onRemove={(targetId, tipo) => removeLink(targetId, tipo)}
       >
         <TextField value={genericSearch} onChange={setGenericSearch}>
           <Label className="text-xs text-ink-lo">Cerca elemento</Label>
           <Input className="min-h-[40px]" />
         </TextField>
         <div className="grid gap-2 sm:grid-cols-2">
+          {genericCandidates.length === 0 && (
+            <p className="col-span-2 text-sm text-ink-dim">Nessun risultato.</p>
+          )}
           {genericCandidates.slice(0, 8).map((candidate) => (
             <Button
               key={candidate.id}
@@ -779,16 +809,20 @@ export function ElementoEditor({
         icon={<FileText className="h-3.5 w-3.5" />}
         emptyLabel="Nessuna annotazione collegata"
       >
-        {annotazioni.mie.map((annotation) => (
-          <div key={annotation.id as string} className="rounded-xl border border-primary/8 bg-panel px-3 py-2">
-            <p className="text-sm font-medium text-ink-hi">{annotation.titolo}</p>
-            {annotation.descrizione && (
-              <p className="mt-1 text-sm text-ink-md">{annotation.descrizione}</p>
+        {(annotazioni.mie.length > 0 || annotazioni.altreCount > 0) && (
+          <>
+            {annotazioni.mie.map((annotation) => (
+              <div key={annotation.id as string} className="rounded-xl border border-primary/8 bg-panel px-3 py-2">
+                <p className="text-sm font-medium text-ink-hi">{annotation.titolo}</p>
+                {annotation.descrizione && (
+                  <p className="mt-1 text-sm text-ink-md">{annotation.descrizione}</p>
+                )}
+              </div>
+            ))}
+            {annotazioni.altreCount > 0 && (
+              <p className="text-sm text-ink-dim">{annotazioni.altreCount} annotazioni altrui non mostrate qui.</p>
             )}
-          </div>
-        ))}
-        {annotazioni.altreCount > 0 && (
-          <p className="text-sm text-ink-dim">{annotazioni.altreCount} annotazioni altrui non mostrate qui.</p>
+          </>
         )}
       </ReadOnlySection>
 
@@ -797,13 +831,15 @@ export function ElementoEditor({
         icon={<Users className="h-3.5 w-3.5" />}
         emptyLabel="Nessuna board dinamica o fissa"
       >
-        <div className="flex flex-wrap gap-2">
-          {boards.map((board) => (
-            <Chip key={board} className="border border-primary/10 bg-primary/5 px-3 text-sm text-primary">
-              {board}
-            </Chip>
-          ))}
-        </div>
+        {boards.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {boards.map((board) => (
+              <Chip key={board} className="border border-primary/10 bg-primary/5 px-3 text-sm text-primary">
+                {board}
+              </Chip>
+            ))}
+          </div>
+        )}
       </ReadOnlySection>
 
       <ReadOnlySection
@@ -811,13 +847,15 @@ export function ElementoEditor({
         icon={<Link2 className="h-3.5 w-3.5" />}
         emptyLabel="Nessuna fonte visibile in S02"
       >
-        <div className="flex flex-wrap gap-2">
-          {fonti.map((fonte) => (
-            <Chip key={fonte} className="border border-edge bg-panel px-3 text-sm text-ink-md">
-              {fonte}
-            </Chip>
-          ))}
-        </div>
+        {fonti.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {fonti.map((fonte) => (
+              <Chip key={fonte} className="border border-edge bg-panel px-3 text-sm text-ink-md">
+                {fonte}
+              </Chip>
+            ))}
+          </div>
+        )}
       </ReadOnlySection>
     </div>
   );
@@ -1058,19 +1096,13 @@ function VitaChip({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        className="p-0"
+      <ChipButton
+        icon={<Calendar className="h-3.5 w-3.5" />}
+        label="Vita"
+        value={formatVita(element)}
+        active={open}
         onPress={() => onOpenChange(true)}
-      >
-        <ChipButton
-          icon={<Calendar className="h-3.5 w-3.5" />}
-          label="Vita"
-          value={formatVita(element)}
-          active={open}
-          onPress={() => onOpenChange(true)}
-        />
-      </Button>
+      />
       <Drawer.Backdrop isOpen={open} onOpenChange={onOpenChange} className="bg-black/30">
         <Drawer.Content placement="right">
           <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
@@ -1280,7 +1312,6 @@ function ArraySection({
   icon: ReactNode;
   title: string;
   items: readonly string[];
-  addFieldId: EditableFieldId;
   addLabel: string;
   draftValue: string;
   onDraftChange: (value: string) => void;
@@ -1339,7 +1370,7 @@ function ArraySection({
               <button
                 type="button"
                 onClick={() => onRemove(item)}
-                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-black/10"
+                className="-m-1 flex h-6 w-6 items-center justify-center rounded-full p-1 hover:bg-black/10"
                 aria-label={`Rimuovi ${item}`}
               >
                 <X className="h-3 w-3" />
@@ -1362,11 +1393,11 @@ function LinkSection({
   children,
 }: {
   title: string;
-  links: ReadonlyArray<{ titolo: string; tipo: string }>;
+  links: ReadonlyArray<{ titolo: string; tipo: string; targetId: string; ruolo?: string }>;
   fieldId: EditableFieldId;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRemove: (title: string) => void;
+  onRemove: (targetId: string, tipo: string) => void;
   children: ReactNode;
 }) {
   return (
@@ -1385,16 +1416,16 @@ function LinkSection({
         {links.length === 0 && <p className="text-sm text-ink-dim">Nessun collegamento in questo gruppo.</p>}
         {links.map((link) => (
           <Chip
-            key={`${fieldId}-${link.titolo}-${link.tipo}`}
+            key={`${fieldId}-${link.targetId}-${link.tipo}`}
             className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
           >
             <span className="flex items-center gap-1.5">
               {link.titolo}
-              <span className="text-xs text-ink-dim">{link.tipo}</span>
+              <span className="text-xs text-ink-dim">{link.ruolo ?? link.tipo}</span>
               <button
                 type="button"
-                onClick={() => onRemove(link.titolo)}
-                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-black/10"
+                onClick={() => onRemove(link.targetId, link.tipo)}
+                className="-m-1 flex h-6 w-6 items-center justify-center rounded-full p-1 hover:bg-black/10"
                 aria-label={`Rimuovi ${link.titolo}`}
               >
                 <X className="h-3 w-3" />

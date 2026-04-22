@@ -113,7 +113,7 @@ Palette teal-based con accent orange per CTA. Typography: Fira Code headings, Fi
 
 ## iPad-Native Feel
 
-App nativa iPad, non sito responsive. Riferimenti: Apple Notes/Mail, Things 3, Notion iPad. Principi di design — recipes operative (spacing, animation, HeroUI scope) in `.planning/KNOWLEDGE.md`.
+App nativa iPad, non sito responsive. Riferimenti: Apple Notes/Mail, Things 3, Notion iPad.
 
 - **Densità**: interfaccia compatta stile Notion/Linear. Info utile senza scroll su iPad landscape. Contenuto primario domina; sidebar/toolbar sono chrome. Niente spazio vuoto decorativo.
 - **Zero page reload visibile**: transizioni istantanee via Jazz CRDT in memoria. Loading → skeleton/spinner inline.
@@ -134,14 +134,14 @@ App nativa iPad, non sito responsive. Riferimenti: Apple Notes/Mail, Things 3, N
 
 ## Workflow
 
-- **GSD-driven**: requisiti in `.planning/REQUIREMENTS.md`, regole dominio e pattern in `.planning/KNOWLEDGE.md`, decisioni in `.planning/DECISIONS.md`. Consultare SEMPRE prima di implementare.
+- **GSD-driven**: requisiti in `.gsd/REQUIREMENTS.md`, decisioni in `.gsd/DECISIONS.md`, pattern in `.gsd/KNOWLEDGE.md`. Consultare SEMPRE prima di implementare.
 - **Jazz docs first**: prima di toccare data model o auth, consultare jazz.tools/docs. Jazz è giovane — training data limitati, verificare contro docs correnti.
 - **Incremental delivery**: ogni user story testabile e consegnabile indipendentemente.
 - **Reuse-first**: se esiste già codice che fa il lavoro, riusalo. Prima di creare nuovo componente/funzione/pattern, grep il codebase per simili — estrarre base condivisa batte duplicazione.
 - **YAGNI**: non implementare feature non richieste. Iniziare semplice, aggiungere complessità solo quando giustificata.
 
 ### UI/UX Review Gate
-Ogni componente UI nuovo o modifica visiva significativa DEVE passare un gate di approvazione umana. Protocollo operativo completo in `.planning/KNOWLEDGE.md` → "Pattern: UI/UX Review Gate (Human-in-the-Loop)".
+Ogni componente UI nuovo o modifica visiva significativa DEVE passare un gate di approvazione umana.
 
 - **Skill obbligatoria**: caricare `ui-ux-pro-max` PRIMA di scrivere codice UI.
 - **Interattivo**: implementa → screenshot → approva → itera fino a OK.
@@ -159,4 +159,4 @@ Questa constitution è il documento di massima autorità per il progetto Timelin
 - **Emendamenti**: modifiche a principi/stack richiedono version bump + rationale + sync impact report.
 - **Versioning**: MAJOR per rimozione/ridefinizione principi, MINOR per aggiunte, PATCH per chiarimenti.
 - **Compliance**: ogni PR verifica compliance. Violazioni DEVONO essere risolte prima del merge.
-- **Source of Truth**: per valori concreti (colori, spacing, durate, catalogo componenti), il codice e `.planning/KNOWLEDGE.md` sono autoritativi — non questo documento. Questa costituzione dice *come pensare*, non *quali valori*.
+- **Source of Truth**: per valori concreti (colori, spacing, durate, catalogo componenti), il codice è autoritativo — non questo documento. Questa costituzione dice *come pensare*, non *quali valori*.

@@ -47,7 +47,7 @@ function getAddOptions(selectedId: string | null): AddOption[] {
     .filter((o) => o.visible)
     // Deduplicate by field (first occurrence wins — "missing" takes priority over "add more")
     .filter((o, idx, arr) => arr.findIndex((x) => x.field === o.field) === idx)
-    .map(({ field, label }) => ({ field, label }));
+    .map(({ field, label }) => ({ field: field as EditableFieldId, label }));
 }
 
 function ElementoFieldFab() {

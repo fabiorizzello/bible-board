@@ -220,10 +220,12 @@ export function getBoardDisplayItems(): BoardDisplayItem[] {
 
 // ── Link resolution ──
 
-/** Resolved link for display — titolo and tipo instead of raw targetId. */
+/** Resolved link for display — titolo, tipo, targetId and optional ruolo. */
 export interface ResolvedLink {
   readonly titolo: string;
   readonly tipo: string;
+  readonly targetId: string;
+  readonly ruolo?: string;
 }
 
 /**
@@ -237,6 +239,8 @@ export function resolveCollegamenti(el: Elemento): ResolvedLink[] {
     return {
       titolo: target?.titolo ?? link.targetId,
       tipo: link.tipo,
+      targetId: link.targetId,
+      ruolo: link.ruolo,
     };
   });
 }
