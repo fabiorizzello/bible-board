@@ -1,0 +1,21 @@
+# Runtime / ephemeral — non versionare
+gsd.db
+gsd.db-shm
+gsd.db-wal
+*.lock
+activity/
+audit/
+journal/
+runtime/
+worktrees/
+graphs/
+parallel/
+quick/
+safety/
+event-log.jsonl
+notifications.jsonl
+doctor-history.jsonl
+metrics.json
+last-snapshot.md
+state-manifest.json
+repo-meta.json
