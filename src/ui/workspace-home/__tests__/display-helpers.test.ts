@@ -6,8 +6,8 @@ import {
   getElementsForView,
   resolveCollegamenti,
   resolveBoardsForElement,
-  MOCK_FONTI,
   getFontiForElement,
+  getFontiGroupedByTipo,
   findElementById,
   getAnnotazioniForElement,
   CURRENT_AUTORE,
@@ -290,26 +290,33 @@ describe("resolveBoardsForElement", () => {
 
 // ── Fonti ──
 
-describe("MOCK_FONTI", () => {
-  it("has fonti for Abraamo", () => {
-    const fonti = MOCK_FONTI.get(ELEMENTO_IDS.abraamo as string);
-    expect(fonti).toBeDefined();
-    expect(fonti!.length).toBe(4);
-    expect(fonti).toContain("Genesi 12:1-3");
-  });
-});
-
 describe("getFontiForElement", () => {
-  it("returns fonti for Abraamo", () => {
+  it("returns typed NormalizedFonte list for Abraamo (4 scrittura fonti seeded)", () => {
     const abraamo = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))!;
     const fonti = getFontiForElement(abraamo);
     expect(fonti.length).toBe(4);
-    expect(fonti).toContain("Ebrei 11:8-10");
+    expect(fonti.every((f) => f.tipo === "scrittura")).toBe(true);
+    expect(fonti.some((f) => f.valore === "Ebrei 11:8-10")).toBe(true);
   });
 
   it("returns empty array for element without fonti", () => {
     const isacco = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.isacco as string))!;
     expect(getFontiForElement(isacco)).toEqual([]);
+  });
+});
+
+describe("getFontiGroupedByTipo", () => {
+  it("groups Abraamo fonti under scrittura key", () => {
+    const abraamo = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))!;
+    const grouped = getFontiGroupedByTipo(abraamo);
+    expect(grouped.has("scrittura")).toBe(true);
+    expect(grouped.get("scrittura")!.length).toBe(4);
+    expect(grouped.get("scrittura")!.some((f) => f.valore === "Genesi 12:1-3")).toBe(true);
+  });
+
+  it("returns empty Map for element without fonti", () => {
+    const isacco = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.isacco as string))!;
+    expect(getFontiGroupedByTipo(isacco).size).toBe(0);
   });
 });
 

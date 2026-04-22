@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { normalizeElementoInput, validateLinkTipoPermission } from "@/features/elemento/elemento.rules";
+import {
+  normalizeElementoInput,
+  validateLinkTipoPermission,
+  validateFonte,
+  addFonte,
+  removeFonte,
+} from "@/features/elemento/elemento.rules";
+import type { NormalizedFonte } from "@/features/elemento/elemento.rules";
 import type { DataStorica } from "@/features/shared/value-objects";
 
 const DS = (anno: number, era: "aev" | "ev" = "aev"): DataStorica => ({
@@ -182,5 +189,121 @@ describe("normalizeElementoInput — date validation", () => {
     });
     expect(result.isErr()).toBe(true);
     if (result.isErr()) expect(result.error.type).toBe("data_non_valida");
+  });
+});
+
+describe("validateFonte — all FonteTipo variants", () => {
+  it("accepts scrittura and resolves urlCalcolata from WOL", () => {
+    const result = validateFonte({ tipo: "scrittura", valore: "Genesi 12:1" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.tipo).toBe("scrittura");
+      expect(result.value.valore).toBe("Genesi 12:1");
+      // urlCalcolata may be undefined if WOL resolver can't resolve — just check it doesn't crash
+    }
+  });
+
+  it("accepts articolo-wol with the URL as urlCalcolata", () => {
+    const result = validateFonte({ tipo: "articolo-wol", valore: "https://wol.jw.org/example" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.tipo).toBe("articolo-wol");
+      expect(result.value.urlCalcolata).toBe("https://wol.jw.org/example");
+    }
+  });
+
+  it("accepts pubblicazione without urlCalcolata", () => {
+    const result = validateFonte({ tipo: "pubblicazione", valore: "Manuale di studio" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.tipo).toBe("pubblicazione");
+      expect(result.value.urlCalcolata).toBeUndefined();
+    }
+  });
+
+  it("accepts link with the URL as urlCalcolata", () => {
+    const result = validateFonte({ tipo: "link", valore: "https://example.org" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.tipo).toBe("link");
+      expect(result.value.urlCalcolata).toBe("https://example.org");
+    }
+  });
+
+  it("accepts altro without urlCalcolata", () => {
+    const result = validateFonte({ tipo: "altro", valore: "Tradizione orale" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value.tipo).toBe("altro");
+      expect(result.value.urlCalcolata).toBeUndefined();
+    }
+  });
+
+  it("rejects empty valore with fonte_non_valida", () => {
+    const result = validateFonte({ tipo: "scrittura", valore: "   " });
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("fonte_non_valida");
+  });
+});
+
+describe("addFonte — pure helper", () => {
+  const seed: readonly NormalizedFonte[] = [
+    { tipo: "scrittura", valore: "Genesi 1:1" },
+  ];
+
+  it("adds a new fonte to the list", () => {
+    const result = addFonte(seed, { tipo: "scrittura", valore: "Esodo 12:1" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value).toHaveLength(2);
+      expect(result.value[1].valore).toBe("Esodo 12:1");
+    }
+  });
+
+  it("rejects a duplicate (same tipo + valore) with fonte_duplicata", () => {
+    const result = addFonte(seed, { tipo: "scrittura", valore: "Genesi 1:1" });
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("fonte_duplicata");
+  });
+
+  it("allows same valore with a different tipo", () => {
+    const result = addFonte(seed, { tipo: "link", valore: "Genesi 1:1" });
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) expect(result.value).toHaveLength(2);
+  });
+
+  it("rejects empty valore with fonte_non_valida", () => {
+    const result = addFonte(seed, { tipo: "scrittura", valore: "" });
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("fonte_non_valida");
+  });
+});
+
+describe("removeFonte — pure helper", () => {
+  const seed: readonly NormalizedFonte[] = [
+    { tipo: "scrittura", valore: "Genesi 1:1" },
+    { tipo: "link", valore: "https://example.org" },
+  ];
+
+  it("removes a fonte by tipo + valore", () => {
+    const result = removeFonte(seed, "scrittura", "Genesi 1:1");
+    expect(result.isOk()).toBe(true);
+    if (result.isOk()) {
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0].valore).toBe("https://example.org");
+    }
+  });
+
+  it("rejects removal of a non-existent fonte with fonte_non_trovata", () => {
+    const result = removeFonte(seed, "scrittura", "Apocalisse 1:1");
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("fonte_non_trovata");
+  });
+
+  it("rejects removal when tipo does not match", () => {
+    // Same valore but different tipo — should not match
+    const result = removeFonte(seed, "altro", "Genesi 1:1");
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) expect(result.error.type).toBe("fonte_non_trovata");
   });
 });

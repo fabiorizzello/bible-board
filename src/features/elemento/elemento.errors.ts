@@ -3,6 +3,8 @@ export type ElementoError =
   | { type: "elemento_non_trovato" }
   | { type: "data_non_valida" }
   | { type: "fonte_non_valida" }
+  | { type: "fonte_duplicata" }
+  | { type: "fonte_non_trovata" }
   | { type: "link_non_valido" }
   | { type: "link_duplicato" }
   | { type: "link_auto_riferimento" }

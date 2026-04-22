@@ -6,7 +6,7 @@
  */
 
 import type { Elemento } from "@/features/elemento/elemento.model";
-import type { NormalizedElementoInput } from "@/features/elemento/elemento.rules";
+import type { NormalizedElementoInput, NormalizedFonte } from "@/features/elemento/elemento.rules";
 import { observable } from "@legendapp/state";
 
 export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
@@ -20,6 +20,7 @@ export type EditableFieldId =
   | "descrizione"
   | "ruoli"
   | "tags"
+  | "fonti"
   | "collegamenti-famiglia"
   | "collegamenti-generici"
   | "add-field"
@@ -43,6 +44,8 @@ export interface WorkspaceUIState {
    */
   deletedElementIds: string[];
   elementOverrides: Record<string, ElementoSessionPatch>;
+  /** Session-only fonti overrides keyed by ElementoId string. Once set, fully replaces MOCK_FONTI for that element. */
+  fontiOverrides: Record<string, readonly NormalizedFonte[]>;
   lastModified: number;
 }
 
@@ -56,6 +59,7 @@ const initialState: WorkspaceUIState = {
   editingFieldId: null,
   deletedElementIds: [],
   elementOverrides: {},
+  fontiOverrides: {},
   lastModified: Date.now(),
 };
 
@@ -122,6 +126,19 @@ export function commitNormalizedElement(
 }
 
 /**
+ * Replace the session-level fonti for a given element.
+ * Called after every add/remove so the detail pane re-renders via lastModified.
+ */
+export function commitFontiOverride(
+  elementId: string,
+  fonti: readonly NormalizedFonte[],
+): void {
+  const current = workspaceUi$.fontiOverrides.peek();
+  workspaceUi$.fontiOverrides.set({ ...current, [elementId]: fonti });
+  workspaceUi$.lastModified.set(Date.now());
+}
+
+/**
  * Soft delete an element: mark it as deleted (filtered out of lists) and
  * clear the current selection so the detail pane returns to its empty state.
  * Also exits fullscreen mode and edit mode if active.
@@ -165,6 +182,7 @@ export function resetWorkspaceUiState(): void {
     ...initialState,
     deletedElementIds: [],
     elementOverrides: {},
+    fontiOverrides: {},
     lastModified: Date.now(),
   });
 }

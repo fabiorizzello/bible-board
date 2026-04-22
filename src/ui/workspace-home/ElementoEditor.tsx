@@ -41,22 +41,26 @@ import { commonmark } from "@milkdown/preset-commonmark";
 import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 
 import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
-import type { ElementoInput } from "@/features/elemento/elemento.rules";
-import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
+import type { ElementoInput, FonteTipo, NormalizedFonte } from "@/features/elemento/elemento.rules";
+import { normalizeElementoInput, addFonte, removeFonte } from "@/features/elemento/elemento.rules";
 import { formatHistoricalEra, type DataStorica } from "@/features/shared/value-objects";
 import { ELEMENTI } from "@/mock/data";
 import {
   closeFieldEditor,
   commitElementPatch,
+  commitFontiOverride,
   commitNormalizedElement,
   openFieldEditor,
   type EditableFieldId,
 } from "./workspace-ui-store";
 import {
   CURRENT_AUTORE,
+  FONTE_TIPI_IN_SCOPE,
+  FONTE_TIPO_LABEL,
   formatElementDate,
   getAnnotazioniForElement,
   getFontiForElement,
+  getFontiGroupedByTipo,
   resolveBoardsForElement,
   resolveCollegamenti,
 } from "./display-helpers";
@@ -340,10 +344,13 @@ export function ElementoEditor({
   const [genericType, setGenericType] = useState<TipoLink>("correlato");
   const [familyTargetId, setFamilyTargetId] = useState("");
   const [genericTargetId, setGenericTargetId] = useState("");
+  const [fonteTipoDraft, setFonteTipoDraft] = useState<FonteTipo>("scrittura");
+  const [fonteValoreDraft, setFonteValoreDraft] = useState("");
 
   const warnings = useMemo(() => getWarnings(element), [element]);
   const boards = useMemo(() => resolveBoardsForElement(element), [element]);
   const fonti = useMemo(() => getFontiForElement(element), [element]);
+  const fontiGrouped = useMemo(() => getFontiGroupedByTipo(element), [element]);
   const annotazioni = useMemo(
     () => getAnnotazioniForElement(element.id as string, CURRENT_AUTORE),
     [element],
@@ -562,6 +569,56 @@ export function ElementoEditor({
       (link) => !(link.targetId === targetId && link.tipo === tipo),
     );
     commitPatch({ link: nextLinks }, "Collegamento rimosso", { keepEditorOpen: true });
+  }
+
+  function commitFonteAdd() {
+    const valore = fonteValoreDraft.trim();
+    if (!valore) return;
+    const elementId = element.id as string;
+    const prevFonti = getFontiForElement(element);
+    const result = addFonte(prevFonti, { tipo: fonteTipoDraft, valore });
+    result.match(
+      (nextFonti) => {
+        commitFontiOverride(elementId, nextFonti);
+        setSurfaceError(null);
+        setFonteValoreDraft("");
+        toast("Fonte aggiunta", {
+          timeout: 5_000,
+          variant: "default",
+          actionProps: {
+            children: "Annulla",
+            onPress: () => commitFontiOverride(elementId, prevFonti),
+          },
+        });
+      },
+      (error) => {
+        setSurfaceError(
+          error.type === "fonte_duplicata" ? "Fonte gia presente" : "Valore fonte non valido",
+        );
+      },
+    );
+  }
+
+  function commitFonteRemove(tipo: FonteTipo, valore: string) {
+    const elementId = element.id as string;
+    const prevFonti = getFontiForElement(element);
+    const result = removeFonte(prevFonti, tipo, valore);
+    result.match(
+      (nextFonti) => {
+        commitFontiOverride(elementId, nextFonti);
+        toast("Fonte rimossa", {
+          timeout: 5_000,
+          variant: "default",
+          actionProps: {
+            children: "Annulla",
+            onPress: () => commitFontiOverride(elementId, prevFonti),
+          },
+        });
+      },
+      () => {
+        setSurfaceError("Fonte non trovata");
+      },
+    );
   }
 
   const familyLinks = links.filter((link) => link.tipo === "parentela");
@@ -842,20 +899,19 @@ export function ElementoEditor({
         )}
       </ReadOnlySection>
 
-      <ReadOnlySection
-        title="Fonti"
-        icon={<Link2 className="h-3.5 w-3.5" />}
-      >
-        {fonti.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {fonti.map((fonte) => (
-              <Chip key={fonte} className="border border-edge bg-panel px-3 text-sm text-ink-md">
-                {fonte}
-              </Chip>
-            ))}
-          </div>
-        )}
-      </ReadOnlySection>
+      <FontiSection
+        fontiGrouped={fontiGrouped}
+        totalCount={fonti.length}
+        isAddOpen={editingFieldId === "fonti"}
+        onOpenAdd={() => openFieldEditor("fonti")}
+        onCloseAdd={closeFieldEditor}
+        fonteTipo={fonteTipoDraft}
+        onFonteTipoChange={setFonteTipoDraft}
+        fonteValore={fonteValoreDraft}
+        onFonteValoreChange={setFonteValoreDraft}
+        onAdd={commitFonteAdd}
+        onRemove={commitFonteRemove}
+      />
     </div>
   );
 }
@@ -1460,6 +1516,137 @@ function FieldDrawer({
         </Drawer.Dialog>
       </Drawer.Content>
     </Drawer.Backdrop>
+  );
+}
+
+function FontiSection({
+  fontiGrouped,
+  totalCount,
+  isAddOpen,
+  onOpenAdd,
+  onCloseAdd,
+  fonteTipo,
+  onFonteTipoChange,
+  fonteValore,
+  onFonteValoreChange,
+  onAdd,
+  onRemove,
+}: {
+  fontiGrouped: Map<FonteTipo, readonly NormalizedFonte[]>;
+  totalCount: number;
+  isAddOpen: boolean;
+  onOpenAdd: () => void;
+  onCloseAdd: () => void;
+  fonteTipo: FonteTipo;
+  onFonteTipoChange: (tipo: FonteTipo) => void;
+  fonteValore: string;
+  onFonteValoreChange: (valore: string) => void;
+  onAdd: () => void;
+  onRemove: (tipo: FonteTipo, valore: string) => void;
+}) {
+  if (totalCount === 0 && !isAddOpen) return null;
+
+  return (
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-2">
+          <span className="text-ink-dim"><Link2 className="h-3.5 w-3.5" /></span>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">Fonti</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-[36px] rounded-full px-3 text-primary"
+          onPress={onOpenAdd}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Aggiungi fonte
+        </Button>
+        <FieldDrawer title="Aggiungi fonte" isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
+          <div className="space-y-1">
+            <p className="text-xs text-ink-lo">Tipo</p>
+            <div className="flex flex-wrap gap-2">
+              {FONTE_TIPI_IN_SCOPE.map((tipo) => (
+                <Button
+                  key={tipo}
+                  variant={fonteTipo === tipo ? "primary" : "outline"}
+                  size="sm"
+                  onPress={() => onFonteTipoChange(tipo)}
+                >
+                  {FONTE_TIPO_LABEL[tipo]}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <TextField value={fonteValore} onChange={onFonteValoreChange}>
+            <Label className="text-xs text-ink-lo">
+              {fonteTipo === "scrittura" ? "Riferimento (es. Genesi 12:1-3)" : "Valore"}
+            </Label>
+            <Input
+              className="min-h-[40px]"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === "Enter") onAdd();
+                if (event.key === "Escape") onCloseAdd();
+              }}
+            />
+          </TextField>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onPress={onCloseAdd}>
+              Chiudi
+            </Button>
+            <Button variant="primary" size="sm" onPress={onAdd} isDisabled={!fonteValore.trim()}>
+              Aggiungi
+            </Button>
+          </div>
+        </FieldDrawer>
+      </div>
+
+      {/* Grouped by FonteTipo */}
+      {FONTE_TIPI_IN_SCOPE.map((tipo) => {
+        const group = fontiGrouped.get(tipo);
+        if (!group || group.length === 0) return null;
+        return (
+          <div key={tipo} className="mb-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-ghost">
+              {FONTE_TIPO_LABEL[tipo]}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {group.map((fonte) => (
+                <Chip
+                  key={`${tipo}-${fonte.valore}`}
+                  className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+                >
+                  <span className="flex items-center gap-1.5">
+                    {fonte.urlCalcolata ? (
+                      <a
+                        href={fonte.urlCalcolata}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline underline-offset-2 hover:text-ink transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {fonte.valore}
+                      </a>
+                    ) : (
+                      <span>{fonte.valore}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onRemove(tipo, fonte.valore)}
+                      className="-m-1 flex h-6 w-6 items-center justify-center rounded-full p-1 hover:bg-black/10"
+                      aria-label={`Rimuovi ${fonte.valore}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                </Chip>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </section>
   );
 }
 

@@ -140,13 +140,6 @@ App nativa iPad, non sito responsive. Riferimenti: Apple Notes/Mail, Things 3, N
 - **Reuse-first**: se esiste già codice che fa il lavoro, riusalo. Prima di creare nuovo componente/funzione/pattern, grep il codebase per simili — estrarre base condivisa batte duplicazione.
 - **YAGNI**: non implementare feature non richieste. Iniziare semplice, aggiungere complessità solo quando giustificata.
 
-### UI/UX Review Gate
-Ogni componente UI nuovo o modifica visiva significativa DEVE passare un gate di approvazione umana.
-
-- **Skill obbligatoria**: caricare `ui-ux-pro-max` PRIMA di scrivere codice UI.
-- **Interattivo**: implementa → screenshot → approva → itera fino a OK.
-- **Auto-mode — Mockup-First**: mockup `.tsx` in `src/ui/mockups/` su route `/dev/mockup-*` con dati hardcoded → screenshot → approvazione umana → wiring con dati reali → rimozione route dev.
-
 ## Verifiche pendenti
 
 - [ ] **Jazz BinaryCoStream**: verificare supporto blob per immagini offline

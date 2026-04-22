@@ -37,11 +37,11 @@ function getAddOptions(selectedId: string | null): AddOption[] {
     { field: "descrizione", label: "Descrizione", visible: !element.descrizione.trim() },
     { field: "tags", label: "Tag", visible: element.tags.length === 0 },
     { field: "ruoli", label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
-    { field: "collegamenti-famiglia", label: "Famiglia", visible: familyLinks.length === 0 },
+    { field: "collegamenti-famiglia", label: "Famiglia", visible: element.tipo === "personaggio" && familyLinks.length === 0 },
     { field: "collegamenti-generici", label: "Collegamento", visible: genericLinks.length === 0 },
     // Always available — user may want to add more even if some exist
     { field: "tags", label: "Aggiungi tag", visible: element.tags.length > 0 },
-    { field: "collegamenti-famiglia", label: "Aggiungi famiglia", visible: familyLinks.length > 0 },
+    { field: "collegamenti-famiglia", label: "Aggiungi famiglia", visible: element.tipo === "personaggio" && familyLinks.length > 0 },
     { field: "collegamenti-generici", label: "Aggiungi collegamento", visible: genericLinks.length > 0 },
   ]
     .filter((o) => o.visible)

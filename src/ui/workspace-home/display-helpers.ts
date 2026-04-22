@@ -9,10 +9,13 @@ import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model"
 import type { Board } from "@/features/board/board.model";
 import { formatHistoricalEra } from "@/features/shared/value-objects";
 import type { DataStorica } from "@/features/shared/value-objects";
+import type { NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
 import { ELEMENTI, BOARDS, ELEMENTI_MAP, ELEMENTO_IDS } from "@/mock/data";
 
 import type { ElementoSessionPatch, ViewId } from "./workspace-ui-store";
 import { workspaceUi$ } from "./workspace-ui-store";
+
+export type { NormalizedFonte, FonteTipo };
 
 // Re-export ViewId for convenience — single import point for UI modules
 export type { ViewId };
@@ -268,28 +271,67 @@ export function resolveBoardsForElement(el: Elemento): string[] {
 
 // ── Fonti ──
 
+/** Human-readable labels for FonteTipo values shown in the UI. */
+export const FONTE_TIPO_LABEL: Record<FonteTipo, string> = {
+  scrittura: "Scrittura",
+  "articolo-wol": "Articolo WOL",
+  pubblicazione: "Pubblicazione",
+  link: "Link",
+  altro: "Altro",
+};
+
+/** FonteTipo values in scope for M001 (video deferred to M004). */
+export const FONTE_TIPI_IN_SCOPE: readonly FonteTipo[] = [
+  "scrittura",
+  "articolo-wol",
+  "pubblicazione",
+  "link",
+  "altro",
+];
+
 /**
- * Mock fonti data — only Abraamo has fonti in the preview.
+ * Baseline mock fonti — only Abraamo has fonti seeded in the preview.
  * Keyed by ElementoId string value.
  */
-export const MOCK_FONTI: ReadonlyMap<string, readonly string[]> = new Map([
+const MOCK_FONTI: ReadonlyMap<string, readonly NormalizedFonte[]> = new Map([
   [
     ELEMENTO_IDS.abraamo as string,
     [
-      "Genesi 12:1-3",
-      "Genesi 15:5-6",
-      "Genesi 22:1-18",
-      "Ebrei 11:8-10",
-    ],
+      { tipo: "scrittura", valore: "Genesi 12:1-3" },
+      { tipo: "scrittura", valore: "Genesi 15:5-6" },
+      { tipo: "scrittura", valore: "Genesi 22:1-18" },
+      { tipo: "scrittura", valore: "Ebrei 11:8-10" },
+    ] satisfies NormalizedFonte[],
   ],
 ]);
 
 /**
- * Get fonti references for an elemento.
- * Returns empty array if no fonti are registered.
+ * Get fonti for an elemento, applying session overrides over MOCK_FONTI.
+ * Returns an empty array if no fonti are registered.
  */
-export function getFontiForElement(el: Elemento): readonly string[] {
+export function getFontiForElement(el: Elemento): readonly NormalizedFonte[] {
+  const overrides = workspaceUi$.fontiOverrides.peek();
+  const override = overrides[el.id as string];
+  if (override !== undefined) return override;
   return MOCK_FONTI.get(el.id as string) ?? [];
+}
+
+/**
+ * Get fonti for an elemento grouped by FonteTipo.
+ * Returns a Map preserving insertion order within each group.
+ */
+export function getFontiGroupedByTipo(el: Elemento): Map<FonteTipo, readonly NormalizedFonte[]> {
+  const fonti = getFontiForElement(el);
+  const groups = new Map<FonteTipo, NormalizedFonte[]>();
+  for (const fonte of fonti) {
+    const existing = groups.get(fonte.tipo);
+    if (existing) {
+      existing.push(fonte);
+    } else {
+      groups.set(fonte.tipo, [fonte]);
+    }
+  }
+  return groups;
 }
 
 // ── Annotazioni ──

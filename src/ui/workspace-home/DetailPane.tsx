@@ -33,7 +33,9 @@ import {
   findElementById,
   resolveCollegamenti,
   resolveBoardsForElement,
-  getFontiForElement,
+  getFontiGroupedByTipo,
+  FONTE_TIPO_LABEL,
+  FONTE_TIPI_IN_SCOPE,
   getAnnotazioniForElement,
   CURRENT_AUTORE,
 } from "./display-helpers";
@@ -78,7 +80,7 @@ export function DetailBody({
   const gap = isFullscreen ? "gap-1.5" : "gap-1";
 
   const collegamenti = resolveCollegamenti(element);
-  const fonti = getFontiForElement(element);
+  const fontiGrouped = getFontiGroupedByTipo(element);
   const annotazioni = getAnnotazioniForElement(element.id as string, CURRENT_AUTORE);
   const boards = resolveBoardsForElement(element);
 
@@ -122,19 +124,45 @@ export function DetailBody({
         </Card>
       )}
 
-      {fonti.length > 0 && (
+      {fontiGrouped.size > 0 && (
         <Card className={`border-none shadow-none bg-transparent ${section}`}>
           <Card.Header className={heading}>
             <Card.Title className={title}>Fonti</Card.Title>
           </Card.Header>
-          <Card.Content className="p-0">
-            <div className="flex flex-wrap gap-2">
-              {fonti.map((f) => (
-                <Link key={f} className={`${isFullscreen ? "text-[13px]" : "text-xs"} text-primary underline underline-offset-2 cursor-pointer hover:text-ink transition-colors`}>
-                  {f}
-                </Link>
-              ))}
-            </div>
+          <Card.Content className="p-0 space-y-2">
+            {FONTE_TIPI_IN_SCOPE.map((tipo) => {
+              const group = fontiGrouped.get(tipo);
+              if (!group || group.length === 0) return null;
+              return (
+                <div key={tipo}>
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-ghost">
+                    {FONTE_TIPO_LABEL[tipo]}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {group.map((f) =>
+                      f.urlCalcolata ? (
+                        <Link
+                          key={f.valore}
+                          href={f.urlCalcolata}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${isFullscreen ? "text-[13px]" : "text-xs"} text-primary underline underline-offset-2 cursor-pointer hover:text-ink transition-colors`}
+                        >
+                          {f.valore}
+                        </Link>
+                      ) : (
+                        <span
+                          key={f.valore}
+                          className={`${isFullscreen ? "text-[13px]" : "text-xs"} text-ink-md`}
+                        >
+                          {f.valore}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </Card.Content>
         </Card>
       )}
