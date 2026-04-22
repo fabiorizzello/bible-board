@@ -1,5 +1,4 @@
 # Runtime / ephemeral — non versionare
-gsd.db
 gsd.db-shm
 gsd.db-wal
 *.lock
