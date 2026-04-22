@@ -1366,7 +1366,7 @@ function CollegamentiGenericiSection({
 // Inline add triggers (skip categories — sketch 2 dual-entry)
 // ============================================================================
 
-function DashedAddChip({
+export function DashedAddChip({
   label,
   onClick,
 }: {

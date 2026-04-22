@@ -59,7 +59,8 @@ export function resolveScriptureSource(reference: string): Result<string, Elemen
 
 // --- Fonti ---
 
-export type FonteTipo = "scrittura" | "articolo" | "altro";
+/** FonteTipo in scope for M001 (video deferred to M004). */
+export type FonteTipo = "scrittura" | "articolo-wol" | "pubblicazione" | "link" | "altro";
 
 export interface FonteInput {
   readonly tipo: FonteTipo;
@@ -87,9 +88,24 @@ export function validateFonte(input: FonteInput): Result<NormalizedFonte, Elemen
     });
   }
 
-  if (input.tipo === "articolo") {
+  if (input.tipo === "articolo-wol") {
     return ok({
-      tipo: "articolo",
+      tipo: "articolo-wol",
+      valore: trimmed,
+      urlCalcolata: trimmed,
+    });
+  }
+
+  if (input.tipo === "pubblicazione") {
+    return ok({
+      tipo: "pubblicazione",
+      valore: trimmed,
+    });
+  }
+
+  if (input.tipo === "link") {
+    return ok({
+      tipo: "link",
       valore: trimmed,
       urlCalcolata: trimmed,
     });
@@ -115,6 +131,31 @@ export function normalizeFonti(
   }
 
   return ok(normalized);
+}
+
+export function addFonte(
+  fonti: readonly NormalizedFonte[],
+  input: FonteInput,
+): Result<readonly NormalizedFonte[], ElementoError> {
+  const validationResult = validateFonte(input);
+  if (validationResult.isErr()) return err(validationResult.error);
+
+  const fonte = validationResult.value;
+  const duplicate = fonti.some((f) => f.tipo === fonte.tipo && f.valore === fonte.valore);
+  if (duplicate) return err({ type: "fonte_duplicata" });
+
+  return ok([...fonti, fonte]);
+}
+
+export function removeFonte(
+  fonti: readonly NormalizedFonte[],
+  tipo: FonteTipo,
+  valore: string,
+): Result<readonly NormalizedFonte[], ElementoError> {
+  const index = fonti.findIndex((f) => f.tipo === tipo && f.valore === valore);
+  if (index === -1) return err({ type: "fonte_non_trovata" });
+
+  return ok([...fonti.slice(0, index), ...fonti.slice(index + 1)]);
 }
 
 export function normalizeElementoInput(
@@ -194,6 +235,16 @@ const RUOLO_INVERSO: Record<RuoloLink, RuoloLink> = {
   figlia: "madre",
   coniuge: "coniuge",
 };
+
+export function validateLinkTipoPermission(
+  sourceTipo: ElementoTipo,
+  linkTipo: TipoLink
+): Result<void, ElementoError> {
+  if (linkTipo === "parentela" && sourceTipo !== "personaggio") {
+    return err({ type: "parentela_non_ammessa" });
+  }
+  return ok(undefined);
+}
 
 export function validateLink(
   sourceId: string,

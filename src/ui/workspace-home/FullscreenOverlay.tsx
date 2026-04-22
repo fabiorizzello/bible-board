@@ -74,12 +74,14 @@ export function FullscreenOverlay() {
 
       <ScrollShadow className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-6 py-6 md:px-8">
-          <ElementoEditor
-            element={selectedElement}
-            editingFieldId={editingFieldId}
-            isFullscreen
-            onDelete={() => handleSoftDelete(selectedElement)}
-          />
+          {fullscreen && (
+            <ElementoEditor
+              element={selectedElement}
+              editingFieldId={editingFieldId}
+              isFullscreen
+              onDelete={() => handleSoftDelete(selectedElement)}
+            />
+          )}
         </div>
       </ScrollShadow>
     </div>

@@ -15,7 +15,6 @@ import {
   Input,
   Label,
   Popover,
-  Text,
   TextField,
   toast,
 } from "@heroui/react";
@@ -28,6 +27,7 @@ import {
   FileText,
   Link2,
   MapPin,
+  Maximize2,
   MoreHorizontal,
   Plus,
   Tag,
@@ -41,22 +41,28 @@ import { commonmark } from "@milkdown/preset-commonmark";
 import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 
 import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
-import type { ElementoInput } from "@/features/elemento/elemento.rules";
-import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
-import { formatHistoricalEra, type DataStorica, type DataTemporale } from "@/features/shared/value-objects";
+import type { ElementoInput, FonteTipo, NormalizedFonte } from "@/features/elemento/elemento.rules";
+import { normalizeElementoInput, addFonte, removeFonte } from "@/features/elemento/elemento.rules";
+import { formatHistoricalEra, type DataStorica } from "@/features/shared/value-objects";
 import { ELEMENTI } from "@/mock/data";
 import {
   closeFieldEditor,
   commitElementPatch,
+  commitFontiOverride,
   commitNormalizedElement,
+  createBidirectionalLink,
   openFieldEditor,
+  removeBidirectionalLink,
   type EditableFieldId,
 } from "./workspace-ui-store";
 import {
   CURRENT_AUTORE,
+  FONTE_TIPI_IN_SCOPE,
+  FONTE_TIPO_LABEL,
   formatElementDate,
   getAnnotazioniForElement,
   getFontiForElement,
+  getFontiGroupedByTipo,
   resolveBoardsForElement,
   resolveCollegamenti,
 } from "./display-helpers";
@@ -200,7 +206,7 @@ function getWarnings(element: Elemento): ValidationWarning[] {
     });
   }
 
-  if (element.tags.length === 0) {
+  if (element.tipo !== "annotazione" && element.tags.length === 0) {
     warnings.push({
       field: "tags",
       label: "Tag",
@@ -208,7 +214,7 @@ function getWarnings(element: Elemento): ValidationWarning[] {
     });
   }
 
-  if (element.link.length === 0) {
+  if (element.tipo !== "annotazione" && element.link.length === 0) {
     warnings.push({
       field: "collegamenti-generici",
       label: "Collegamenti",
@@ -220,44 +226,41 @@ function getWarnings(element: Elemento): ValidationWarning[] {
 }
 
 function buildElementoInput(next: Elemento): ElementoInput {
-  const input: ElementoInput = {
+  const hasDate =
+    next.tipo === "evento" ||
+    next.tipo === "periodo" ||
+    next.tipo === "profezia" ||
+    next.tipo === "regno";
+
+  let typeSpecific: Partial<ElementoInput> = {};
+  switch (next.tipo) {
+    case "personaggio":
+      typeSpecific = { nascita: next.nascita, morte: next.morte, tribu: next.tribu, ruoli: next.ruoli };
+      break;
+    case "guerra":
+      typeSpecific = { fazioni: next.fazioni, esito: next.esito };
+      break;
+    case "profezia":
+      typeSpecific = { statoProfezia: next.statoProfezia };
+      break;
+    case "regno":
+      typeSpecific = { dettagliRegno: next.dettagliRegno };
+      break;
+    case "luogo":
+      typeSpecific = { regione: next.regione };
+      break;
+    default:
+      break;
+  }
+
+  return {
     titolo: next.titolo,
     descrizione: next.descrizione,
     tags: next.tags,
     tipo: next.tipo,
+    ...(hasDate ? { date: next.date } : {}),
+    ...typeSpecific,
   };
-
-  if (next.tipo === "evento" || next.tipo === "periodo" || next.tipo === "profezia" || next.tipo === "regno") {
-    input.date = next.date;
-  }
-
-  switch (next.tipo) {
-    case "personaggio":
-      input.nascita = next.nascita;
-      input.morte = next.morte;
-      input.tribu = next.tribu;
-      input.ruoli = next.ruoli;
-      break;
-    case "guerra":
-      input.fazioni = next.fazioni;
-      input.esito = next.esito;
-      break;
-    case "profezia":
-      input.statoProfezia = next.statoProfezia;
-      break;
-    case "regno":
-      input.dettagliRegno = next.dettagliRegno;
-      break;
-    case "luogo":
-      input.regione = next.regione;
-      break;
-    case "evento":
-    case "periodo":
-    case "annotazione":
-      break;
-  }
-
-  return input;
 }
 
 function buildTypeResetPatch(nextTipo: ElementoTipo): Partial<Elemento> {
@@ -326,11 +329,13 @@ export function ElementoEditor({
   editingFieldId,
   isFullscreen = false,
   onDelete,
+  onExpand,
 }: {
   element: Elemento;
   editingFieldId: EditableFieldId | null;
   isFullscreen?: boolean;
   onDelete?: () => void;
+  onExpand?: () => void;
 }) {
   const [surfaceError, setSurfaceError] = useState<string | null>(null);
   const [tagDraft, setTagDraft] = useState("");
@@ -341,45 +346,75 @@ export function ElementoEditor({
   const [genericType, setGenericType] = useState<TipoLink>("correlato");
   const [familyTargetId, setFamilyTargetId] = useState("");
   const [genericTargetId, setGenericTargetId] = useState("");
+  const [fonteTipoDraft, setFonteTipoDraft] = useState<FonteTipo>("scrittura");
+  const [fonteValoreDraft, setFonteValoreDraft] = useState("");
 
   const warnings = useMemo(() => getWarnings(element), [element]);
   const boards = useMemo(() => resolveBoardsForElement(element), [element]);
   const fonti = useMemo(() => getFontiForElement(element), [element]);
+  const fontiGrouped = useMemo(() => getFontiGroupedByTipo(element), [element]);
   const annotazioni = useMemo(
     () => getAnnotazioniForElement(element.id as string, CURRENT_AUTORE),
     [element],
   );
   const links = useMemo(() => resolveCollegamenti(element), [element]);
 
+  const alreadyLinkedFamilyIds = useMemo(
+    () => new Set(element.link.filter((l) => l.tipo === "parentela").map((l) => l.targetId)),
+    [element.link],
+  );
+  const alreadyLinkedGenericIds = useMemo(
+    () => new Set(element.link.map((l) => l.targetId)),
+    [element.link],
+  );
+
   const familyCandidates = useMemo(
     () =>
       ELEMENTI.filter(
         (candidate) =>
           candidate.id !== element.id &&
+          !alreadyLinkedFamilyIds.has(candidate.id as string) &&
           candidate.tipo === "personaggio" &&
           candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
       ),
-    [element.id, familySearch],
+    [element.id, alreadyLinkedFamilyIds, familySearch],
   );
   const genericCandidates = useMemo(
     () =>
       ELEMENTI.filter(
         (candidate) =>
           candidate.id !== element.id &&
+          !alreadyLinkedGenericIds.has(candidate.id as string) &&
           candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
       ),
-    [element.id, genericSearch],
+    [element.id, alreadyLinkedGenericIds, genericSearch],
   );
 
   useEffect(() => {
     setSurfaceError(null);
   }, [element.id, editingFieldId]);
 
+  useEffect(() => {
+    if (editingFieldId === "collegamenti-famiglia") {
+      setFamilySearch("");
+      setFamilyTargetId("");
+    }
+  }, [editingFieldId]);
+
+  useEffect(() => {
+    if (editingFieldId === "collegamenti-generici") {
+      setGenericSearch("");
+      setGenericTargetId("");
+    }
+  }, [editingFieldId]);
+
   function commitPatch(
     patch: Partial<Elemento>,
-    successMessage: string,
+    label: string,
     options?: { keepEditorOpen?: boolean },
   ) {
+    // Snapshot prev state before any mutation for per-field rollback
+    const prevElement = { ...element };
     const next = { ...element, ...patch };
     const result = normalizeElementoInput(buildElementoInput(next));
 
@@ -389,11 +424,31 @@ export function ElementoEditor({
         if ("link" in patch) {
           commitElementPatch(element.id as string, { link: patch.link });
         }
-        toast(successMessage, { variant: "default" });
         setSurfaceError(null);
         if (!options?.keepEditorOpen) {
           closeFieldEditor();
         }
+        // Blur-to-save + toast undo: every field mutation gets a rollback action
+        toast(label, {
+          timeout: 5_000,
+          variant: "default",
+          actionProps: {
+            children: "Annulla",
+            onPress: () => {
+              normalizeElementoInput(buildElementoInput(prevElement)).match(
+                (prevNormalized) => {
+                  commitNormalizedElement(prevElement.id as string, prevNormalized);
+                  if ("link" in patch) {
+                    commitElementPatch(prevElement.id as string, { link: prevElement.link });
+                  }
+                },
+                () => {
+                  // prevElement was already valid — this branch is a safeguard only
+                },
+              );
+            },
+          },
+        });
       },
       (error) => {
         setSurfaceError(error.type.replaceAll("_", " "));
@@ -423,8 +478,8 @@ export function ElementoEditor({
     commitPatch({ descrizione: nextDescrizione }, "Descrizione aggiornata");
   }
 
-  function commitScalar(field: keyof Elemento, value: string) {
-    commitPatch({ [field]: value || undefined } as Partial<Elemento>, "Campo aggiornato");
+  function commitScalar(field: keyof Elemento, value: string, label = "Campo aggiornato") {
+    commitPatch({ [field]: value || undefined } as Partial<Elemento>, label);
   }
 
   function addTag() {
@@ -470,21 +525,21 @@ export function ElementoEditor({
       setSurfaceError("Collegamento famiglia gia presente");
       return;
     }
-    commitPatch(
-      {
-        link: [
-          ...element.link,
-          {
-            targetId: familyTargetId,
-            tipo: "parentela",
-            ruolo: familyRole,
-          },
-        ],
-      },
-      "Collegamento familiare aggiunto",
-      { keepEditorOpen: true },
-    );
+    const capturedTargetId = familyTargetId;
+    const capturedRole = familyRole;
+    createBidirectionalLink(element.id as string, capturedTargetId, "parentela", capturedRole);
     setFamilyTargetId("");
+    setFamilySearch("");
+    setSurfaceError(null);
+    toast("Collegamento famiglia aggiunto", {
+      timeout: 5_000,
+      variant: "default",
+      actionProps: {
+        children: "Annulla",
+        onPress: () =>
+          removeBidirectionalLink(element.id as string, capturedTargetId, "parentela"),
+      },
+    });
   }
 
   function addGenericLink() {
@@ -493,46 +548,104 @@ export function ElementoEditor({
       setSurfaceError("Collegamento gia presente");
       return;
     }
-    commitPatch(
-      {
-        link: [
-          ...element.link,
-          {
-            targetId: genericTargetId,
-            tipo: genericType,
-          },
-        ],
-      },
-      "Collegamento aggiunto",
-      { keepEditorOpen: true },
-    );
+    const capturedTargetId = genericTargetId;
+    const capturedType = genericType;
+    createBidirectionalLink(element.id as string, capturedTargetId, capturedType);
     setGenericTargetId("");
-  }
-
-  function removeLink(targetTitle: string) {
-    const nextLinks = element.link.filter((link) => {
-      const target = ELEMENTI.find((candidate) => candidate.id === link.targetId);
-      return (target?.titolo ?? link.targetId) !== targetTitle;
+    setGenericSearch("");
+    setSurfaceError(null);
+    toast("Collegamento aggiunto", {
+      timeout: 5_000,
+      variant: "default",
+      actionProps: {
+        children: "Annulla",
+        onPress: () =>
+          removeBidirectionalLink(element.id as string, capturedTargetId, capturedType),
+      },
     });
-    commitPatch({ link: nextLinks }, "Collegamento rimosso", { keepEditorOpen: true });
   }
 
-  const familyLinks = links.filter((link, index) => element.link[index]?.tipo === "parentela");
-  const genericLinks = links.filter((link, index) => element.link[index]?.tipo !== "parentela");
+  function removeLink(targetId: string, tipo: string) {
+    const linkToRemove = element.link.find((l) => l.targetId === targetId && l.tipo === tipo);
+    const ruolo = linkToRemove?.ruolo;
+    removeBidirectionalLink(element.id as string, targetId, tipo as TipoLink);
+    toast("Collegamento rimosso", {
+      timeout: 5_000,
+      variant: "default",
+      actionProps: {
+        children: "Annulla",
+        onPress: () =>
+          createBidirectionalLink(element.id as string, targetId, tipo as TipoLink, ruolo),
+      },
+    });
+  }
 
-  const globalAddOptions: Array<{ field: EditableFieldId; label: string; visible: boolean }> = [
-    { field: "descrizione", label: "Descrizione", visible: !element.descrizione.trim() },
-    { field: "tags", label: "Tag", visible: element.tags.length === 0 },
-    { field: "ruoli", label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
-    { field: "collegamenti-famiglia", label: "Collegamenti famiglia", visible: familyLinks.length === 0 },
-    { field: "collegamenti-generici", label: "Collegamenti", visible: genericLinks.length === 0 },
+  function commitFonteAdd() {
+    const valore = fonteValoreDraft.trim();
+    if (!valore) return;
+    const elementId = element.id as string;
+    const prevFonti = getFontiForElement(element);
+    const result = addFonte(prevFonti, { tipo: fonteTipoDraft, valore });
+    result.match(
+      (nextFonti) => {
+        commitFontiOverride(elementId, nextFonti);
+        setSurfaceError(null);
+        setFonteValoreDraft("");
+        toast("Fonte aggiunta", {
+          timeout: 5_000,
+          variant: "default",
+          actionProps: {
+            children: "Annulla",
+            onPress: () => commitFontiOverride(elementId, prevFonti),
+          },
+        });
+      },
+      (error) => {
+        setSurfaceError(
+          error.type === "fonte_duplicata" ? "Fonte gia presente" : "Valore fonte non valido",
+        );
+      },
+    );
+  }
+
+  function commitFonteRemove(tipo: FonteTipo, valore: string) {
+    const elementId = element.id as string;
+    const prevFonti = getFontiForElement(element);
+    const result = removeFonte(prevFonti, tipo, valore);
+    result.match(
+      (nextFonti) => {
+        commitFontiOverride(elementId, nextFonti);
+        toast("Fonte rimossa", {
+          timeout: 5_000,
+          variant: "default",
+          actionProps: {
+            children: "Annulla",
+            onPress: () => commitFontiOverride(elementId, prevFonti),
+          },
+        });
+      },
+      () => {
+        setSurfaceError("Fonte non trovata");
+      },
+    );
+  }
+
+  const familyLinks = links.filter((link) => link.tipo === "parentela");
+  const genericLinks = links.filter((link) => link.tipo !== "parentela");
+
+  const globalAddOptions = [
+    { field: "descrizione" as EditableFieldId, label: "Descrizione", visible: !element.descrizione.trim() },
+    { field: "tags" as EditableFieldId, label: "Tag", visible: element.tags.length === 0 },
+    { field: "ruoli" as EditableFieldId, label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
+    { field: "collegamenti-famiglia" as EditableFieldId, label: "Familiari", visible: element.tipo === "personaggio" && familyLinks.length === 0 },
+    { field: "collegamenti-generici" as EditableFieldId, label: "Collegamenti", visible: genericLinks.length === 0 },
   ].filter((option) => option.visible);
 
   return (
-    <div className={`flex flex-col gap-6 ${isFullscreen ? "px-0" : ""}`}>
+    <div className={`flex flex-col gap-4 ${isFullscreen ? "px-0" : ""}`}>
       <SurfaceMessage message={surfaceError} />
 
-      <header className="border-b border-primary/8 pb-5">
+      <header className="border-b border-primary/8 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <InlineTitle
             value={element.titolo}
@@ -548,11 +661,22 @@ export function ElementoEditor({
               onOpenChange={(open) => (open ? openFieldEditor("review") : closeFieldEditor())}
               onJump={(field) => openFieldEditor(field)}
             />
+            {!isFullscreen && onExpand && (
+              <Button
+                variant="ghost"
+                isIconOnly
+                className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+                onPress={onExpand}
+                aria-label="Apri in fullscreen"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            )}
             <HeaderActionsMenu onDelete={onDelete} />
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <TipoChip
             tipo={element.tipo}
             open={editingFieldId === "tipo"}
@@ -573,7 +697,7 @@ export function ElementoEditor({
                 value={element.tribu ?? "Aggiungi tribu"}
                 open={editingFieldId === "tribu"}
                 onOpenChange={(open) => (open ? openFieldEditor("tribu") : closeFieldEditor())}
-                onCommit={(value) => commitScalar("tribu", value)}
+                onCommit={(value) => commitScalar("tribu", value, "Tribu aggiornata")}
               />
             </>
           )}
@@ -584,7 +708,7 @@ export function ElementoEditor({
               value={element.regione ?? "Aggiungi regione"}
               open={editingFieldId === "origine"}
               onOpenChange={(open) => (open ? openFieldEditor("origine") : closeFieldEditor())}
-              onCommit={(value) => commitScalar("regione", value)}
+              onCommit={(value) => commitScalar("regione", value, "Regione aggiornata")}
             />
           )}
           {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
@@ -609,7 +733,6 @@ export function ElementoEditor({
           icon={<Users className="h-3.5 w-3.5" />}
           title="Ruoli"
           items={element.ruoli ?? []}
-          addFieldId="ruoli"
           addLabel="Aggiungi ruolo"
           draftValue={ruoloDraft}
           onDraftChange={setRuoloDraft}
@@ -625,7 +748,6 @@ export function ElementoEditor({
         icon={<Tag className="h-3.5 w-3.5" />}
         title="Tag"
         items={element.tags}
-        addFieldId="tags"
         addLabel="Aggiungi tag"
         draftValue={tagDraft}
         onDraftChange={setTagDraft}
@@ -636,46 +758,51 @@ export function ElementoEditor({
         onRemove={removeTag}
       />
 
-      <LinkSection
-        title="Collegamenti famiglia"
-        links={familyLinks}
-        fieldId="collegamenti-famiglia"
-        open={editingFieldId === "collegamenti-famiglia"}
-        onOpenChange={(open) => (open ? openFieldEditor("collegamenti-famiglia") : closeFieldEditor())}
-        onRemove={removeLink}
-      >
-        <TextField value={familySearch} onChange={setFamilySearch}>
-          <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
-          <Input className="min-h-[40px]" />
-        </TextField>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {familyCandidates.slice(0, 8).map((candidate) => (
-            <Button
-              key={candidate.id}
-              variant={familyTargetId === candidate.id ? "primary" : "outline"}
-              className="justify-start"
-              onPress={() => setFamilyTargetId(candidate.id as string)}
-            >
-              {candidate.titolo}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {PARENTELA_ROLES.map((role) => (
-            <Button
-              key={role}
-              variant={familyRole === role ? "primary" : "outline"}
-              size="sm"
-              onPress={() => setFamilyRole(role)}
-            >
-              {role}
-            </Button>
-          ))}
-        </div>
-        <Button variant="primary" onPress={addFamilyLink} isDisabled={!familyTargetId}>
-          Aggiungi collegamento
-        </Button>
-      </LinkSection>
+      {element.tipo === "personaggio" && (
+        <LinkSection
+          title="Familiari"
+          links={familyLinks}
+          fieldId="collegamenti-famiglia"
+          open={editingFieldId === "collegamenti-famiglia"}
+          onOpenChange={(open) => (open ? openFieldEditor("collegamenti-famiglia") : closeFieldEditor())}
+          onRemove={(targetId, tipo) => removeLink(targetId, tipo)}
+        >
+          <TextField value={familySearch} onChange={setFamilySearch}>
+            <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
+            <Input className="min-h-[40px]" />
+          </TextField>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {familyCandidates.length === 0 && (
+              <p className="col-span-2 text-sm text-ink-dim">Nessun risultato.</p>
+            )}
+            {familyCandidates.slice(0, 8).map((candidate) => (
+              <Button
+                key={candidate.id}
+                variant={familyTargetId === candidate.id ? "primary" : "outline"}
+                className="justify-start"
+                onPress={() => setFamilyTargetId(candidate.id as string)}
+              >
+                {candidate.titolo}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PARENTELA_ROLES.map((role) => (
+              <Button
+                key={role}
+                variant={familyRole === role ? "primary" : "outline"}
+                size="sm"
+                onPress={() => setFamilyRole(role)}
+              >
+                {role}
+              </Button>
+            ))}
+          </div>
+          <Button variant="primary" onPress={addFamilyLink} isDisabled={!familyTargetId}>
+            Aggiungi collegamento
+          </Button>
+        </LinkSection>
+      )}
 
       <LinkSection
         title="Collegamenti"
@@ -683,13 +810,16 @@ export function ElementoEditor({
         fieldId="collegamenti-generici"
         open={editingFieldId === "collegamenti-generici"}
         onOpenChange={(open) => (open ? openFieldEditor("collegamenti-generici") : closeFieldEditor())}
-        onRemove={removeLink}
+        onRemove={(targetId, tipo) => removeLink(targetId, tipo)}
       >
         <TextField value={genericSearch} onChange={setGenericSearch}>
           <Label className="text-xs text-ink-lo">Cerca elemento</Label>
           <Input className="min-h-[40px]" />
         </TextField>
         <div className="grid gap-2 sm:grid-cols-2">
+          {genericCandidates.length === 0 && (
+            <p className="col-span-2 text-sm text-ink-dim">Nessun risultato.</p>
+          )}
           {genericCandidates.slice(0, 8).map((candidate) => (
             <Button
               key={candidate.id}
@@ -718,20 +848,12 @@ export function ElementoEditor({
         </Button>
       </LinkSection>
 
-      <section className="border-t border-primary/8 pt-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">
-              + Aggiungi campo
-            </p>
-            <p className="max-w-xl text-sm leading-relaxed text-ink-md">
-              Campi secondari e vuoti restano nel flusso del body. Fonti e cataloghi completi restano rimandati a S03.
-            </p>
-          </div>
+      {globalAddOptions.length > 0 && (
+        <div className="border-t border-primary/8 pt-3 flex justify-end">
           <Dropdown>
             <Dropdown.Trigger>
-              <Button variant="primary" className="min-h-[42px] gap-2 rounded-full px-4">
-                <Plus className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="min-h-[36px] gap-1.5 rounded-full px-3 text-primary">
+                <Plus className="h-3.5 w-3.5" />
                 Aggiungi campo
               </Button>
             </Dropdown.Trigger>
@@ -739,71 +861,66 @@ export function ElementoEditor({
               <Dropdown.Menu
                 onAction={(key) => openFieldEditor(String(key) as EditableFieldId)}
               >
-                {globalAddOptions.length === 0 && (
-                  <Dropdown.Item id="none" textValue="Nessun campo nascosto" isDisabled>
-                    <Label>Nessun campo nascosto disponibile</Label>
-                  </Dropdown.Item>
-                )}
                 {globalAddOptions.map((option) => (
                   <Dropdown.Item key={option.field} id={option.field} textValue={option.label}>
                     <Label>{option.label}</Label>
                   </Dropdown.Item>
                 ))}
-                <Dropdown.Item id="fonti-deferred" textValue="Fonti completo" isDisabled>
-                  <Label>Fonti completo rimandato a S03</Label>
-                </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown.Popover>
           </Dropdown>
         </div>
-      </section>
+      )}
 
       <ReadOnlySection
         title="Annotazioni"
         icon={<FileText className="h-3.5 w-3.5" />}
-        emptyLabel="Nessuna annotazione collegata"
       >
-        {annotazioni.mie.map((annotation) => (
-          <div key={annotation.id as string} className="rounded-xl border border-primary/8 bg-panel px-3 py-2">
-            <p className="text-sm font-medium text-ink-hi">{annotation.titolo}</p>
-            {annotation.descrizione && (
-              <p className="mt-1 text-sm text-ink-md">{annotation.descrizione}</p>
+        {(annotazioni.mie.length > 0 || annotazioni.altreCount > 0) && (
+          <>
+            {annotazioni.mie.map((annotation) => (
+              <div key={annotation.id as string} className="rounded-xl border border-primary/8 bg-panel px-3 py-2">
+                <p className="text-sm font-medium text-ink-hi">{annotation.titolo}</p>
+                {annotation.descrizione && (
+                  <p className="mt-1 text-sm text-ink-md">{annotation.descrizione}</p>
+                )}
+              </div>
+            ))}
+            {annotazioni.altreCount > 0 && (
+              <p className="text-sm text-ink-dim">{annotazioni.altreCount} annotazioni altrui non mostrate qui.</p>
             )}
-          </div>
-        ))}
-        {annotazioni.altreCount > 0 && (
-          <p className="text-sm text-ink-dim">{annotazioni.altreCount} annotazioni altrui non mostrate qui.</p>
+          </>
         )}
       </ReadOnlySection>
 
       <ReadOnlySection
         title="Board"
         icon={<Users className="h-3.5 w-3.5" />}
-        emptyLabel="Nessuna board dinamica o fissa"
       >
-        <div className="flex flex-wrap gap-2">
-          {boards.map((board) => (
-            <Chip key={board} className="border border-primary/10 bg-primary/5 px-3 text-sm text-primary">
-              {board}
-            </Chip>
-          ))}
-        </div>
+        {boards.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {boards.map((board) => (
+              <Chip key={board} className="border border-primary/10 bg-primary/5 px-3 text-sm text-primary">
+                {board}
+              </Chip>
+            ))}
+          </div>
+        )}
       </ReadOnlySection>
 
-      <ReadOnlySection
-        title="Fonti"
-        icon={<Link2 className="h-3.5 w-3.5" />}
-        emptyLabel="Nessuna fonte visibile in S02"
-      >
-        <div className="flex flex-wrap gap-2">
-          {fonti.map((fonte) => (
-            <Chip key={fonte} className="border border-edge bg-panel px-3 text-sm text-ink-md">
-              {fonte}
-            </Chip>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-ink-ghost">Editing fonti completo rimandato a S03.</p>
-      </ReadOnlySection>
+      <FontiSection
+        fontiGrouped={fontiGrouped}
+        totalCount={fonti.length}
+        isAddOpen={editingFieldId === "fonti"}
+        onOpenAdd={() => openFieldEditor("fonti")}
+        onCloseAdd={closeFieldEditor}
+        fonteTipo={fonteTipoDraft}
+        onFonteTipoChange={setFonteTipoDraft}
+        fonteValore={fonteValoreDraft}
+        onFonteValoreChange={setFonteValoreDraft}
+        onAdd={commitFonteAdd}
+        onRemove={commitFonteRemove}
+      />
     </div>
   );
 }
@@ -836,12 +953,6 @@ function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
             <span className="inline-flex items-center gap-2">
               <Copy className="h-4 w-4" />
               <Label>Duplica</Label>
-            </span>
-          </Dropdown.Item>
-          <Dropdown.Item id="link" textValue="Link" isDisabled>
-            <span className="inline-flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              <Label>Link avanzati in S03</Label>
             </span>
           </Dropdown.Item>
           <Dropdown.Item id="delete" textValue="Elimina" variant="danger">
@@ -927,7 +1038,15 @@ function ReviewDrawer({
   onJump: (field: EditableFieldId) => void;
 }) {
   return (
-    <Drawer>
+    <>
+      <Button
+        variant={warnings.length > 0 ? "outline" : "ghost"}
+        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
+        onPress={() => onOpenChange(true)}
+      >
+        <AlertTriangle className="h-4 w-4" />
+        {warnings.length > 0 ? `${warnings.length} da rivedere` : "Review"}
+      </Button>
       <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} className="bg-black/30">
         <Drawer.Content placement="right">
           <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
@@ -962,15 +1081,7 @@ function ReviewDrawer({
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>
-      <Button
-        variant={warnings.length > 0 ? "outline" : "ghost"}
-        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
-        onPress={() => onOpenChange(true)}
-      >
-        <AlertTriangle className="h-4 w-4" />
-        {warnings.length > 0 ? `${warnings.length} da rivedere` : "Review"}
-      </Button>
-    </Drawer>
+    </>
   );
 }
 
@@ -996,9 +1107,8 @@ function TipoChip({
           onPress={() => onOpenChange(!open)}
         />
       </Popover.Trigger>
-      <Popover.Content placement="bottom start" className="w-[260px]">
-        <Popover.Dialog className="space-y-2 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-dim">Tipo elemento</p>
+      <Popover.Content placement="bottom" className="w-[220px]">
+        <Popover.Dialog className="space-y-1 p-2">
           {TIPO_OPTIONS.map((option) => (
             <Button
               key={option}
@@ -1049,20 +1159,14 @@ function VitaChip({
   }
 
   return (
-    <Drawer>
-      <Button
-        variant="ghost"
-        className="p-0"
+    <>
+      <ChipButton
+        icon={<Calendar className="h-3.5 w-3.5" />}
+        label="Vita"
+        value={formatVita(element)}
+        active={open}
         onPress={() => onOpenChange(true)}
-      >
-        <ChipButton
-          icon={<Calendar className="h-3.5 w-3.5" />}
-          label="Vita"
-          value={formatVita(element)}
-          active={open}
-          onPress={() => onOpenChange(true)}
-        />
-      </Button>
+      />
       <Drawer.Backdrop isOpen={open} onOpenChange={onOpenChange} className="bg-black/30">
         <Drawer.Content placement="right">
           <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
@@ -1111,7 +1215,7 @@ function VitaChip({
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>
-    </Drawer>
+    </>
   );
 }
 
@@ -1130,14 +1234,22 @@ function ScalarChip({
   onOpenChange: (open: boolean) => void;
   onCommit: (value: string) => void;
 }) {
-  const [draft, setDraft] = useState(value === `Aggiungi ${label.toLowerCase()}` ? "" : value);
+  const [draft, setDraft] = useState(value.startsWith("Aggiungi ") ? "" : value);
+  const skipBlur = useRef(false);
 
   useEffect(() => {
     setDraft(value.startsWith("Aggiungi ") ? "" : value);
+    skipBlur.current = false;
   }, [value, open]);
 
   function submit() {
-    onCommit(draft.trim());
+    const trimmed = draft.trim();
+    const original = value.startsWith("Aggiungi ") ? "" : value;
+    if (trimmed === original) {
+      onOpenChange(false);
+      return;
+    }
+    onCommit(trimmed);
   }
 
   return (
@@ -1146,29 +1258,28 @@ function ScalarChip({
         <ChipButton icon={icon} label={label} value={value} active={open} onPress={() => onOpenChange(!open)} />
       </Popover.Trigger>
       <Popover.Content placement="bottom start" className="w-[280px]">
-        <Popover.Dialog className="space-y-3 p-3">
+        <Popover.Dialog className="p-3">
           <TextField value={draft} onChange={setDraft}>
             <Label className="text-xs text-ink-lo">{label}</Label>
             <Input
               className="min-h-[40px]"
+              autoFocus
+              onBlur={() => {
+                if (!skipBlur.current) submit();
+                skipBlur.current = false;
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
+                  event.preventDefault();
                   submit();
                 }
                 if (event.key === "Escape") {
+                  skipBlur.current = true;
                   onOpenChange(false);
                 }
               }}
             />
           </TextField>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onPress={() => onOpenChange(false)}>
-              Annulla
-            </Button>
-            <Button variant="primary" size="sm" onPress={submit}>
-              Salva
-            </Button>
-          </div>
         </Popover.Dialog>
       </Popover.Content>
     </Popover>
@@ -1265,7 +1376,6 @@ function ArraySection({
   icon: ReactNode;
   title: string;
   items: readonly string[];
-  addFieldId: EditableFieldId;
   addLabel: string;
   draftValue: string;
   onDraftChange: (value: string) => void;
@@ -1275,57 +1385,61 @@ function ArraySection({
   onAdd: () => void;
   onRemove: (value: string) => void;
 }) {
+  if (items.length === 0 && !isAddOpen) return null;
   return (
-    <section className="border-t border-primary/8 pt-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-2">
           <span className="text-ink-dim">{icon}</span>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
         </div>
-        <Popover isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
-          <Popover.Trigger>
-            <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
-              <Plus className="h-3.5 w-3.5" />
-              {addLabel}
+        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
+          <Plus className="h-3.5 w-3.5" />
+          {addLabel}
+        </Button>
+        <FieldDrawer title={addLabel} isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
+          <TextField value={draftValue} onChange={onDraftChange}>
+            <Label className="text-xs text-ink-lo">{title}</Label>
+            <Input
+              className="min-h-[40px]"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  onAdd();
+                }
+                if (event.key === "Escape") {
+                  onCloseAdd();
+                }
+              }}
+            />
+          </TextField>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onPress={onCloseAdd}>
+              Chiudi
             </Button>
-          </Popover.Trigger>
-          <Popover.Content placement="bottom end" className="w-[280px]">
-            <Popover.Dialog className="space-y-3 p-3">
-              <TextField value={draftValue} onChange={onDraftChange}>
-                <Label className="text-xs text-ink-lo">{title}</Label>
-                <Input
-                  className="min-h-[40px]"
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      onAdd();
-                    }
-                    if (event.key === "Escape") {
-                      onCloseAdd();
-                    }
-                  }}
-                />
-              </TextField>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onPress={onCloseAdd}>
-                  Chiudi
-                </Button>
-                <Button variant="primary" size="sm" onPress={onAdd}>
-                  Aggiungi
-                </Button>
-              </div>
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
+            <Button variant="primary" size="sm" onPress={onAdd}>
+              Aggiungi
+            </Button>
+          </div>
+        </FieldDrawer>
       </div>
       <div className="flex flex-wrap gap-2">
-        {items.length === 0 && <p className="text-sm text-ink-dim">Nessun valore impostato.</p>}
         {items.map((item) => (
           <Chip
             key={item}
             className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
-            onClose={() => onRemove(item)}
           >
-            {item}
+            <span className="flex items-center gap-1.5">
+              {item}
+              <button
+                type="button"
+                onClick={() => onRemove(item)}
+                className="-m-1 flex h-6 w-6 items-center justify-center rounded-full p-1 hover:bg-black/10"
+                aria-label={`Rimuovi ${item}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
           </Chip>
         ))}
       </div>
@@ -1343,39 +1457,44 @@ function LinkSection({
   children,
 }: {
   title: string;
-  links: ReadonlyArray<{ titolo: string; tipo: string }>;
+  links: ReadonlyArray<{ titolo: string; tipo: string; targetId: string; ruolo?: string }>;
   fieldId: EditableFieldId;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRemove: (title: string) => void;
+  onRemove: (targetId: string, tipo: string) => void;
   children: ReactNode;
 }) {
+  if (links.length === 0 && !open) return null;
   return (
-    <section className="border-t border-primary/8 pt-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
-        <Popover isOpen={open} onOpenChange={onOpenChange}>
-          <Popover.Trigger>
-            <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Aggiungi
-            </Button>
-          </Popover.Trigger>
-          <Popover.Content placement="bottom end" className="w-[360px]">
-            <Popover.Dialog className="space-y-3 p-3">{children}</Popover.Dialog>
-          </Popover.Content>
-        </Popover>
+        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
+          <Plus className="h-3.5 w-3.5" />
+          Aggiungi
+        </Button>
+        <FieldDrawer title={`Aggiungi: ${title}`} isOpen={open} onOpenChange={onOpenChange}>
+          {children}
+        </FieldDrawer>
       </div>
       <div className="flex flex-wrap gap-2">
-        {links.length === 0 && <p className="text-sm text-ink-dim">Nessun collegamento in questo gruppo.</p>}
         {links.map((link) => (
           <Chip
-            key={`${fieldId}-${link.titolo}-${link.tipo}`}
+            key={`${fieldId}-${link.targetId}-${link.tipo}`}
             className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
-            onClose={() => onRemove(link.titolo)}
           >
-            {link.titolo}
-            <span className="ml-2 text-xs text-ink-dim">{link.tipo}</span>
+            <span className="flex items-center gap-1.5">
+              {link.titolo}
+              <span className="text-xs text-ink-dim">{link.ruolo ?? link.tipo}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(link.targetId, link.tipo)}
+                className="-m-1 flex h-6 w-6 items-center justify-center rounded-full p-1 hover:bg-black/10"
+                aria-label={`Rimuovi ${link.titolo}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
           </Chip>
         ))}
       </div>
@@ -1383,26 +1502,182 @@ function LinkSection({
   );
 }
 
+function FieldDrawer({
+  title,
+  isOpen,
+  onOpenChange,
+  children,
+}: {
+  title: string;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} className="bg-black/30">
+      <Drawer.Content placement="right">
+        <Drawer.Dialog className="w-full max-w-[420px] bg-panel">
+          <Drawer.Header className="border-b border-primary/8 px-5 py-4">
+            <Drawer.Heading className="text-lg font-semibold text-ink-hi">{title}</Drawer.Heading>
+            <Drawer.CloseTrigger />
+          </Drawer.Header>
+          <Drawer.Body className="space-y-4 px-5 py-4">{children}</Drawer.Body>
+        </Drawer.Dialog>
+      </Drawer.Content>
+    </Drawer.Backdrop>
+  );
+}
+
+function FontiSection({
+  fontiGrouped,
+  totalCount,
+  isAddOpen,
+  onOpenAdd,
+  onCloseAdd,
+  fonteTipo,
+  onFonteTipoChange,
+  fonteValore,
+  onFonteValoreChange,
+  onAdd,
+  onRemove,
+}: {
+  fontiGrouped: Map<FonteTipo, readonly NormalizedFonte[]>;
+  totalCount: number;
+  isAddOpen: boolean;
+  onOpenAdd: () => void;
+  onCloseAdd: () => void;
+  fonteTipo: FonteTipo;
+  onFonteTipoChange: (tipo: FonteTipo) => void;
+  fonteValore: string;
+  onFonteValoreChange: (valore: string) => void;
+  onAdd: () => void;
+  onRemove: (tipo: FonteTipo, valore: string) => void;
+}) {
+  if (totalCount === 0 && !isAddOpen) return null;
+
+  return (
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-2">
+          <span className="text-ink-dim"><Link2 className="h-3.5 w-3.5" /></span>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">Fonti</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-[36px] rounded-full px-3 text-primary"
+          onPress={onOpenAdd}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Aggiungi fonte
+        </Button>
+        <FieldDrawer title="Aggiungi fonte" isOpen={isAddOpen} onOpenChange={(open) => (open ? onOpenAdd() : onCloseAdd())}>
+          <div className="space-y-1">
+            <p className="text-xs text-ink-lo">Tipo</p>
+            <div className="flex flex-wrap gap-2">
+              {FONTE_TIPI_IN_SCOPE.map((tipo) => (
+                <Button
+                  key={tipo}
+                  variant={fonteTipo === tipo ? "primary" : "outline"}
+                  size="sm"
+                  onPress={() => onFonteTipoChange(tipo)}
+                >
+                  {FONTE_TIPO_LABEL[tipo]}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <TextField value={fonteValore} onChange={onFonteValoreChange}>
+            <Label className="text-xs text-ink-lo">
+              {fonteTipo === "scrittura" ? "Riferimento (es. Genesi 12:1-3)" : "Valore"}
+            </Label>
+            <Input
+              className="min-h-[40px]"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === "Enter") onAdd();
+                if (event.key === "Escape") onCloseAdd();
+              }}
+            />
+          </TextField>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onPress={onCloseAdd}>
+              Chiudi
+            </Button>
+            <Button variant="primary" size="sm" onPress={onAdd} isDisabled={!fonteValore.trim()}>
+              Aggiungi
+            </Button>
+          </div>
+        </FieldDrawer>
+      </div>
+
+      {/* Grouped by FonteTipo */}
+      {FONTE_TIPI_IN_SCOPE.map((tipo) => {
+        const group = fontiGrouped.get(tipo);
+        if (!group || group.length === 0) return null;
+        return (
+          <div key={tipo} className="mb-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-ghost">
+              {FONTE_TIPO_LABEL[tipo]}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {group.map((fonte) => (
+                <Chip
+                  key={`${tipo}-${fonte.valore}`}
+                  className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+                >
+                  <span className="flex items-center gap-1.5">
+                    {fonte.urlCalcolata ? (
+                      <a
+                        href={fonte.urlCalcolata}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline underline-offset-2 hover:text-ink transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {fonte.valore}
+                      </a>
+                    ) : (
+                      <span>{fonte.valore}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onRemove(tipo, fonte.valore)}
+                      className="-m-1 flex h-6 w-6 items-center justify-center rounded-full p-1 hover:bg-black/10"
+                      aria-label={`Rimuovi ${fonte.valore}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                </Chip>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function ReadOnlySection({
   title,
   icon,
-  emptyLabel,
   children,
 }: {
   title: string;
   icon: ReactNode;
-  emptyLabel: string;
   children: ReactNode;
 }) {
   const isEmpty = Array.isArray(children) ? children.length === 0 : !children;
+  if (isEmpty) return null;
 
   return (
-    <section className="border-t border-primary/8 pt-4">
-      <div className="mb-3 inline-flex items-center gap-2">
+    <section className="border-t border-primary/8 pt-3">
+      <div className="mb-2 inline-flex items-center gap-2">
         <span className="text-ink-dim">{icon}</span>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
       </div>
-      {isEmpty ? <p className="text-sm text-ink-dim">{emptyLabel}</p> : children}
+      {children}
     </section>
   );
 }

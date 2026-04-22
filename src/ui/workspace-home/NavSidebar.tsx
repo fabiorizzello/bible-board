@@ -31,6 +31,7 @@ import { useValue } from "@legendapp/state/react";
 import { workspaceUi$, navigateToView } from "./workspace-ui-store";
 import type { ViewId } from "./workspace-ui-store";
 import { getBoardDisplayItems } from "./display-helpers";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export function NavSidebar() {
   const currentView = useValue(workspaceUi$.currentView);
@@ -194,6 +195,7 @@ export function NavSidebar() {
             <Settings className="h-4 w-4" />
             Impostazioni
           </Button>
+          <ThemeSwitcher />
           <Tooltip>
             <Button
               variant="ghost"

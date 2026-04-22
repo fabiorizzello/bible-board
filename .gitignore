@@ -34,8 +34,7 @@ coverage/
 .env.*
 !.env.example
 
-# ── GSD (symlink to external project state) ──
-.gsd
+# ── GSD (project state — versionato nel repo) ──
 *.code-workspace
 __pycache__/
 *.pyc
@@ -51,3 +50,7 @@ vendor/
 .archive-gsd-cc-2026-04-10/
 # heroui-agents-md
 .heroui-docs/
+
+# ── GSD baseline (auto-generated) ──
+.mcp.json
+.bg-shell/
