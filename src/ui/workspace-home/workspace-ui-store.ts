@@ -5,9 +5,11 @@
  * decomposed workspace components.
  */
 
-import type { Elemento } from "@/features/elemento/elemento.model";
+import type { Elemento, ElementoLink, TipoLink, RuoloLink } from "@/features/elemento/elemento.model";
 import type { NormalizedElementoInput, NormalizedFonte } from "@/features/elemento/elemento.rules";
+import { getInverseLink } from "@/features/elemento/elemento.rules";
 import { observable } from "@legendapp/state";
+import { ELEMENTI_MAP } from "@/mock/data";
 
 export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
 
@@ -185,4 +187,88 @@ export function resetWorkspaceUiState(): void {
     fontiOverrides: {},
     lastModified: Date.now(),
   });
+}
+
+/**
+ * Add a bidirectional link between source and target atomically.
+ * Writes the forward link on source and the computed inverse on target in one
+ * store update. Idempotent: no-op if the forward link already exists.
+ */
+export function createBidirectionalLink(
+  sourceId: string,
+  targetId: string,
+  tipo: TipoLink,
+  ruolo?: RuoloLink,
+): void {
+  const currentOverrides = workspaceUi$.elementOverrides.peek();
+
+  const sourceBase = ELEMENTI_MAP.get(sourceId);
+  const targetBase = ELEMENTI_MAP.get(targetId);
+  if (!sourceBase || !targetBase) return;
+
+  const sourceLinks: readonly ElementoLink[] =
+    currentOverrides[sourceId]?.link ?? sourceBase.link;
+  const targetLinks: readonly ElementoLink[] =
+    currentOverrides[targetId]?.link ?? targetBase.link;
+
+  if (sourceLinks.some((l) => l.targetId === targetId && l.tipo === tipo)) return;
+
+  const forwardLink: ElementoLink = { targetId, tipo, ...(ruolo ? { ruolo } : {}) };
+  const inverseLink = getInverseLink(sourceId, forwardLink);
+
+  const targetAlreadyLinked = targetLinks.some(
+    (l) => l.targetId === sourceId && l.tipo === tipo,
+  );
+
+  const nextOverrides: Record<string, ElementoSessionPatch> = {
+    ...currentOverrides,
+    [sourceId]: { ...(currentOverrides[sourceId] ?? {}), link: [...sourceLinks, forwardLink] },
+    ...(!targetAlreadyLinked
+      ? {
+          [targetId]: {
+            ...(currentOverrides[targetId] ?? {}),
+            link: [...targetLinks, inverseLink],
+          },
+        }
+      : {}),
+  };
+
+  workspaceUi$.elementOverrides.set(nextOverrides);
+  workspaceUi$.lastModified.set(Date.now());
+}
+
+/**
+ * Remove a bidirectional link atomically.
+ * Removes the forward link from source and the matching inverse from target.
+ * No-op when either link is absent.
+ */
+export function removeBidirectionalLink(
+  sourceId: string,
+  targetId: string,
+  tipo: TipoLink,
+): void {
+  const currentOverrides = workspaceUi$.elementOverrides.peek();
+
+  const sourceBase = ELEMENTI_MAP.get(sourceId);
+  const targetBase = ELEMENTI_MAP.get(targetId);
+  if (!sourceBase || !targetBase) return;
+
+  const sourceLinks: readonly ElementoLink[] =
+    currentOverrides[sourceId]?.link ?? sourceBase.link;
+  const targetLinks: readonly ElementoLink[] =
+    currentOverrides[targetId]?.link ?? targetBase.link;
+
+  const nextSourceLinks = sourceLinks.filter(
+    (l) => !(l.targetId === targetId && l.tipo === tipo),
+  );
+  const nextTargetLinks = targetLinks.filter(
+    (l) => !(l.targetId === sourceId && l.tipo === tipo),
+  );
+
+  workspaceUi$.elementOverrides.set({
+    ...currentOverrides,
+    [sourceId]: { ...(currentOverrides[sourceId] ?? {}), link: nextSourceLinks },
+    [targetId]: { ...(currentOverrides[targetId] ?? {}), link: nextTargetLinks },
+  });
+  workspaceUi$.lastModified.set(Date.now());
 }

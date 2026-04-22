@@ -50,7 +50,9 @@ import {
   commitElementPatch,
   commitFontiOverride,
   commitNormalizedElement,
+  createBidirectionalLink,
   openFieldEditor,
+  removeBidirectionalLink,
   type EditableFieldId,
 } from "./workspace-ui-store";
 import {
@@ -523,22 +525,21 @@ export function ElementoEditor({
       setSurfaceError("Collegamento famiglia gia presente");
       return;
     }
-    commitPatch(
-      {
-        link: [
-          ...element.link,
-          {
-            targetId: familyTargetId,
-            tipo: "parentela",
-            ruolo: familyRole,
-          },
-        ],
-      },
-      "Collegamento famiglia aggiunto",
-      { keepEditorOpen: true },
-    );
+    const capturedTargetId = familyTargetId;
+    const capturedRole = familyRole;
+    createBidirectionalLink(element.id as string, capturedTargetId, "parentela", capturedRole);
     setFamilyTargetId("");
     setFamilySearch("");
+    setSurfaceError(null);
+    toast("Collegamento famiglia aggiunto", {
+      timeout: 5_000,
+      variant: "default",
+      actionProps: {
+        children: "Annulla",
+        onPress: () =>
+          removeBidirectionalLink(element.id as string, capturedTargetId, "parentela"),
+      },
+    });
   }
 
   function addGenericLink() {
@@ -547,28 +548,36 @@ export function ElementoEditor({
       setSurfaceError("Collegamento gia presente");
       return;
     }
-    commitPatch(
-      {
-        link: [
-          ...element.link,
-          {
-            targetId: genericTargetId,
-            tipo: genericType,
-          },
-        ],
-      },
-      "Collegamento aggiunto",
-      { keepEditorOpen: true },
-    );
+    const capturedTargetId = genericTargetId;
+    const capturedType = genericType;
+    createBidirectionalLink(element.id as string, capturedTargetId, capturedType);
     setGenericTargetId("");
     setGenericSearch("");
+    setSurfaceError(null);
+    toast("Collegamento aggiunto", {
+      timeout: 5_000,
+      variant: "default",
+      actionProps: {
+        children: "Annulla",
+        onPress: () =>
+          removeBidirectionalLink(element.id as string, capturedTargetId, capturedType),
+      },
+    });
   }
 
   function removeLink(targetId: string, tipo: string) {
-    const nextLinks = element.link.filter(
-      (link) => !(link.targetId === targetId && link.tipo === tipo),
-    );
-    commitPatch({ link: nextLinks }, "Collegamento rimosso", { keepEditorOpen: true });
+    const linkToRemove = element.link.find((l) => l.targetId === targetId && l.tipo === tipo);
+    const ruolo = linkToRemove?.ruolo;
+    removeBidirectionalLink(element.id as string, targetId, tipo as TipoLink);
+    toast("Collegamento rimosso", {
+      timeout: 5_000,
+      variant: "default",
+      actionProps: {
+        children: "Annulla",
+        onPress: () =>
+          createBidirectionalLink(element.id as string, targetId, tipo as TipoLink, ruolo),
+      },
+    });
   }
 
   function commitFonteAdd() {
