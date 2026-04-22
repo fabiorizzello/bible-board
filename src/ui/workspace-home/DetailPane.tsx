@@ -19,9 +19,7 @@ import {
   Tooltip,
 } from "@heroui/react";
 import {
-  BookOpen,
   LayoutGrid,
-  Link2,
   Maximize2,
   MessageSquareText,
 } from "lucide-react";
@@ -35,7 +33,6 @@ import {
 } from "./workspace-ui-store";
 import {
   findElementById,
-  formatElementDate,
   resolveCollegamenti,
   resolveBoardsForElement,
   getFontiForElement,

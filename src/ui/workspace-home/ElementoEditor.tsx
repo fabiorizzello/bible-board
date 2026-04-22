@@ -15,7 +15,6 @@ import {
   Input,
   Label,
   Popover,
-  Text,
   TextField,
   toast,
 } from "@heroui/react";
@@ -43,7 +42,7 @@ import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
 import type { ElementoInput } from "@/features/elemento/elemento.rules";
 import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
-import { formatHistoricalEra, type DataStorica, type DataTemporale } from "@/features/shared/value-objects";
+import { formatHistoricalEra, type DataStorica } from "@/features/shared/value-objects";
 import { ELEMENTI } from "@/mock/data";
 import {
   closeFieldEditor,
@@ -220,44 +219,41 @@ function getWarnings(element: Elemento): ValidationWarning[] {
 }
 
 function buildElementoInput(next: Elemento): ElementoInput {
-  const input: ElementoInput = {
+  const hasDate =
+    next.tipo === "evento" ||
+    next.tipo === "periodo" ||
+    next.tipo === "profezia" ||
+    next.tipo === "regno";
+
+  let typeSpecific: Partial<ElementoInput> = {};
+  switch (next.tipo) {
+    case "personaggio":
+      typeSpecific = { nascita: next.nascita, morte: next.morte, tribu: next.tribu, ruoli: next.ruoli };
+      break;
+    case "guerra":
+      typeSpecific = { fazioni: next.fazioni, esito: next.esito };
+      break;
+    case "profezia":
+      typeSpecific = { statoProfezia: next.statoProfezia };
+      break;
+    case "regno":
+      typeSpecific = { dettagliRegno: next.dettagliRegno };
+      break;
+    case "luogo":
+      typeSpecific = { regione: next.regione };
+      break;
+    default:
+      break;
+  }
+
+  return {
     titolo: next.titolo,
     descrizione: next.descrizione,
     tags: next.tags,
     tipo: next.tipo,
+    ...(hasDate ? { date: next.date } : {}),
+    ...typeSpecific,
   };
-
-  if (next.tipo === "evento" || next.tipo === "periodo" || next.tipo === "profezia" || next.tipo === "regno") {
-    input.date = next.date;
-  }
-
-  switch (next.tipo) {
-    case "personaggio":
-      input.nascita = next.nascita;
-      input.morte = next.morte;
-      input.tribu = next.tribu;
-      input.ruoli = next.ruoli;
-      break;
-    case "guerra":
-      input.fazioni = next.fazioni;
-      input.esito = next.esito;
-      break;
-    case "profezia":
-      input.statoProfezia = next.statoProfezia;
-      break;
-    case "regno":
-      input.dettagliRegno = next.dettagliRegno;
-      break;
-    case "luogo":
-      input.regione = next.regione;
-      break;
-    case "evento":
-    case "periodo":
-    case "annotazione":
-      break;
-  }
-
-  return input;
 }
 
 function buildTypeResetPatch(nextTipo: ElementoTipo): Partial<Elemento> {
@@ -377,9 +373,11 @@ export function ElementoEditor({
 
   function commitPatch(
     patch: Partial<Elemento>,
-    successMessage: string,
+    label: string,
     options?: { keepEditorOpen?: boolean },
   ) {
+    // Snapshot prev state before any mutation for per-field rollback
+    const prevElement = { ...element };
     const next = { ...element, ...patch };
     const result = normalizeElementoInput(buildElementoInput(next));
 
@@ -389,11 +387,31 @@ export function ElementoEditor({
         if ("link" in patch) {
           commitElementPatch(element.id as string, { link: patch.link });
         }
-        toast(successMessage, { variant: "default" });
         setSurfaceError(null);
         if (!options?.keepEditorOpen) {
           closeFieldEditor();
         }
+        // Blur-to-save + toast undo: every field mutation gets a rollback action
+        toast(label, {
+          timeout: 5_000,
+          variant: "default",
+          actionProps: {
+            children: "Annulla",
+            onPress: () => {
+              normalizeElementoInput(buildElementoInput(prevElement)).match(
+                (prevNormalized) => {
+                  commitNormalizedElement(prevElement.id as string, prevNormalized);
+                  if ("link" in patch) {
+                    commitElementPatch(prevElement.id as string, { link: prevElement.link });
+                  }
+                },
+                () => {
+                  // prevElement was already valid — this branch is a safeguard only
+                },
+              );
+            },
+          },
+        });
       },
       (error) => {
         setSurfaceError(error.type.replaceAll("_", " "));
@@ -423,8 +441,8 @@ export function ElementoEditor({
     commitPatch({ descrizione: nextDescrizione }, "Descrizione aggiornata");
   }
 
-  function commitScalar(field: keyof Elemento, value: string) {
-    commitPatch({ [field]: value || undefined } as Partial<Elemento>, "Campo aggiornato");
+  function commitScalar(field: keyof Elemento, value: string, label = "Campo aggiornato") {
+    commitPatch({ [field]: value || undefined } as Partial<Elemento>, label);
   }
 
   function addTag() {
@@ -481,7 +499,7 @@ export function ElementoEditor({
           },
         ],
       },
-      "Collegamento familiare aggiunto",
+      "Collegamento famiglia aggiunto",
       { keepEditorOpen: true },
     );
     setFamilyTargetId("");
@@ -517,15 +535,15 @@ export function ElementoEditor({
     commitPatch({ link: nextLinks }, "Collegamento rimosso", { keepEditorOpen: true });
   }
 
-  const familyLinks = links.filter((link, index) => element.link[index]?.tipo === "parentela");
-  const genericLinks = links.filter((link, index) => element.link[index]?.tipo !== "parentela");
+  const familyLinks = links.filter((link) => link.tipo === "parentela");
+  const genericLinks = links.filter((link) => link.tipo !== "parentela");
 
-  const globalAddOptions: Array<{ field: EditableFieldId; label: string; visible: boolean }> = [
-    { field: "descrizione", label: "Descrizione", visible: !element.descrizione.trim() },
-    { field: "tags", label: "Tag", visible: element.tags.length === 0 },
-    { field: "ruoli", label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
-    { field: "collegamenti-famiglia", label: "Collegamenti famiglia", visible: familyLinks.length === 0 },
-    { field: "collegamenti-generici", label: "Collegamenti", visible: genericLinks.length === 0 },
+  const globalAddOptions = [
+    { field: "descrizione" as EditableFieldId, label: "Descrizione", visible: !element.descrizione.trim() },
+    { field: "tags" as EditableFieldId, label: "Tag", visible: element.tags.length === 0 },
+    { field: "ruoli" as EditableFieldId, label: "Ruoli", visible: element.tipo === "personaggio" && (element.ruoli?.length ?? 0) === 0 },
+    { field: "collegamenti-famiglia" as EditableFieldId, label: "Collegamenti famiglia", visible: familyLinks.length === 0 },
+    { field: "collegamenti-generici" as EditableFieldId, label: "Collegamenti", visible: genericLinks.length === 0 },
   ].filter((option) => option.visible);
 
   return (
@@ -573,7 +591,7 @@ export function ElementoEditor({
                 value={element.tribu ?? "Aggiungi tribu"}
                 open={editingFieldId === "tribu"}
                 onOpenChange={(open) => (open ? openFieldEditor("tribu") : closeFieldEditor())}
-                onCommit={(value) => commitScalar("tribu", value)}
+                onCommit={(value) => commitScalar("tribu", value, "Tribu aggiornata")}
               />
             </>
           )}
@@ -584,7 +602,7 @@ export function ElementoEditor({
               value={element.regione ?? "Aggiungi regione"}
               open={editingFieldId === "origine"}
               onOpenChange={(open) => (open ? openFieldEditor("origine") : closeFieldEditor())}
-              onCommit={(value) => commitScalar("regione", value)}
+              onCommit={(value) => commitScalar("regione", value, "Regione aggiornata")}
             />
           )}
           {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
@@ -1130,10 +1148,12 @@ function ScalarChip({
   onOpenChange: (open: boolean) => void;
   onCommit: (value: string) => void;
 }) {
-  const [draft, setDraft] = useState(value === `Aggiungi ${label.toLowerCase()}` ? "" : value);
+  const [draft, setDraft] = useState(value.startsWith("Aggiungi ") ? "" : value);
+  const skipBlur = useRef(false);
 
   useEffect(() => {
     setDraft(value.startsWith("Aggiungi ") ? "" : value);
+    skipBlur.current = false;
   }, [value, open]);
 
   function submit() {
@@ -1146,29 +1166,28 @@ function ScalarChip({
         <ChipButton icon={icon} label={label} value={value} active={open} onPress={() => onOpenChange(!open)} />
       </Popover.Trigger>
       <Popover.Content placement="bottom start" className="w-[280px]">
-        <Popover.Dialog className="space-y-3 p-3">
+        <Popover.Dialog className="p-3">
           <TextField value={draft} onChange={setDraft}>
             <Label className="text-xs text-ink-lo">{label}</Label>
             <Input
               className="min-h-[40px]"
+              autoFocus
+              onBlur={() => {
+                if (!skipBlur.current) submit();
+                skipBlur.current = false;
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
+                  event.preventDefault();
                   submit();
                 }
                 if (event.key === "Escape") {
+                  skipBlur.current = true;
                   onOpenChange(false);
                 }
               }}
             />
           </TextField>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onPress={() => onOpenChange(false)}>
-              Annulla
-            </Button>
-            <Button variant="primary" size="sm" onPress={submit}>
-              Salva
-            </Button>
-          </div>
         </Popover.Dialog>
       </Popover.Content>
     </Popover>
@@ -1323,9 +1342,18 @@ function ArraySection({
           <Chip
             key={item}
             className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
-            onClose={() => onRemove(item)}
           >
-            {item}
+            <span className="flex items-center gap-1.5">
+              {item}
+              <button
+                type="button"
+                onClick={() => onRemove(item)}
+                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-black/10"
+                aria-label={`Rimuovi ${item}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
           </Chip>
         ))}
       </div>
@@ -1372,10 +1400,19 @@ function LinkSection({
           <Chip
             key={`${fieldId}-${link.titolo}-${link.tipo}`}
             className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
-            onClose={() => onRemove(link.titolo)}
           >
-            {link.titolo}
-            <span className="ml-2 text-xs text-ink-dim">{link.tipo}</span>
+            <span className="flex items-center gap-1.5">
+              {link.titolo}
+              <span className="text-xs text-ink-dim">{link.tipo}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(link.titolo)}
+                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-black/10"
+                aria-label={`Rimuovi ${link.titolo}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
           </Chip>
         ))}
       </div>
