@@ -21,13 +21,16 @@ import { NavSidebar } from "./NavSidebar";
 import { ListPane } from "./ListPane";
 import { DetailPane } from "./DetailPane";
 import { FullscreenOverlay } from "./FullscreenOverlay";
-import { workspaceUi$, openFieldEditor, syncJazzState, findElementById } from "./workspace-ui-store";
+import { workspaceUi$, openFieldEditor, syncJazzState, syncJazzBoards } from "./workspace-ui-store";
+import { findElementById } from "./display-helpers";
 import type { EditableFieldId } from "./workspace-ui-store";
 import {
   useWorkspaceElementiState,
   coMapToElementoDomain,
 } from "@/features/elemento/elemento.adapter";
+import { coMapToBoard } from "@/features/board/board.adapter";
 import type { Elemento } from "@/features/elemento/elemento.model";
+import type { Board } from "@/features/board/board.model";
 
 type AddOption = { field: EditableFieldId; label: string };
 
@@ -106,10 +109,18 @@ export function WorkspacePreviewPage() {
     .map(coMapToElementoDomain)
     .filter((e): e is Elemento => e !== null);
 
+  const rawBoards = workspace?.boards
+    ? Array.from(workspace.boards as any[]).filter(Boolean)
+    : [];
+  const domainBoards = rawBoards
+    .map(coMapToBoard)
+    .filter((b): b is Board => b !== null);
+
   // Sync Jazz state into the module-level store.
   // Called during render (not in useEffect) so child components read fresh data
   // in the same render cycle without an extra flash of stale content.
   syncJazzState(account.me, rawCoMaps, domainElementi);
+  syncJazzBoards(domainBoards);
 
   return (
     <div className="flex h-screen bg-panel font-body">

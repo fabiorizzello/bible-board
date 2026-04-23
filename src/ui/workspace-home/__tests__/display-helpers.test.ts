@@ -12,11 +12,13 @@ import {
   getAnnotazioniForElement,
   CURRENT_AUTORE,
 } from "../display-helpers";
-import { ELEMENTI, ELEMENTO_IDS } from "@/mock/data";
+import { ELEMENTI, ELEMENTO_IDS, BOARDS, BOARD_IDS } from "@/mock/data";
 import {
   resetWorkspaceUiState,
   syncJazzElementiForTest,
+  syncJazzBoardsForTest,
 } from "../workspace-ui-store";
+import type { Board } from "@/features/board/board.model";
 import type { NormalizedFonte } from "../display-helpers";
 import type { Elemento } from "@/features/elemento/elemento.model";
 
@@ -35,6 +37,7 @@ const MOCK_TEST_FONTI: ReadonlyMap<string, readonly NormalizedFonte[]> = new Map
 beforeEach(() => {
   resetWorkspaceUiState();
   syncJazzElementiForTest(ELEMENTI as unknown as Elemento[], MOCK_TEST_FONTI);
+  syncJazzBoardsForTest(BOARDS as unknown as Board[]);
 });
 
 // ── Constants ──
@@ -110,14 +113,14 @@ describe("getElementsForView", () => {
   });
 
   it("returns board elements for board-patriarchi", () => {
-    const result = getElementsForView("board-patriarchi", "", "Tutti");
+    const result = getElementsForView(`board-${BOARD_IDS.patriarchi as string}`, "", "Tutti");
     expect(result.length).toBe(7); // Fixed selection: 7 elements
     expect(result.map((e) => e.titolo)).toContain("Abraamo");
     expect(result.map((e) => e.titolo)).toContain("Giosuè");
   });
 
   it("returns board elements for board-profeti via dynamic selection", () => {
-    const result = getElementsForView("board-profeti", "", "Tutti");
+    const result = getElementsForView(`board-${BOARD_IDS.profeti as string}`, "", "Tutti");
     expect(result.length).toBeGreaterThan(0);
     // Should include Profezia Isaia 53 (tag messianico + tipo profezia)
     expect(result.map((e) => e.titolo)).toContain("Profezia Isaia 53");
@@ -188,9 +191,10 @@ describe("getElementsForView", () => {
   });
 
   it("filters soft-deleted elements from board views", () => {
-    const baseline = getElementsForView("board-patriarchi", "", "Tutti");
+    const patriarchiViewId = `board-${BOARD_IDS.patriarchi as string}`;
+    const baseline = getElementsForView(patriarchiViewId, "", "Tutti");
     const result = getElementsForView(
-      "board-patriarchi",
+      patriarchiViewId,
       "",
       "Tutti",
       [ELEMENTO_IDS.abraamo as string],

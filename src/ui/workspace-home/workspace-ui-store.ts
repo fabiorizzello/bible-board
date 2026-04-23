@@ -11,6 +11,7 @@
 
 import type { Elemento, TipoLink, RuoloLink } from "@/features/elemento/elemento.model";
 import type { NormalizedElementoInput, NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
+import type { Board } from "@/features/board/board.model";
 import { observable } from "@legendapp/state";
 import {
   updateWorkspaceElemento,
@@ -19,8 +20,13 @@ import {
   softDeleteWorkspaceElemento,
   restoreSoftDeletedElemento,
 } from "@/features/elemento/elemento.adapter";
+import {
+  createBoard as createBoardAdapter,
+  renameBoard as renameBoardAdapter,
+  deleteBoard as deleteBoardAdapter,
+} from "@/features/board/board.adapter";
 
-export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
+export type ViewId = "recenti" | "tutti" | `board-${string}`;
 
 export type EditableFieldId =
   | "titolo"
@@ -48,6 +54,7 @@ export interface WorkspaceUIState {
   sidebarOpen: boolean;
   fullscreen: boolean;
   editingFieldId: EditableFieldId | null;
+  lastModified: number;
 }
 
 // ── Module-level Jazz state refs ──
@@ -56,6 +63,7 @@ export interface WorkspaceUIState {
 
 let _jazzMe: any = null;
 let _jazzElementi: readonly Elemento[] = [];
+let _jazzBoards: readonly Board[] = [];
 const _fontiBacking = new Map<string, readonly NormalizedFonte[]>();
 
 export function getJazzMe(): any {
@@ -64,6 +72,10 @@ export function getJazzMe(): any {
 
 export function getJazzElementi(): readonly Elemento[] {
   return _jazzElementi;
+}
+
+export function getJazzBoards(): readonly Board[] {
+  return _jazzBoards;
 }
 
 export function getJazzFontiForElement(elementoId: string): readonly NormalizedFonte[] {
@@ -116,6 +128,23 @@ export function syncJazzElementiForTest(
   }
 }
 
+/**
+ * Called by WorkspacePreviewPage on every Jazz-triggered render.
+ * Updates the module-level boards ref and bumps lastModified to trigger
+ * NavSidebar re-reads of getBoardDisplayItems().
+ */
+export function syncJazzBoards(boards: readonly Board[]): void {
+  _jazzBoards = boards;
+  workspaceUi$.lastModified.set(Date.now());
+}
+
+/**
+ * Test-only: seed the Jazz boards store with inline fixtures.
+ */
+export function syncJazzBoardsForTest(boards: readonly Board[]): void {
+  _jazzBoards = [...boards];
+}
+
 // ── Observable UI state ──
 
 const initialState: WorkspaceUIState = {
@@ -126,6 +155,7 @@ const initialState: WorkspaceUIState = {
   sidebarOpen: true,
   fullscreen: false,
   editingFieldId: null,
+  lastModified: 0,
 };
 
 export const workspaceUi$ = observable<WorkspaceUIState>(initialState);
@@ -234,7 +264,47 @@ export function resetWorkspaceUiState(): void {
   workspaceUi$.set({ ...initialState });
   _jazzMe = null;
   _jazzElementi = [];
+  _jazzBoards = [];
   _fontiBacking.clear();
+}
+
+export function createBoardInWorkspace(nome: string): void {
+  const me = getJazzMe();
+  if (!me) {
+    console.warn("createBoardInWorkspace: Jazz account non disponibile");
+    return;
+  }
+  const result = createBoardAdapter(me, nome);
+  if (result.isErr()) {
+    console.warn("createBoardInWorkspace failed:", result.error);
+  }
+}
+
+export function renameBoardInWorkspace(boardId: string, newNome: string): void {
+  const me = getJazzMe();
+  if (!me) {
+    console.warn("renameBoardInWorkspace: Jazz account non disponibile");
+    return;
+  }
+  const result = renameBoardAdapter(me, boardId, newNome);
+  if (result.isErr()) {
+    console.warn("renameBoardInWorkspace failed:", result.error);
+  }
+}
+
+export function deleteBoardFromWorkspace(boardId: string): void {
+  const me = getJazzMe();
+  if (!me) {
+    console.warn("deleteBoardFromWorkspace: Jazz account non disponibile");
+    return;
+  }
+  const result = deleteBoardAdapter(me, boardId);
+  if (result.isErr()) {
+    console.warn("deleteBoardFromWorkspace failed:", result.error);
+  }
+  if (workspaceUi$.currentView.peek() === `board-${boardId}`) {
+    workspaceUi$.currentView.set("recenti");
+  }
 }
 
 /**

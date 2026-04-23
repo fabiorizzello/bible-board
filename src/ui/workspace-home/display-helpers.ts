@@ -13,11 +13,8 @@ import type { Board } from "@/features/board/board.model";
 import { formatHistoricalEra } from "@/features/shared/value-objects";
 import type { DataStorica } from "@/features/shared/value-objects";
 import type { NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
-// Boards still use mock data — S04 will migrate these to Jazz.
-import { BOARDS } from "@/mock/data";
-
 import type { ViewId } from "./workspace-ui-store";
-import { getJazzElementi, getJazzFontiForElement } from "./workspace-ui-store";
+import { getJazzElementi, getJazzFontiForElement, getJazzBoards } from "./workspace-ui-store";
 
 export type { NormalizedFonte, FonteTipo };
 
@@ -143,11 +140,8 @@ export function getElementsForView(
       break;
 
     default: {
-      const board = BOARDS.find((b) => {
-        if (viewId === "board-patriarchi") return b.nome === "Patriarchi e Giudici";
-        if (viewId === "board-profeti") return b.nome === "Profeti di Israele";
-        return false;
-      });
+      const boardId = viewId.replace(/^board-/, "");
+      const board = getJazzBoards().find((b) => b.id === boardId);
       items = board ? getBoardElements(board) : [];
       break;
     }
@@ -186,19 +180,12 @@ export interface BoardDisplayItem {
   readonly count: number;
 }
 
-/** Map a domain Board to a ViewId (used for nav selection). */
-function boardToViewId(board: Board): ViewId {
-  if (board.nome === "Patriarchi e Giudici") return "board-patriarchi";
-  if (board.nome === "Profeti di Israele") return "board-profeti";
-  return `board-${board.id}` as ViewId;
-}
-
 /** Get display-ready board items with viewId and element count. */
 export function getBoardDisplayItems(): BoardDisplayItem[] {
-  return BOARDS.map((board) => ({
+  return getJazzBoards().map((board) => ({
     id: board.id,
     nome: board.nome,
-    viewId: boardToViewId(board),
+    viewId: `board-${board.id}` as ViewId,
     count: getBoardElements(board).length,
   }));
 }
@@ -237,18 +224,20 @@ export function resolveCollegamenti(el: Elemento): ResolvedLink[] {
  * Returns board names for display.
  */
 export function resolveBoardsForElement(el: Elemento): string[] {
-  return BOARDS.filter((board) => {
-    const selezione = board.selezione;
-    if (selezione.kind === "fissa") {
-      return selezione.elementiIds.includes(el.id as string);
-    }
-    // dinamica
-    const matchesTag =
-      selezione.tags?.some((t) => el.tags.includes(t)) ?? false;
-    const matchesTipo =
-      selezione.tipi?.includes(el.tipo) ?? false;
-    return matchesTag || matchesTipo;
-  }).map((b) => b.nome);
+  return getJazzBoards()
+    .filter((board) => {
+      const selezione = board.selezione;
+      if (selezione.kind === "fissa") {
+        return selezione.elementiIds.includes(el.id as string);
+      }
+      // dinamica
+      const matchesTag =
+        selezione.tags?.some((t) => el.tags.includes(t)) ?? false;
+      const matchesTipo =
+        selezione.tipi?.includes(el.tipo) ?? false;
+      return matchesTag || matchesTipo;
+    })
+    .map((b) => b.nome);
 }
 
 // ── Fonti ──
