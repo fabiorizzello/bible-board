@@ -303,7 +303,7 @@ function ChipButton({
     <button
       type="button"
       onClick={onPress}
-      className={`inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-left transition-colors ${
+      className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-left transition-colors ${
         active
           ? "border-primary/35 bg-primary/8 text-primary"
           : "border-edge bg-chrome text-ink-md hover:border-primary/25 hover:bg-primary/5"
@@ -668,7 +668,7 @@ export function ElementoEditor({
               <Button
                 variant="ghost"
                 isIconOnly
-                className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+                className="h-[44px] w-[44px] rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
                 onPress={onExpand}
                 aria-label="Apri in fullscreen"
               >
@@ -715,7 +715,7 @@ export function ElementoEditor({
             />
           )}
           {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
-            <Chip className="min-h-[38px] border border-edge bg-chrome px-3.5 text-sm text-ink-md">
+            <Chip className="min-h-[44px] border border-edge bg-chrome px-3.5 text-sm text-ink-md">
               <Calendar className="mr-2 h-3.5 w-3.5 text-ink-dim" />
               {formatElementDate(element) ?? "Data non definita"}
             </Chip>
@@ -772,7 +772,7 @@ export function ElementoEditor({
         >
           <TextField value={familySearch} onChange={setFamilySearch}>
             <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
-            <Input className="min-h-[40px]" />
+            <Input className="min-h-[44px]" />
           </TextField>
           <div className="grid gap-2 sm:grid-cols-2">
             {familyCandidates.length === 0 && (
@@ -817,7 +817,7 @@ export function ElementoEditor({
       >
         <TextField value={genericSearch} onChange={setGenericSearch}>
           <Label className="text-xs text-ink-lo">Cerca elemento</Label>
-          <Input className="min-h-[40px]" />
+          <Input className="min-h-[44px]" />
         </TextField>
         <div className="grid gap-2 sm:grid-cols-2">
           {genericCandidates.length === 0 && (
@@ -855,7 +855,7 @@ export function ElementoEditor({
         <div className="border-t border-primary/8 pt-3 flex justify-end">
           <Dropdown>
             <Dropdown.Trigger>
-              <Button variant="ghost" size="sm" className="min-h-[36px] gap-1.5 rounded-full px-3 text-primary">
+              <Button variant="ghost" size="sm" className="min-h-[44px] gap-1.5 rounded-full px-3 text-primary">
                 <Plus className="h-3.5 w-3.5" />
                 Aggiungi campo
               </Button>
@@ -935,7 +935,7 @@ function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
         <Button
           variant="ghost"
           isIconOnly
-          className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+          className="h-[44px] w-[44px] rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
           aria-label="Azioni elemento"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -1044,7 +1044,7 @@ function ReviewDrawer({
     <>
       <Button
         variant={warnings.length > 0 ? "outline" : "ghost"}
-        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
+        className={`min-h-[44px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
         onPress={() => onOpenChange(true)}
       >
         <AlertTriangle className="h-4 w-4" />
@@ -1181,7 +1181,7 @@ function VitaChip({
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <TextField value={nascitaAnno} onChange={setNascitaAnno}>
                   <Label className="text-xs text-ink-lo">Nascita</Label>
-                  <Input className="min-h-[40px]" />
+                  <Input className="min-h-[44px]" />
                 </TextField>
                 <div className="flex gap-2 pt-5">
                   <Button variant={nascitaEra === "aev" ? "primary" : "outline"} size="sm" onPress={() => setNascitaEra("aev")}>
@@ -1195,7 +1195,7 @@ function VitaChip({
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <TextField value={morteAnno} onChange={setMorteAnno}>
                   <Label className="text-xs text-ink-lo">Morte</Label>
-                  <Input className="min-h-[40px]" />
+                  <Input className="min-h-[44px]" />
                 </TextField>
                 <div className="flex gap-2 pt-5">
                   <Button variant={morteEra === "aev" ? "primary" : "outline"} size="sm" onPress={() => setMorteEra("aev")}>
@@ -1265,7 +1265,7 @@ function ScalarChip({
           <TextField value={draft} onChange={setDraft}>
             <Label className="text-xs text-ink-lo">{label}</Label>
             <Input
-              className="min-h-[40px]"
+              className="min-h-[44px]"
               autoFocus
               onBlur={() => {
                 if (!skipBlur.current) submit();
@@ -1396,7 +1396,7 @@ function ArraySection({
           <span className="text-ink-dim">{icon}</span>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
         </div>
-        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
+        <Button variant="ghost" size="sm" className="min-h-[44px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
           <Plus className="h-3.5 w-3.5" />
           {addLabel}
         </Button>
@@ -1404,7 +1404,7 @@ function ArraySection({
           <TextField value={draftValue} onChange={onDraftChange}>
             <Label className="text-xs text-ink-lo">{title}</Label>
             <Input
-              className="min-h-[40px]"
+              className="min-h-[44px]"
               autoFocus
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -1430,7 +1430,7 @@ function ArraySection({
         {items.map((item) => (
           <Chip
             key={item}
-            className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            className="min-h-[44px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
           >
             <span className="flex items-center gap-1.5">
               {item}
@@ -1472,7 +1472,7 @@ function LinkSection({
     <section className="border-t border-primary/8 pt-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
-        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
+        <Button variant="ghost" size="sm" className="min-h-[44px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
           <Plus className="h-3.5 w-3.5" />
           Aggiungi
         </Button>
@@ -1484,7 +1484,7 @@ function LinkSection({
         {links.map((link) => (
           <Chip
             key={`${fieldId}-${link.targetId}-${link.tipo}`}
-            className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            className="min-h-[44px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
           >
             <span className="flex items-center gap-1.5">
               {link.titolo}
@@ -1568,7 +1568,7 @@ function FontiSection({
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-[36px] rounded-full px-3 text-primary"
+          className="min-h-[44px] rounded-full px-3 text-primary"
           onPress={onOpenAdd}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -1595,7 +1595,7 @@ function FontiSection({
               {fonteTipo === "scrittura" ? "Riferimento (es. Genesi 12:1-3)" : "Valore"}
             </Label>
             <Input
-              className="min-h-[40px]"
+              className="min-h-[44px]"
               autoFocus
               onKeyDown={(event) => {
                 if (event.key === "Enter") onAdd();
@@ -1627,7 +1627,7 @@ function FontiSection({
               {group.map((fonte) => (
                 <Chip
                   key={`${tipo}-${fonte.valore}`}
-                  className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+                  className="min-h-[44px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
                 >
                   <span className="flex items-center gap-1.5">
                     {fonte.urlCalcolata ? (

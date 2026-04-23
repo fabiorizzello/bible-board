@@ -4,6 +4,8 @@ import {
   TIPO_ABBREV,
   formatElementDate,
   getElementsForView,
+  sortElementi,
+  isElementMatchingSearch,
   resolveCollegamenti,
   resolveBoardsForElement,
   getFontiForElement,
@@ -141,7 +143,8 @@ describe("getElementsForView", () => {
   it("combines text and tipo filters", () => {
     const result = getElementsForView("tutti", "isa", "Personaggi");
     expect(result.every((e) => e.tipo === "personaggio")).toBe(true);
-    expect(result.every((e) => e.titolo.toLowerCase().includes("isa"))).toBe(true);
+    // Search now covers titolo + descrizione + tags, so all results must match in at least one
+    expect(result.every((e) => isElementMatchingSearch(e, "isa"))).toBe(true);
   });
 
   it("returns empty when filters match nothing", () => {
@@ -336,5 +339,128 @@ describe("findElementById", () => {
 
   it("returns undefined for nonexistent ID", () => {
     expect(findElementById("nonexistent-id")).toBeUndefined();
+  });
+});
+
+// ── Search matching ──
+
+describe("isElementMatchingSearch", () => {
+  const abraamo = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))!;
+  const babilonia = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.babilonia as string))!;
+
+  it("returns true for empty query (always match)", () => {
+    expect(isElementMatchingSearch(abraamo, "")).toBe(true);
+    expect(isElementMatchingSearch(babilonia, "")).toBe(true);
+  });
+
+  it("matches on titolo (case-insensitive)", () => {
+    expect(isElementMatchingSearch(abraamo, "abr")).toBe(true);
+    expect(isElementMatchingSearch(abraamo, "ABR")).toBe(true);
+    expect(isElementMatchingSearch(babilonia, "abr")).toBe(false);
+  });
+
+  it("matches on descrizione", () => {
+    // Abraamo has descrizione containing 'Patriarca'
+    expect(isElementMatchingSearch(abraamo, "patriarca")).toBe(true);
+    // Babilonia has empty descrizione
+    expect(isElementMatchingSearch(babilonia, "patriarca")).toBe(false);
+  });
+
+  it("matches on tags", () => {
+    // Abraamo has tag 'patriarchi'
+    expect(isElementMatchingSearch(abraamo, "patriarchi")).toBe(true);
+    // Babilonia has tag 'esilio'
+    expect(isElementMatchingSearch(babilonia, "esilio")).toBe(true);
+    expect(isElementMatchingSearch(abraamo, "esilio")).toBe(false);
+  });
+
+  it("returns false when nothing matches", () => {
+    expect(isElementMatchingSearch(abraamo, "zzznomatch")).toBe(false);
+  });
+});
+
+describe("getElementsForView - search covers descrizione and tags", () => {
+  it("finds Abraamo via tag 'patriarchi'", () => {
+    const result = getElementsForView("tutti", "patriarchi", "Tutti");
+    expect(result.map((e) => e.titolo)).toContain("Abraamo");
+  });
+
+  it("finds Abraamo via descrizione keyword 'ur dei caldei'", () => {
+    const result = getElementsForView("tutti", "ur dei caldei", "Tutti");
+    expect(result.map((e) => e.titolo)).toContain("Abraamo");
+  });
+
+  it("excludes elements that don't match descrizione/tags/titolo", () => {
+    const result = getElementsForView("tutti", "zzznomatch", "Tutti");
+    expect(result).toHaveLength(0);
+  });
+});
+
+// ── Sort helpers ──
+
+describe("sortElementi", () => {
+  it("sorts ascending by titolo", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const sorted = sortElementi(elementi, "titolo", "asc");
+    for (let i = 1; i < sorted.length; i++) {
+      expect(
+        sorted[i - 1]!.titolo.toLowerCase() <= sorted[i]!.titolo.toLowerCase()
+      ).toBe(true);
+    }
+  });
+
+  it("sorts descending by titolo (reverses order)", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const asc = sortElementi(elementi, "titolo", "asc");
+    const desc = sortElementi(elementi, "titolo", "desc");
+    expect(desc[0]!.titolo).toBe(asc[asc.length - 1]!.titolo);
+  });
+
+  it("sorts ascending by tipo groups same-tipo elements together", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const sorted = sortElementi(elementi, "tipo", "asc");
+    // Collect types in order — they should be monotonically non-decreasing alphabetically
+    const types = sorted.map((e) => e.tipo);
+    for (let i = 1; i < types.length; i++) {
+      expect(types[i - 1]!.localeCompare(types[i]!)).toBeLessThanOrEqual(0);
+    }
+  });
+
+  it("sorts ascending by data puts BC dates first (earliest first)", () => {
+    const boardElementi = getElementsForView(`board-${BOARD_IDS.patriarchi as string}`, "", "Tutti");
+    const sorted = sortElementi(boardElementi, "data", "asc");
+    // Abraamo 2018 aev should come before Isacco 1918 aev (larger BC year = older)
+    const abraamoIdx = sorted.findIndex((e) => e.titolo === "Abraamo");
+    const isaccoIdx = sorted.findIndex((e) => e.titolo === "Isacco");
+    expect(abraamoIdx).toBeLessThan(isaccoIdx);
+  });
+
+  it("sorts descending by data puts newest first", () => {
+    const boardElementi = getElementsForView(`board-${BOARD_IDS.patriarchi as string}`, "", "Tutti");
+    const asc = sortElementi(boardElementi, "data", "asc");
+    const desc = sortElementi(boardElementi, "data", "desc");
+    // First element of desc should be last of asc (excluding undated)
+    const ascDated = asc.filter((e) => e.nascita || e.date);
+    const descDated = desc.filter((e) => e.nascita || e.date);
+    expect(ascDated[0]!.titolo).toBe(descDated[descDated.length - 1]!.titolo);
+  });
+
+  it("does not mutate input array", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const originalOrder = elementi.map((e) => e.titolo);
+    sortElementi(elementi, "titolo", "asc");
+    expect(elementi.map((e) => e.titolo)).toEqual(originalOrder);
+  });
+
+  it("elements without dates are sorted last in ascending order", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const sorted = sortElementi(elementi, "data", "asc");
+    const undated = sorted.filter((e) => !e.nascita && !e.date);
+    const dated = sorted.filter((e) => e.nascita || e.date);
+    if (undated.length > 0 && dated.length > 0) {
+      const lastDatedIdx = sorted.lastIndexOf(dated[dated.length - 1]!);
+      const firstUndatedIdx = sorted.indexOf(undated[0]!);
+      expect(firstUndatedIdx).toBeGreaterThan(lastDatedIdx);
+    }
   });
 });

@@ -21,6 +21,7 @@ import { NavSidebar } from "./NavSidebar";
 import { ListPane } from "./ListPane";
 import { DetailPane } from "./DetailPane";
 import { FullscreenOverlay } from "./FullscreenOverlay";
+import { Timeline } from "@/ui/timeline/Timeline";
 import { workspaceUi$, openFieldEditor, syncJazzState, syncJazzBoards } from "./workspace-ui-store";
 import { findElementById } from "./display-helpers";
 import type { EditableFieldId } from "./workspace-ui-store";
@@ -96,6 +97,9 @@ function ElementoFieldFab() {
 
 export function WorkspacePreviewPage() {
   const { account, workspace } = useWorkspaceElementiState();
+  const currentView = useValue(workspaceUi$.currentView);
+  const activeBoardView = useValue(workspaceUi$.activeBoardView);
+  const showTimeline = currentView.startsWith("board-") && activeBoardView === "timeline";
 
   // Build raw CoMap list excluding soft-deleted elements (deletedAt flag set)
   const rawCoMaps: any[] = workspace?.elementi
@@ -125,10 +129,16 @@ export function WorkspacePreviewPage() {
   return (
     <div className="flex h-screen bg-panel font-body">
       <NavSidebar />
-      <ListPane />
-      <DetailPane />
-      <ElementoFieldFab />
-      <FullscreenOverlay />
+      {showTimeline ? (
+        <Timeline />
+      ) : (
+        <>
+          <ListPane />
+          <DetailPane />
+          <ElementoFieldFab />
+          <FullscreenOverlay />
+        </>
+      )}
       <Toast.Provider placement="bottom end" />
     </div>
   );

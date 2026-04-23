@@ -10,6 +10,7 @@
  */
 
 import type { Elemento, TipoLink, RuoloLink } from "@/features/elemento/elemento.model";
+import type { SortBy, SortDir } from "./display-helpers";
 import type { NormalizedElementoInput, NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
 import type { Board } from "@/features/board/board.model";
 import { observable } from "@legendapp/state";
@@ -27,6 +28,8 @@ import {
 } from "@/features/board/board.adapter";
 
 export type ViewId = "recenti" | "tutti" | `board-${string}`;
+
+export type BoardViewMode = "lista" | "timeline";
 
 export type EditableFieldId =
   | "titolo"
@@ -51,11 +54,16 @@ export interface WorkspaceUIState {
   selectedElementId: string | null;
   filterText: string;
   activeTipo: string;
+  sortBy: SortBy;
+  sortDir: SortDir;
   sidebarOpen: boolean;
   fullscreen: boolean;
   editingFieldId: EditableFieldId | null;
   lastModified: number;
+  activeBoardView: BoardViewMode;
 }
+
+export type { SortBy, SortDir };
 
 // ── Module-level Jazz state refs ──
 // Kept outside the observable to avoid Legend State attempting to deeply
@@ -152,16 +160,27 @@ const initialState: WorkspaceUIState = {
   selectedElementId: null,
   filterText: "",
   activeTipo: "Tutti",
+  sortBy: "titolo",
+  sortDir: "asc",
   sidebarOpen: true,
   fullscreen: false,
   editingFieldId: null,
   lastModified: 0,
+  activeBoardView: "lista",
 };
 
 export const workspaceUi$ = observable<WorkspaceUIState>(initialState);
 
 export function navigateToView(viewId: ViewId): void {
   workspaceUi$.currentView.set(viewId);
+  // Reset board view mode to list when navigating to non-board views
+  if (!viewId.startsWith("board-")) {
+    workspaceUi$.activeBoardView.set("lista");
+  }
+}
+
+export function setActiveBoardView(view: BoardViewMode): void {
+  workspaceUi$.activeBoardView.set(view);
 }
 
 export function selectElement(id: string): void {

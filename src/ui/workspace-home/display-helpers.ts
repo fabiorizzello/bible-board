@@ -12,6 +12,11 @@ import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model"
 import type { Board } from "@/features/board/board.model";
 import { formatHistoricalEra } from "@/features/shared/value-objects";
 import type { DataStorica } from "@/features/shared/value-objects";
+
+// ── Sort types ──
+
+export type SortBy = "titolo" | "data" | "tipo";
+export type SortDir = "asc" | "desc";
 import type { NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
 import type { ViewId } from "./workspace-ui-store";
 import { getJazzElementi, getJazzFontiForElement, getJazzBoards } from "./workspace-ui-store";
@@ -92,6 +97,64 @@ export function formatElementDate(el: Elemento): string | undefined {
   return undefined;
 }
 
+// ── Sort helpers ──
+
+/**
+ * Returns a numeric sort key for date-based ordering.
+ * BC dates produce negative values so chronological sort is just ascending numeric.
+ */
+function extractSortYear(el: Elemento): number {
+  const toNumeric = (d: DataStorica): number => (d.era === "aev" ? -d.anno : d.anno);
+  if (el.nascita) return toNumeric(el.nascita);
+  if (el.date?.kind === "puntuale") return toNumeric(el.date.data);
+  if (el.date?.kind === "range") return toNumeric(el.date.inizio);
+  return Infinity; // no date → sort last
+}
+
+function getElementSortKey(el: Elemento, sortBy: SortBy): string | number {
+  switch (sortBy) {
+    case "titolo": return el.titolo.toLowerCase();
+    case "tipo":   return el.tipo;
+    case "data":   return extractSortYear(el);
+  }
+}
+
+/**
+ * Sort a list of Elemento by the given column and direction.
+ * Returns a new array; does not mutate input.
+ */
+export function sortElementi(
+  elementi: Elemento[],
+  sortBy: SortBy,
+  sortDir: SortDir,
+): Elemento[] {
+  return [...elementi].sort((a, b) => {
+    const ka = getElementSortKey(a, sortBy);
+    const kb = getElementSortKey(b, sortBy);
+    let cmp: number;
+    if (typeof ka === "string" && typeof kb === "string") {
+      cmp = ka.localeCompare(kb, "it");
+    } else {
+      cmp = (ka as number) - (kb as number);
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+}
+
+/**
+ * Returns true if an element matches a search query (title, description, tags).
+ * Always returns true when query is empty — used for dimming in spatial views.
+ */
+export function isElementMatchingSearch(el: Elemento, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    el.titolo.toLowerCase().includes(q) ||
+    (el.descrizione ? el.descrizione.toLowerCase().includes(q) : false) ||
+    el.tags.some((t) => t.toLowerCase().includes(q))
+  );
+}
+
 // ── Element filtering ──
 
 /**
@@ -153,10 +216,9 @@ export function getElementsForView(
     items = items.filter((el) => !deletedSet.has(el.id as string));
   }
 
-  // Text search filter
+  // Text search filter — searches titolo, descrizione, and tags
   if (filterText) {
-    const q = filterText.toLowerCase();
-    items = items.filter((el) => el.titolo.toLowerCase().includes(q));
+    items = items.filter((el) => isElementMatchingSearch(el, filterText));
   }
 
   // Tipo filter

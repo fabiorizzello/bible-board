@@ -97,11 +97,13 @@ export function NavSidebar() {
   }
 
   return (
+    <div className={`flex-shrink-0 overflow-hidden ${sidebarOpen ? "w-[220px]" : "w-0"}`}>
     <nav
-      className={`flex flex-col border-r border-primary/10 bg-chrome transition-all duration-200 ease-in-out overflow-hidden ${
-        sidebarOpen ? "w-[220px] min-w-[220px]" : "w-0 min-w-0"
+      className={`w-[220px] flex flex-col border-r border-primary/10 bg-chrome transition-opacity duration-200 ${
+        sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       aria-label="Navigazione workspace"
+      aria-hidden={!sidebarOpen}
     >
       {/* Workspace switcher — Dropdown + Avatar */}
       <div className="px-2 pt-2 pb-1">
@@ -179,7 +181,7 @@ export function NavSidebar() {
           <ListBox.Item
             id="recenti"
             textValue="Recenti"
-            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
+            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
           >
             <Clock className="h-4 w-4 flex-shrink-0" />
             <Label>Recenti</Label>
@@ -187,7 +189,7 @@ export function NavSidebar() {
           <ListBox.Item
             id="tutti"
             textValue="Tutti gli elementi"
-            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
+            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
           >
             <List className="h-4 w-4 flex-shrink-0" />
             <Label>Tutti gli elementi</Label>
@@ -201,7 +203,7 @@ export function NavSidebar() {
             <Button
               variant="ghost"
               isIconOnly
-              className="h-[24px] w-[24px] rounded text-ink-dim hover:bg-primary/6 hover:text-accent"
+              className="h-[44px] w-[44px] rounded text-ink-dim hover:bg-primary/6 hover:text-accent"
               aria-label="Nuovo board"
               onPress={() => { setNewBoardName(""); setShowCreate(true); }}
             >
@@ -221,7 +223,7 @@ export function NavSidebar() {
                 key={board.id}
                 role="option"
                 aria-selected={isSelected}
-                className={`group flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] cursor-pointer text-[13px] font-medium transition-colors ${
+                className={`group flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] cursor-pointer text-[13px] font-medium transition-colors ${
                   isSelected
                     ? "bg-accent/10 text-accent font-semibold"
                     : "text-ink-lo hover:bg-primary/6"
@@ -267,7 +269,7 @@ export function NavSidebar() {
                     <Button
                       variant="ghost"
                       isIconOnly
-                      className="h-[22px] w-[22px] rounded opacity-0 group-hover:opacity-100 text-ink-dim hover:bg-primary/10 flex-shrink-0"
+                      className="h-[44px] w-[44px] rounded opacity-0 group-hover:opacity-100 text-ink-dim hover:bg-primary/10 flex-shrink-0"
                       aria-label={`Azioni per ${board.nome}`}
                       onPress={(e) => { (e as any).stopPropagation?.(); }}
                     >
@@ -384,7 +386,7 @@ export function NavSidebar() {
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
-            className="flex-1 justify-start gap-2 rounded-lg px-2.5 min-h-[36px] text-[13px] font-medium text-ink-lo hover:bg-primary/6"
+            className="flex-1 justify-start gap-2 rounded-lg px-2.5 min-h-[44px] text-[13px] font-medium text-ink-lo hover:bg-primary/6"
           >
             <Settings className="h-4 w-4" />
             Impostazioni
@@ -394,7 +396,7 @@ export function NavSidebar() {
             <Button
               variant="ghost"
               isIconOnly
-              className="h-[36px] w-[36px] rounded-lg text-ink-dim hover:bg-primary/6"
+              className="h-[44px] w-[44px] rounded-lg text-ink-dim hover:bg-primary/6"
               onPress={() => workspaceUi$.sidebarOpen.set(false)}
               aria-label="Chiudi navigazione"
             >
@@ -405,5 +407,6 @@ export function NavSidebar() {
         </div>
       </div>
     </nav>
+    </div>
   );
 }

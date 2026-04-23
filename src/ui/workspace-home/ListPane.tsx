@@ -22,8 +22,12 @@ import {
   Tooltip,
 } from "@heroui/react";
 import {
+  ArrowDownUp,
+  ArrowUpDown,
+  List,
   PanelLeft,
   Plus,
+  GitBranch,
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
@@ -31,9 +35,11 @@ import {
   workspaceUi$,
   navigateToView,
   selectElement,
+  setActiveBoardView,
   getJazzElementi,
   getJazzMe,
 } from "./workspace-ui-store";
+import type { SortBy } from "./workspace-ui-store";
 import type { ElementoTipo } from "@/features/elemento/elemento.model";
 
 const TIPO_OPTIONS: readonly ElementoTipo[] = [
@@ -51,6 +57,7 @@ import {
   TIPO_FILTERS,
   TIPO_ABBREV,
   getElementsForView,
+  sortElementi,
   formatElementDate,
   getBoardDisplayItems,
 } from "./display-helpers";
@@ -60,17 +67,34 @@ export function ListPane() {
   const currentView = useValue(workspaceUi$.currentView);
   const filterText = useValue(workspaceUi$.filterText);
   const activeTipo = useValue(workspaceUi$.activeTipo);
+  const sortBy = useValue(workspaceUi$.sortBy);
+  const sortDir = useValue(workspaceUi$.sortDir);
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
   const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
   const fullscreen = useValue(workspaceUi$.fullscreen);
+  const activeBoardView = useValue(workspaceUi$.activeBoardView);
   const boardItems = getBoardDisplayItems();
 
   const isElementView = currentView === "tutti" || currentView.startsWith("board-");
   const isRecentiView = currentView === "recenti";
+  const isBoardView = currentView.startsWith("board-");
 
-  const currentElements = isElementView
+  const filteredElements = isElementView
     ? getElementsForView(currentView, filterText, activeTipo)
     : [];
+
+  const currentElements = isElementView
+    ? sortElementi(filteredElements, sortBy, sortDir)
+    : [];
+
+  function handleSortColumn(col: SortBy) {
+    if (workspaceUi$.sortBy.peek() === col) {
+      workspaceUi$.sortDir.set(workspaceUi$.sortDir.peek() === "asc" ? "desc" : "asc");
+    } else {
+      workspaceUi$.sortBy.set(col);
+      workspaceUi$.sortDir.set("asc");
+    }
+  }
 
   // Recenti: most recently created elements (last 8, newest first)
   const recentElements = isRecentiView ? [...getJazzElementi()].reverse().slice(0, 8) : [];
@@ -79,7 +103,7 @@ export function ListPane() {
     : currentView === "tutti" ? "Tutti gli elementi"
     : boardItems.find((b) => b.viewId === currentView)?.nome ?? currentView;
 
-  const listCount = isRecentiView ? recentElements.length : currentElements.length;
+  const listCount = isRecentiView ? recentElements.length : filteredElements.length;
 
   function handleSelectElement(id: string) {
     selectElement(id);
@@ -119,10 +143,12 @@ export function ListPane() {
   }
 
   return (
+    <div className={`flex-shrink-0 overflow-hidden ${fullscreen ? "w-0" : "w-[300px]"}`}>
     <div
-      className={`flex flex-col border-r border-primary/10 transition-all duration-200 ease-in-out overflow-hidden ${
-        fullscreen ? "w-0 min-w-0" : "w-[300px] min-w-[300px]"
+      className={`w-[300px] flex flex-col border-r border-primary/10 transition-opacity duration-200 overflow-hidden ${
+        fullscreen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
+      aria-hidden={fullscreen}
     >
       {/* List header */}
       <div className="flex items-center gap-1.5 border-b border-primary/6 px-3 min-h-[44px]">
@@ -131,7 +157,7 @@ export function ListPane() {
             <Button
               variant="ghost"
               isIconOnly
-              className="h-[30px] w-[30px] rounded-md text-ink-dim hover:bg-primary/6 mr-1"
+              className="h-[44px] w-[44px] rounded-md text-ink-dim hover:bg-primary/6 mr-1"
               onPress={() => workspaceUi$.sidebarOpen.set(true)}
               aria-label="Apri navigazione"
             >
@@ -147,13 +173,50 @@ export function ListPane() {
           {listCount}
         </Text>
         <div className="flex-1" />
+        {/* View toggle: list / timeline (board views only) */}
+        {isBoardView && (
+          <div className="flex items-center rounded-lg border border-edge bg-chrome overflow-hidden mr-1">
+            <Tooltip>
+              <button
+                type="button"
+                onClick={() => setActiveBoardView("lista")}
+                className={`flex items-center justify-center h-[44px] w-[44px] transition-colors ${
+                  activeBoardView === "lista"
+                    ? "bg-primary text-white"
+                    : "text-ink-dim hover:bg-primary/8 hover:text-ink-md"
+                }`}
+                aria-label="Vista lista"
+                aria-pressed={activeBoardView === "lista"}
+              >
+                <List className="h-3 w-3" />
+              </button>
+              <Tooltip.Content>Vista lista</Tooltip.Content>
+            </Tooltip>
+            <Tooltip>
+              <button
+                type="button"
+                onClick={() => setActiveBoardView("timeline")}
+                className={`flex items-center justify-center h-[44px] w-[44px] transition-colors ${
+                  activeBoardView === "timeline"
+                    ? "bg-primary text-white"
+                    : "text-ink-dim hover:bg-primary/8 hover:text-ink-md"
+                }`}
+                aria-label="Vista timeline"
+                aria-pressed={activeBoardView === "timeline"}
+              >
+                <GitBranch className="h-3 w-3 rotate-90" />
+              </button>
+              <Tooltip.Content>Vista timeline</Tooltip.Content>
+            </Tooltip>
+          </div>
+        )}
         <Dropdown>
           <Tooltip>
             <Dropdown.Trigger>
               <Button
                 variant="ghost"
                 isIconOnly
-                className="h-[30px] w-[30px] rounded-md border border-dashed border-accent/30 text-accent hover:bg-accent/5 hover:border-accent hover:border-solid"
+                className="h-[44px] w-[44px] rounded-md border border-dashed border-accent/30 text-accent hover:bg-accent/5 hover:border-accent hover:border-solid"
                 aria-label="Nuovo elemento"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -214,13 +277,48 @@ export function ListPane() {
                 <Tag
                   key={tipo}
                   id={tipo}
-                  className="inline-flex items-center rounded-full border px-2.5 text-[10px] font-medium min-h-[28px] leading-none cursor-pointer border-edge text-ink-lo data-[selected]:border-primary/15 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[hovered]:bg-primary/6"
+                  className="inline-flex items-center rounded-full border px-2.5 text-[10px] font-medium min-h-[44px] leading-none cursor-pointer border-edge text-ink-lo data-[selected]:border-primary/15 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[hovered]:bg-primary/6"
                 >
                   {tipo}
                 </Tag>
               ))}
             </TagGroup.List>
           </TagGroup>
+        </div>
+      )}
+
+      {/* Sort bar — shown in element views */}
+      {isElementView && (
+        <div className="flex items-center gap-0 border-b border-primary/6 px-2 min-h-[44px]">
+          {(["titolo", "tipo", "data"] as const).map((col) => {
+            const active = sortBy === col;
+            const label = col === "titolo" ? "Titolo" : col === "tipo" ? "Tipo" : "Data";
+            return (
+              <button
+                key={col}
+                onClick={() => handleSortColumn(col)}
+                className={`flex items-center gap-0.5 rounded px-1.5 py-2.5 text-[10px] font-medium transition-colors ${
+                  active
+                    ? "text-primary bg-primary/8"
+                    : "text-ink-dim hover:text-ink-md hover:bg-primary/5"
+                }`}
+                aria-pressed={active}
+                aria-label={`Ordina per ${label} ${active && sortDir === "asc" ? "discendente" : "ascendente"}`}
+              >
+                {label}
+                {active ? (
+                  sortDir === "asc"
+                    ? <ArrowUpDown className="h-2.5 w-2.5 ml-0.5" />
+                    : <ArrowDownUp className="h-2.5 w-2.5 ml-0.5" />
+                ) : null}
+              </button>
+            );
+          })}
+          {isBoardView && filterText && (
+            <Text className="ml-auto text-[9px] text-ink-ghost pr-1">
+              {filteredElements.length} risultati
+            </Text>
+          )}
         </div>
       )}
 
@@ -319,6 +417,7 @@ export function ListPane() {
           </EmptyState>
         )}
       </ScrollShadow>
+    </div>
     </div>
   );
 }
