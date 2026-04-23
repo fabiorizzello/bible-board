@@ -164,7 +164,7 @@ export function ThemeSwitcher() {
         <Button
           isIconOnly
           variant="ghost"
-          className="h-[36px] w-[36px] rounded-lg text-ink-dim hover:bg-primary/6"
+          className="h-[44px] w-[44px] rounded-lg text-ink-dim hover:bg-primary/6"
           aria-label="Cambia palette colori"
         >
           <Palette className="h-4 w-4" />
@@ -179,7 +179,7 @@ export function ThemeSwitcher() {
             <Button
               variant="ghost"
               isIconOnly
-              className="h-7 w-7 rounded-lg text-ink-dim hover:bg-primary/6 cursor-pointer"
+              className="h-[44px] w-[44px] rounded-lg text-ink-dim hover:bg-primary/6 cursor-pointer"
               onPress={handleToggleMode}
               aria-label={isDark ? "Modalità chiara" : "Modalità scura"}
             >
