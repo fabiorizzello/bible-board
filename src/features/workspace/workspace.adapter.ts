@@ -9,7 +9,7 @@ export function useWorkspaceAccount() {
         workspace: {
           tagRegistry: { $each: true },
           boardIds: true,
-          elementi: { $each: { tags: true, fonti: true } }
+          elementi: { $each: { tags: true, fonti: true, links: true } }
         }
       },
       profile: true
