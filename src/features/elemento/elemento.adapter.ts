@@ -542,6 +542,30 @@ function syncTagsToRegistry(workspace: any, tags: readonly string[], account: an
   }
 }
 
+export function softDeleteWorkspaceElemento(
+  account: any,
+  elementoId: string
+): Result<void, ElementoError> {
+  const workspace = account.root?.workspace;
+  if (!workspace?.elementi) throw new Error("Workspace non disponibile.");
+  const elemento = workspace.elementi.find((e: any) => e?.id === elementoId);
+  if (!elemento) return err({ type: "elemento_non_trovato" });
+  elemento.deletedAt = new Date().toISOString();
+  return ok(undefined);
+}
+
+export function restoreSoftDeletedElemento(
+  account: any,
+  elementoId: string
+): Result<void, ElementoError> {
+  const workspace = account.root?.workspace;
+  if (!workspace?.elementi) throw new Error("Workspace non disponibile.");
+  const elemento = workspace.elementi.find((e: any) => e?.id === elementoId);
+  if (!elemento) return err({ type: "elemento_non_trovato" });
+  elemento.deletedAt = undefined;
+  return ok(undefined);
+}
+
 export async function uploadWorkspaceImage(_file: File): Promise<ImageUploadResult> {
   throw new Error("Upload immagini non ancora implementato in questa tranche.");
 }

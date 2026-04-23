@@ -4,6 +4,10 @@
  * Assembles the 3-pane layout from extracted components:
  * NavSidebar, ListPane, DetailPane, ThemeSwitcher, FullscreenOverlay.
  *
+ * This is the Jazz-aware root: it calls useWorkspaceElementiState() and
+ * syncJazzState() on every render so all child components read fresh data
+ * via the module-level Jazz store without needing Jazz hooks themselves.
+ *
  * Mounts Toast.Provider here (composition shell level) so imperative
  * `toast()` calls from any pane render into a shared bottom region.
  * iPad-native: bottom placement keeps undo affordances near the thumb.
@@ -17,18 +21,20 @@ import { NavSidebar } from "./NavSidebar";
 import { ListPane } from "./ListPane";
 import { DetailPane } from "./DetailPane";
 import { FullscreenOverlay } from "./FullscreenOverlay";
-import { workspaceUi$, openFieldEditor } from "./workspace-ui-store";
+import { workspaceUi$, openFieldEditor, syncJazzState, findElementById } from "./workspace-ui-store";
 import type { EditableFieldId } from "./workspace-ui-store";
-import { findElementById } from "./display-helpers";
+import {
+  useWorkspaceElementiState,
+  coMapToElementoDomain,
+} from "@/features/elemento/elemento.adapter";
+import type { Elemento } from "@/features/elemento/elemento.model";
 
 type AddOption = { field: EditableFieldId; label: string };
 
 function getAddOptions(selectedId: string | null): AddOption[] {
   if (!selectedId) return [];
-  const overrides = workspaceUi$.elementOverrides.peek();
-  const base = findElementById(selectedId);
-  if (!base) return [];
-  const element = { ...base, ...(overrides[selectedId] ?? {}) };
+  const element = findElementById(selectedId);
+  if (!element) return [];
 
   const familyLinks = (element.link ?? []).filter((l) => l.tipo === "parentela");
   const genericLinks = (element.link ?? []).filter((l) => l.tipo !== "parentela");
@@ -86,6 +92,25 @@ function ElementoFieldFab() {
 }
 
 export function WorkspacePreviewPage() {
+  const { account, workspace } = useWorkspaceElementiState();
+
+  // Build raw CoMap list excluding soft-deleted elements (deletedAt flag set)
+  const rawCoMaps: any[] = workspace?.elementi
+    ? Array.from(workspace.elementi as any[])
+        .filter(Boolean)
+        .filter((e: any) => !e.deletedAt)
+    : [];
+
+  // Convert to domain objects; skip malformed CoMaps (coMapToElementoDomain logs warn)
+  const domainElementi: Elemento[] = rawCoMaps
+    .map(coMapToElementoDomain)
+    .filter((e): e is Elemento => e !== null);
+
+  // Sync Jazz state into the module-level store.
+  // Called during render (not in useEffect) so child components read fresh data
+  // in the same render cycle without an extra flash of stale content.
+  syncJazzState(account.me, rawCoMaps, domainElementi);
+
   return (
     <div className="flex h-screen bg-panel font-body">
       <NavSidebar />

@@ -14,13 +14,27 @@ import {
 } from "../display-helpers";
 import { ELEMENTI, ELEMENTO_IDS } from "@/mock/data";
 import {
-  commitElementPatch,
   resetWorkspaceUiState,
-  softDeleteElement,
+  syncJazzElementiForTest,
 } from "../workspace-ui-store";
+import type { NormalizedFonte } from "../display-helpers";
+import type { Elemento } from "@/features/elemento/elemento.model";
+
+const MOCK_TEST_FONTI: ReadonlyMap<string, readonly NormalizedFonte[]> = new Map([
+  [
+    ELEMENTO_IDS.abraamo as string,
+    [
+      { tipo: "scrittura", valore: "Genesi 12:1-3" },
+      { tipo: "scrittura", valore: "Genesi 15:1-6" },
+      { tipo: "scrittura", valore: "Genesi 22:1-18" },
+      { tipo: "scrittura", valore: "Ebrei 11:8-10" },
+    ],
+  ],
+]);
 
 beforeEach(() => {
   resetWorkspaceUiState();
+  syncJazzElementiForTest(ELEMENTI as unknown as Elemento[], MOCK_TEST_FONTI);
 });
 
 // ── Constants ──
@@ -159,8 +173,6 @@ describe("getElementsForView", () => {
   });
 
   it("composes deletedIds with text + tipo filters", () => {
-    // "abr" + Personaggi matches only Abraamo. Deleting Abraamo leaves zero
-    // results, proving the soft-delete filter composes with the others.
     const baseline = getElementsForView("tutti", "abr", "Personaggi");
     expect(baseline.map((e) => e.id)).toContain(ELEMENTO_IDS.abraamo as string);
 
@@ -191,44 +203,6 @@ describe("getElementsForView", () => {
     const withoutArg = getElementsForView("tutti", "", "Tutti");
     const withEmpty = getElementsForView("tutti", "", "Tutti", []);
     expect(withoutArg.length).toBe(withEmpty.length);
-  });
-
-  it("shows session override fields in list results", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      titolo: "Abramo (sessione)",
-      tags: ["patriarchi", "promessa"],
-      nascita: { anno: 2020, era: "aev", precisione: "esatta" },
-    });
-
-    const result = getElementsForView("tutti", "sessione", "Tutti");
-    expect(result).toHaveLength(1);
-    expect(result[0]?.titolo).toBe("Abramo (sessione)");
-    expect(result[0]?.tags).toContain("promessa");
-    expect(formatElementDate(result[0]!)).toBe("2020 a.e.v.");
-  });
-
-  it("recomputes dynamic board membership from session tags", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      tags: ["messianico"],
-    });
-
-    const result = getElementsForView("board-profeti", "", "Tutti");
-    expect(result.map((element) => element.id)).toContain(ELEMENTO_IDS.abraamo);
-  });
-
-  it("keeps deleted filtering after session overrides", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      titolo: "Abramo nascosto",
-    });
-    softDeleteElement(ELEMENTO_IDS.abraamo as string);
-
-    const result = getElementsForView(
-      "tutti",
-      "",
-      "Tutti",
-      [ELEMENTO_IDS.abraamo as string],
-    );
-    expect(result.find((element) => element.id === ELEMENTO_IDS.abraamo)).toBeUndefined();
   });
 });
 
@@ -276,15 +250,6 @@ describe("resolveBoardsForElement", () => {
     const babilonia = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.babilonia as string))!;
     const boards = resolveBoardsForElement(babilonia);
     expect(boards).toEqual([]);
-  });
-
-  it("uses session tags when resolving boards for an element", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      tags: ["messianico"],
-    });
-
-    const abraamo = findElementById(ELEMENTO_IDS.abraamo as string)!;
-    expect(resolveBoardsForElement(abraamo)).toContain("Profeti di Israele");
   });
 });
 
@@ -354,17 +319,6 @@ describe("getAnnotazioniForElement", () => {
     expect(result.mie).toHaveLength(0);
     expect(result.altreCount).toBe(0);
   });
-
-  it("returns session-edited annotation content", () => {
-    commitElementPatch(ELEMENTO_IDS.annotazioneAbraamo as string, {
-      titolo: "Nota aggiornata",
-      descrizione: "Contenuto aggiornato",
-    });
-
-    const result = getAnnotazioniForElement(ELEMENTO_IDS.abraamo as string, CURRENT_AUTORE);
-    expect(result.mie[0]?.titolo).toBe("Nota aggiornata");
-    expect(result.mie[0]?.descrizione).toBe("Contenuto aggiornato");
-  });
 });
 
 // ── Element lookup ──
@@ -378,16 +332,5 @@ describe("findElementById", () => {
 
   it("returns undefined for nonexistent ID", () => {
     expect(findElementById("nonexistent-id")).toBeUndefined();
-  });
-
-  it("returns the merged session element", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      titolo: "Abramo unito",
-      tribu: "Ebrei",
-    });
-
-    const result = findElementById(ELEMENTO_IDS.abraamo as string);
-    expect(result?.titolo).toBe("Abramo unito");
-    expect(result?.tribu).toBe("Ebrei");
   });
 });

@@ -241,9 +241,7 @@ export function DetailBody({
 
 export function DetailPane() {
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
-  const lastModified = useValue(workspaceUi$.lastModified);
   const editingFieldId = useValue(workspaceUi$.editingFieldId);
-  void lastModified;
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)

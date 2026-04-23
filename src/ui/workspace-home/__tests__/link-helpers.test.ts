@@ -1,268 +1,95 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import {
-  createBidirectionalLink,
-  removeBidirectionalLink,
-  resetWorkspaceUiState,
-} from "../workspace-ui-store";
-import { findElementById } from "../display-helpers";
-import { ELEMENTO_IDS } from "@/mock/data";
+import { describe, expect, it } from "vitest";
+import { getInverseLink } from "@/features/elemento/elemento.rules";
+import type { ElementoLink } from "@/features/elemento/elemento.model";
 
-beforeEach(() => {
-  resetWorkspaceUiState();
-});
+// ── getInverseLink — parentela inversions ──
 
-// ── createBidirectionalLink — parentela ──
-
-describe("createBidirectionalLink — parentela", () => {
-  it("adds padre link on source and figlio inverse on target", () => {
-    // gedeone and babilonia have no existing links to each other
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "parentela",
-      "padre",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    const babilonia = findElementById(ELEMENTO_IDS.babilonia as string);
-
-    expect(gedeone?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.babilonia as string, tipo: "parentela", ruolo: "padre" }),
-    );
-    expect(babilonia?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.gedeone as string, tipo: "parentela", ruolo: "figlio" }),
-    );
+describe("getInverseLink — parentela", () => {
+  it("inverts padre to figlio", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "parentela", ruolo: "padre" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.targetId).toBe("source-b");
+    expect(inverse.tipo).toBe("parentela");
+    expect(inverse.ruolo).toBe("figlio");
   });
 
   it("inverts madre to figlia", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.sara as string,
-      ELEMENTO_IDS.gedeone as string,
-      "parentela",
-      "madre",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    expect(gedeone?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.sara as string, tipo: "parentela", ruolo: "figlia" }),
-    );
+    const link: ElementoLink = { targetId: "target-a", tipo: "parentela", ruolo: "madre" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.ruolo).toBe("figlia");
   });
 
   it("inverts figlio to padre", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "parentela",
-      "figlio",
-    );
+    const link: ElementoLink = { targetId: "target-a", tipo: "parentela", ruolo: "figlio" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.ruolo).toBe("padre");
+  });
 
-    const babilonia = findElementById(ELEMENTO_IDS.babilonia as string);
-    expect(babilonia?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.gedeone as string, tipo: "parentela", ruolo: "padre" }),
-    );
+  it("inverts figlia to madre", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "parentela", ruolo: "figlia" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.ruolo).toBe("madre");
   });
 
   it("inverts coniuge to coniuge (symmetric)", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "parentela",
-      "coniuge",
-    );
+    const link: ElementoLink = { targetId: "target-a", tipo: "parentela", ruolo: "coniuge" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.ruolo).toBe("coniuge");
+  });
 
-    const babilonia = findElementById(ELEMENTO_IDS.babilonia as string);
-    expect(babilonia?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.gedeone as string, tipo: "parentela", ruolo: "coniuge" }),
-    );
+  it("preserves targetId as source id", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "parentela", ruolo: "padre" };
+    const inverse = getInverseLink("source-xyz", link);
+    expect(inverse.targetId).toBe("source-xyz");
   });
 });
 
-// ── createBidirectionalLink — generic links ──
+// ── getInverseLink — non-parentela links (symmetric) ──
 
-describe("createBidirectionalLink — generic links", () => {
-  it("adds correlato on source and symmetric inverse on target", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    const babilonia = findElementById(ELEMENTO_IDS.babilonia as string);
-
-    expect(gedeone?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.babilonia as string, tipo: "correlato" }),
-    );
-    expect(babilonia?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.gedeone as string, tipo: "correlato" }),
-    );
+describe("getInverseLink — non-parentela links", () => {
+  it("returns correlato with no ruolo (symmetric)", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "correlato" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.tipo).toBe("correlato");
+    expect(inverse.ruolo).toBeUndefined();
   });
 
-  it("adds successione on source and symmetric inverse on target", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.regnoDavide as string,
-      "successione",
-    );
-
-    const regnoDavide = findElementById(ELEMENTO_IDS.regnoDavide as string);
-    expect(regnoDavide?.link).toContainEqual(
-      expect.objectContaining({ targetId: ELEMENTO_IDS.gedeone as string, tipo: "successione" }),
-    );
+  it("returns localizzazione symmetric", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "localizzazione" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.tipo).toBe("localizzazione");
+    expect(inverse.ruolo).toBeUndefined();
   });
 
-  it("does not modify the source's pre-existing unrelated links", () => {
-    // Gedeone has no existing links in base mock data
-    const gedeoneBase = findElementById(ELEMENTO_IDS.gedeone as string);
-    const baseLinkCount = gedeoneBase?.link.length ?? 0;
+  it("returns successione symmetric", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "successione" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.tipo).toBe("successione");
+    expect(inverse.ruolo).toBeUndefined();
+  });
 
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    expect(gedeone?.link.length).toBe(baseLinkCount + 1);
+  it("preserves nota on inverse", () => {
+    const link: ElementoLink = { targetId: "target-a", tipo: "correlato", nota: "testo nota" };
+    const inverse = getInverseLink("source-b", link);
+    expect(inverse.nota).toBe("testo nota");
   });
 });
 
-// ── createBidirectionalLink — idempotency ──
+// ── getInverseLink — double inversion ──
 
-describe("createBidirectionalLink — idempotency", () => {
-  it("does not duplicate forward link when called twice with same args", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    const links = gedeone?.link.filter(
-      (l) => l.targetId === (ELEMENTO_IDS.babilonia as string) && l.tipo === "correlato",
-    );
-    expect(links?.length).toBe(1);
+describe("getInverseLink — double inversion", () => {
+  it("padre → figlio → padre (applying twice returns to origin)", () => {
+    const original: ElementoLink = { targetId: "b", tipo: "parentela", ruolo: "padre" };
+    const once = getInverseLink("a", original);
+    const twice = getInverseLink("b", once);
+    expect(twice.ruolo).toBe("padre");
   });
 
-  it("does not duplicate inverse link when called twice", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-
-    const babilonia = findElementById(ELEMENTO_IDS.babilonia as string);
-    const links = babilonia?.link.filter(
-      (l) => l.targetId === (ELEMENTO_IDS.gedeone as string) && l.tipo === "correlato",
-    );
-    expect(links?.length).toBe(1);
-  });
-});
-
-// ── removeBidirectionalLink ──
-
-describe("removeBidirectionalLink", () => {
-  it("removes forward and inverse parentela links built via createBidirectionalLink", () => {
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "parentela",
-      "padre",
-    );
-    removeBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "parentela",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    const babilonia = findElementById(ELEMENTO_IDS.babilonia as string);
-
-    expect(
-      gedeone?.link.some(
-        (l) => l.targetId === (ELEMENTO_IDS.babilonia as string) && l.tipo === "parentela",
-      ),
-    ).toBe(false);
-    expect(
-      babilonia?.link.some(
-        (l) => l.targetId === (ELEMENTO_IDS.gedeone as string) && l.tipo === "parentela",
-      ),
-    ).toBe(false);
-  });
-
-  it("removes existing mock-data parentela link from both sides (abraamo→isacco)", () => {
-    // abraamo has parentela/padre to isacco; isacco has parentela/figlio to abraamo
-    removeBidirectionalLink(
-      ELEMENTO_IDS.abraamo as string,
-      ELEMENTO_IDS.isacco as string,
-      "parentela",
-    );
-
-    const abraamo = findElementById(ELEMENTO_IDS.abraamo as string);
-    const isacco = findElementById(ELEMENTO_IDS.isacco as string);
-
-    expect(
-      abraamo?.link.some(
-        (l) => l.targetId === (ELEMENTO_IDS.isacco as string) && l.tipo === "parentela",
-      ),
-    ).toBe(false);
-    expect(
-      isacco?.link.some(
-        (l) => l.targetId === (ELEMENTO_IDS.abraamo as string) && l.tipo === "parentela",
-      ),
-    ).toBe(false);
-  });
-
-  it("is a no-op when the link does not exist", () => {
-    // gedeone has no link to regnoDavide
-    const gedeoneBase = findElementById(ELEMENTO_IDS.gedeone as string);
-    const baseLinkCount = gedeoneBase?.link.length ?? 0;
-
-    removeBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.regnoDavide as string,
-      "correlato",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    expect(gedeone?.link.length).toBe(baseLinkCount);
-  });
-
-  it("does not remove unrelated links on either side", () => {
-    // Create two different links from gedeone
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-    createBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.gerusalemme as string,
-      "correlato",
-    );
-
-    // Remove only the babilonia link
-    removeBidirectionalLink(
-      ELEMENTO_IDS.gedeone as string,
-      ELEMENTO_IDS.babilonia as string,
-      "correlato",
-    );
-
-    const gedeone = findElementById(ELEMENTO_IDS.gedeone as string);
-    expect(
-      gedeone?.link.some(
-        (l) => l.targetId === (ELEMENTO_IDS.gerusalemme as string) && l.tipo === "correlato",
-      ),
-    ).toBe(true);
+  it("correlato symmetric double inversion stays correlato", () => {
+    const original: ElementoLink = { targetId: "b", tipo: "correlato" };
+    const once = getInverseLink("a", original);
+    const twice = getInverseLink("b", once);
+    expect(twice.tipo).toBe("correlato");
+    expect(twice.ruolo).toBeUndefined();
   });
 });

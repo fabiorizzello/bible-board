@@ -27,7 +27,13 @@ import {
 } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
-import { workspaceUi$, navigateToView, selectElement } from "./workspace-ui-store";
+import {
+  workspaceUi$,
+  navigateToView,
+  selectElement,
+  getJazzElementi,
+  getJazzMe,
+} from "./workspace-ui-store";
 import type { ElementoTipo } from "@/features/elemento/elemento.model";
 
 const TIPO_OPTIONS: readonly ElementoTipo[] = [
@@ -48,7 +54,7 @@ import {
   formatElementDate,
   getBoardDisplayItems,
 } from "./display-helpers";
-import { RECENTI } from "@/mock/data";
+import { createElementoInWorkspace } from "@/features/elemento/elemento.adapter";
 
 export function ListPane() {
   const currentView = useValue(workspaceUi$.currentView);
@@ -57,23 +63,23 @@ export function ListPane() {
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
   const sidebarOpen = useValue(workspaceUi$.sidebarOpen);
   const fullscreen = useValue(workspaceUi$.fullscreen);
-  const deletedElementIds = useValue(workspaceUi$.deletedElementIds);
-  const lastModified = useValue(workspaceUi$.lastModified);
-  void lastModified;
   const boardItems = getBoardDisplayItems();
 
   const isElementView = currentView === "tutti" || currentView.startsWith("board-");
   const isRecentiView = currentView === "recenti";
 
   const currentElements = isElementView
-    ? getElementsForView(currentView, filterText, activeTipo, deletedElementIds)
+    ? getElementsForView(currentView, filterText, activeTipo)
     : [];
+
+  // Recenti: most recently created elements (last 8, newest first)
+  const recentElements = isRecentiView ? [...getJazzElementi()].reverse().slice(0, 8) : [];
 
   const viewLabel = currentView === "recenti" ? "Recenti"
     : currentView === "tutti" ? "Tutti gli elementi"
     : boardItems.find((b) => b.viewId === currentView)?.nome ?? currentView;
 
-  const listCount = isRecentiView ? RECENTI.length : currentElements.length;
+  const listCount = isRecentiView ? recentElements.length : currentElements.length;
 
   function handleSelectElement(id: string) {
     selectElement(id);
@@ -81,6 +87,35 @@ export function ListPane() {
 
   function handleRecentiNavChange(viewId: ViewId) {
     navigateToView(viewId);
+  }
+  void handleRecentiNavChange; // used indirectly in recenti ListBox
+
+  function handleCreateElemento(tipo: ElementoTipo) {
+    const me = getJazzMe();
+    if (!me) {
+      toast("Account non disponibile", { variant: "default" });
+      return;
+    }
+    const result = createElementoInWorkspace(me, {
+      titolo: `Nuovo ${tipo}`,
+      descrizione: "",
+      tags: [],
+      tipo,
+    });
+    result.match(
+      (newCoMap) => {
+        // Select the newly created element so the user can rename it immediately
+        selectElement(newCoMap.id as string);
+        if (currentView === "recenti" || currentView === "tutti") {
+          // Stay in current view; if recenti, new element will appear at top
+        } else {
+          navigateToView("tutti");
+        }
+      },
+      (error) => {
+        toast(`Errore creazione: ${error.type}`, { variant: "default" });
+      },
+    );
   }
 
   return (
@@ -129,7 +164,7 @@ export function ListPane() {
           <Dropdown.Popover placement="bottom end" className="min-w-[200px]">
             <Dropdown.Menu
               onAction={(key) => {
-                toast(`Nuovo ${key} — funzionalità prossimamente`, { variant: "default" });
+                handleCreateElemento(key as ElementoTipo);
               }}
             >
               {TIPO_OPTIONS.map((tipo) => (
@@ -191,51 +226,41 @@ export function ListPane() {
 
       {/* List items — ListBox with keyboard navigation */}
       <ScrollShadow className="flex-1 overflow-y-auto">
-        {/* Recenti view */}
-        {isRecentiView && (
+        {/* Recenti view — most recently created elements */}
+        {isRecentiView && recentElements.length > 0 && (
           <ListBox
             aria-label="Elementi recenti"
             selectionMode="single"
-            selectedKeys={selectedElementId ? new Set([`elemento-${selectedElementId}`]) : new Set()}
+            selectedKeys={selectedElementId ? new Set([selectedElementId]) : new Set()}
             onSelectionChange={(keys) => {
-              if (keys === "all" || keys.size === 0) return;
-              const compositeKey = String([...keys][0]);
-              const dashIdx = compositeKey.indexOf("-");
-              const tipo = compositeKey.substring(0, dashIdx);
-              const id = compositeKey.substring(dashIdx + 1);
-              if (tipo === "elemento") handleSelectElement(id);
-              else if (tipo === "board") {
-                const board = boardItems.find((b) => b.id === id);
-                if (board) handleRecentiNavChange(board.viewId);
+              if (keys !== "all" && keys.size > 0) {
+                handleSelectElement(String([...keys][0]));
               }
             }}
             className="border-none p-0 outline-none"
           >
-            {RECENTI.map((rec) => (
+            {recentElements.map((el) => (
               <ListBox.Item
-                key={`${rec.tipo}-${rec.id}`}
-                id={`${rec.tipo}-${rec.id}`}
-                textValue={rec.titolo}
+                key={el.id as string}
+                id={el.id as string}
+                textValue={el.titolo}
                 className="flex items-center gap-2 rounded-none px-3 min-h-[44px] cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:border-l-[3px] data-[selected]:border-l-primary data-[selected]:pl-[9px]"
               >
-                <Chip size="sm" className={`px-1.5 py-px text-[9px] font-semibold flex-shrink-0 ${
-                  rec.tipo === "board"
-                    ? "bg-accent/10 text-accent uppercase tracking-wider"
-                    : "bg-primary/10 text-primary"
-                }`}>
-                  {rec.tipo === "board"
-                    ? "board"
-                    : rec.elementoTipo
-                      ? TIPO_ABBREV[rec.elementoTipo] ?? rec.elementoTipo
-                      : ""}
+                <Chip size="sm" className="bg-primary/10 px-1.5 py-px text-[9px] font-semibold text-primary flex-shrink-0">
+                  {TIPO_ABBREV[el.tipo] ?? el.tipo}
                 </Chip>
-                <Text className="flex-1 truncate text-xs font-medium text-ink-md">{rec.titolo}</Text>
-                <Text className="font-heading text-[9px] text-ink-dim flex-shrink-0">
-                  {rec.tempo}
-                </Text>
+                <Text className="flex-1 truncate text-xs font-medium text-ink-md">{el.titolo}</Text>
               </ListBox.Item>
             ))}
           </ListBox>
+        )}
+
+        {/* Recenti empty state */}
+        {isRecentiView && recentElements.length === 0 && (
+          <EmptyState className="flex flex-col items-center justify-center py-16 px-4">
+            <Text className="text-xs text-ink-lo mb-3">Nessun elemento ancora.</Text>
+            <Text className="text-[11px] text-ink-ghost">Usa il + per creare il primo.</Text>
+          </EmptyState>
         )}
 
         {/* Element view */}
@@ -255,8 +280,8 @@ export function ListPane() {
               const dateStr = formatElementDate(el);
               return (
                 <ListBox.Item
-                  key={el.id}
-                  id={el.id}
+                  key={el.id as string}
+                  id={el.id as string}
                   textValue={el.titolo}
                   className="flex items-center gap-2 rounded-none px-3 min-h-[44px] cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:border-l-[3px] data-[selected]:border-l-primary data-[selected]:pl-[9px]"
                 >

@@ -3,13 +3,22 @@
  *
  * Module-level singleton (not React context) for fine-grained reactivity across
  * decomposed workspace components.
+ *
+ * Jazz mutations are surfaced here as thin wrappers so call sites in UI
+ * components don't need direct adapter imports. Raw Jazz state is kept in
+ * module-level refs (not in the observable) to avoid Jazz proxy serialization.
  */
 
-import type { Elemento, ElementoLink, TipoLink, RuoloLink } from "@/features/elemento/elemento.model";
-import type { NormalizedElementoInput, NormalizedFonte } from "@/features/elemento/elemento.rules";
-import { getInverseLink } from "@/features/elemento/elemento.rules";
+import type { Elemento, TipoLink, RuoloLink } from "@/features/elemento/elemento.model";
+import type { NormalizedElementoInput, NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
 import { observable } from "@legendapp/state";
-import { ELEMENTI_MAP } from "@/mock/data";
+import {
+  updateWorkspaceElemento,
+  addBidirectionalLink,
+  removeBidirectionalLink as removeBidirectionalLinkAdapter,
+  softDeleteWorkspaceElemento,
+  restoreSoftDeletedElemento,
+} from "@/features/elemento/elemento.adapter";
 
 export type ViewId = "recenti" | "tutti" | "board-patriarchi" | "board-profeti";
 
@@ -28,6 +37,7 @@ export type EditableFieldId =
   | "add-field"
   | "review";
 
+// Legacy type — kept for backward compatibility with existing call sites
 export type ElementoSessionPatch = Partial<Omit<Elemento, "id">>;
 
 export interface WorkspaceUIState {
@@ -38,18 +48,75 @@ export interface WorkspaceUIState {
   sidebarOpen: boolean;
   fullscreen: boolean;
   editingFieldId: EditableFieldId | null;
-  /**
-   * IDs of elements that have been soft-deleted in this session.
-   * In-memory only — no Jazz persistence in the prototype. The list pane
-   * filters them out, and the detail pane is reset when the selected element
-   * is soft-deleted. Restored via the toast undo action.
-   */
-  deletedElementIds: string[];
-  elementOverrides: Record<string, ElementoSessionPatch>;
-  /** Session-only fonti overrides keyed by ElementoId string. Once set, fully replaces MOCK_FONTI for that element. */
-  fontiOverrides: Record<string, readonly NormalizedFonte[]>;
-  lastModified: number;
 }
+
+// ── Module-level Jazz state refs ──
+// Kept outside the observable to avoid Legend State attempting to deeply
+// observe Jazz reactive proxies (which would break the Jazz reactivity model).
+
+let _jazzMe: any = null;
+let _jazzElementi: readonly Elemento[] = [];
+const _fontiBacking = new Map<string, readonly NormalizedFonte[]>();
+
+export function getJazzMe(): any {
+  return _jazzMe;
+}
+
+export function getJazzElementi(): readonly Elemento[] {
+  return _jazzElementi;
+}
+
+export function getJazzFontiForElement(elementoId: string): readonly NormalizedFonte[] {
+  return _fontiBacking.get(elementoId) ?? [];
+}
+
+/**
+ * Called by WorkspacePreviewPage on every Jazz-triggered render.
+ * Populates the module-level refs so all display-helper functions read fresh data.
+ */
+export function syncJazzState(
+  me: any,
+  rawCoMaps: any[],
+  domainElementi: Elemento[],
+): void {
+  _jazzMe = me;
+  _jazzElementi = domainElementi;
+
+  _fontiBacking.clear();
+  for (const coMap of rawCoMaps) {
+    if (!coMap?.id) continue;
+    const fonti: NormalizedFonte[] = coMap.fonti
+      ? Array.from(coMap.fonti as any[])
+          .filter(Boolean)
+          .map((f: any) => ({
+            tipo: f.tipo as FonteTipo,
+            valore: f.valore as string,
+            ...(f.urlCalcolata ? { urlCalcolata: f.urlCalcolata as string } : {}),
+          }))
+      : [];
+    _fontiBacking.set(coMap.id as string, fonti);
+  }
+}
+
+/**
+ * Test-only: seed the Jazz element store with inline fixtures.
+ * Call in beforeEach to make display-helper functions work without a real Jazz runtime.
+ */
+export function syncJazzElementiForTest(
+  elementi: Elemento[],
+  fontiBacking?: ReadonlyMap<string, readonly NormalizedFonte[]>,
+): void {
+  _jazzMe = null;
+  _jazzElementi = [...elementi];
+  _fontiBacking.clear();
+  if (fontiBacking) {
+    for (const [id, fonti] of fontiBacking) {
+      _fontiBacking.set(id, fonti);
+    }
+  }
+}
+
+// ── Observable UI state ──
 
 const initialState: WorkspaceUIState = {
   currentView: "recenti",
@@ -59,10 +126,6 @@ const initialState: WorkspaceUIState = {
   sidebarOpen: true,
   fullscreen: false,
   editingFieldId: null,
-  deletedElementIds: [],
-  elementOverrides: {},
-  fontiOverrides: {},
-  lastModified: Date.now(),
 };
 
 export const workspaceUi$ = observable<WorkspaceUIState>(initialState);
@@ -88,67 +151,60 @@ export function isFieldEditing(fieldId: EditableFieldId): boolean {
   return workspaceUi$.editingFieldId.peek() === fieldId;
 }
 
+/**
+ * No-op kept for backward compat. All field patches now go through
+ * commitNormalizedElement → Jazz adapter. Link patches are handled by
+ * createBidirectionalLink / removeBidirectionalLink.
+ */
 export function commitElementPatch(
-  elementId: string,
-  patch: ElementoSessionPatch,
+  _elementId: string,
+  _patch: ElementoSessionPatch,
 ): void {
-  const current = workspaceUi$.elementOverrides.peek();
-  const nextPatch = {
-    ...(current[elementId] ?? {}),
-    ...patch,
-  };
-
-  workspaceUi$.elementOverrides.set({
-    ...current,
-    [elementId]: nextPatch,
-  });
-  workspaceUi$.lastModified.set(Date.now());
+  void _elementId;
+  void _patch;
 }
 
+/**
+ * Persist a normalized element update to the Jazz CoMap.
+ */
 export function commitNormalizedElement(
   elementId: string,
   normalized: NormalizedElementoInput,
 ): void {
-  commitElementPatch(elementId, {
-    titolo: normalized.titolo,
-    descrizione: normalized.descrizione,
-    tags: normalized.tags,
-    tipo: normalized.tipo,
-    date: normalized.date,
-    nascita: normalized.nascita,
-    morte: normalized.morte,
-    tribu: normalized.tribu,
-    ruoli: normalized.ruoli,
-    fazioni: normalized.fazioni,
-    esito: normalized.esito,
-    statoProfezia: normalized.statoProfezia,
-    dettagliRegno: normalized.dettagliRegno,
-    regione: normalized.regione,
-  });
+  const me = getJazzMe();
+  if (!me) {
+    console.warn("commitNormalizedElement: Jazz account non disponibile");
+    return;
+  }
+  const result = updateWorkspaceElemento(me, elementId, normalized);
+  if (result.isErr()) {
+    console.warn("commitNormalizedElement failed:", result.error);
+  }
 }
 
 /**
- * Replace the session-level fonti for a given element.
- * Called after every add/remove so the detail pane re-renders via lastModified.
+ * No-op kept for backward compat. Fonti are now persisted via Jazz
+ * (addFonteToElemento / removeFonteFromElemento in ElementoEditor).
  */
 export function commitFontiOverride(
-  elementId: string,
-  fonti: readonly NormalizedFonte[],
+  _elementId: string,
+  _fonti: readonly NormalizedFonte[],
 ): void {
-  const current = workspaceUi$.fontiOverrides.peek();
-  workspaceUi$.fontiOverrides.set({ ...current, [elementId]: fonti });
-  workspaceUi$.lastModified.set(Date.now());
+  void _elementId;
+  void _fonti;
 }
 
 /**
- * Soft delete an element: mark it as deleted (filtered out of lists) and
- * clear the current selection so the detail pane returns to its empty state.
- * Also exits fullscreen mode and edit mode if active.
+ * Soft-delete via Jazz deletedAt flag. Clears the selection immediately so
+ * the detail pane returns to its empty state before the Jazz re-render.
  */
 export function softDeleteElement(id: string): void {
-  const current = workspaceUi$.deletedElementIds.peek();
-  if (!current.includes(id)) {
-    workspaceUi$.deletedElementIds.set([...current, id]);
+  const me = getJazzMe();
+  if (me) {
+    const result = softDeleteWorkspaceElemento(me, id);
+    if (result.isErr()) {
+      console.warn("softDeleteElement failed:", result.error);
+    }
   }
   workspaceUi$.selectedElementId.set(null);
   closeFieldEditor();
@@ -156,43 +212,33 @@ export function softDeleteElement(id: string): void {
 }
 
 /**
- * Restore a soft-deleted element back into the visible list and re-select it
- * so the user lands on the item they accidentally deleted.
+ * Restore a soft-deleted element and re-select it.
  */
 export function restoreElement(id: string): void {
-  const current = workspaceUi$.deletedElementIds.peek();
-  if (current.includes(id)) {
-    workspaceUi$.deletedElementIds.set(current.filter((d) => d !== id));
+  const me = getJazzMe();
+  if (me) {
+    const result = restoreSoftDeletedElemento(me, id);
+    if (result.isErr()) {
+      console.warn("restoreElement failed:", result.error);
+    }
   }
   workspaceUi$.selectedElementId.set(id);
 }
 
-/**
- * Finalize a soft delete after the toast undo window has expired. In the
- * mock-data prototype the element stays in `deletedElementIds` (visual-only
- * removal). A future Jazz-backed implementation would mutate persistence here.
- */
-export function finalizeDelete(id: string): void {
-  // No-op in the prototype: the id remains in deletedElementIds so the list
-  // continues to filter it out. Kept as a named entry point so the future
-  // Jazz adapter can hook persistence without refactoring callers.
-  void id;
+/** No-op: soft delete via deletedAt is already persisted in Jazz. */
+export function finalizeDelete(_id: string): void {
+  void _id;
 }
 
 export function resetWorkspaceUiState(): void {
-  workspaceUi$.set({
-    ...initialState,
-    deletedElementIds: [],
-    elementOverrides: {},
-    fontiOverrides: {},
-    lastModified: Date.now(),
-  });
+  workspaceUi$.set({ ...initialState });
+  _jazzMe = null;
+  _jazzElementi = [];
+  _fontiBacking.clear();
 }
 
 /**
- * Add a bidirectional link between source and target atomically.
- * Writes the forward link on source and the computed inverse on target in one
- * store update. Idempotent: no-op if the forward link already exists.
+ * Create a bidirectional link between two elementi via the Jazz adapter.
  */
 export function createBidirectionalLink(
   sourceId: string,
@@ -200,75 +246,32 @@ export function createBidirectionalLink(
   tipo: TipoLink,
   ruolo?: RuoloLink,
 ): void {
-  const currentOverrides = workspaceUi$.elementOverrides.peek();
-
-  const sourceBase = ELEMENTI_MAP.get(sourceId);
-  const targetBase = ELEMENTI_MAP.get(targetId);
-  if (!sourceBase || !targetBase) return;
-
-  const sourceLinks: readonly ElementoLink[] =
-    currentOverrides[sourceId]?.link ?? sourceBase.link;
-  const targetLinks: readonly ElementoLink[] =
-    currentOverrides[targetId]?.link ?? targetBase.link;
-
-  if (sourceLinks.some((l) => l.targetId === targetId && l.tipo === tipo)) return;
-
-  const forwardLink: ElementoLink = { targetId, tipo, ...(ruolo ? { ruolo } : {}) };
-  const inverseLink = getInverseLink(sourceId, forwardLink);
-
-  const targetAlreadyLinked = targetLinks.some(
-    (l) => l.targetId === sourceId && l.tipo === tipo,
-  );
-
-  const nextOverrides: Record<string, ElementoSessionPatch> = {
-    ...currentOverrides,
-    [sourceId]: { ...(currentOverrides[sourceId] ?? {}), link: [...sourceLinks, forwardLink] },
-    ...(!targetAlreadyLinked
-      ? {
-          [targetId]: {
-            ...(currentOverrides[targetId] ?? {}),
-            link: [...targetLinks, inverseLink],
-          },
-        }
-      : {}),
-  };
-
-  workspaceUi$.elementOverrides.set(nextOverrides);
-  workspaceUi$.lastModified.set(Date.now());
+  const me = getJazzMe();
+  if (!me) {
+    console.warn("createBidirectionalLink: Jazz account non disponibile");
+    return;
+  }
+  const result = addBidirectionalLink(me, sourceId, targetId, tipo, ruolo);
+  if (result.isErr()) {
+    console.warn("createBidirectionalLink failed:", result.error);
+  }
 }
 
 /**
- * Remove a bidirectional link atomically.
- * Removes the forward link from source and the matching inverse from target.
- * No-op when either link is absent.
+ * Remove a bidirectional link between two elementi via the Jazz adapter.
  */
 export function removeBidirectionalLink(
   sourceId: string,
   targetId: string,
   tipo: TipoLink,
 ): void {
-  const currentOverrides = workspaceUi$.elementOverrides.peek();
-
-  const sourceBase = ELEMENTI_MAP.get(sourceId);
-  const targetBase = ELEMENTI_MAP.get(targetId);
-  if (!sourceBase || !targetBase) return;
-
-  const sourceLinks: readonly ElementoLink[] =
-    currentOverrides[sourceId]?.link ?? sourceBase.link;
-  const targetLinks: readonly ElementoLink[] =
-    currentOverrides[targetId]?.link ?? targetBase.link;
-
-  const nextSourceLinks = sourceLinks.filter(
-    (l) => !(l.targetId === targetId && l.tipo === tipo),
-  );
-  const nextTargetLinks = targetLinks.filter(
-    (l) => !(l.targetId === sourceId && l.tipo === tipo),
-  );
-
-  workspaceUi$.elementOverrides.set({
-    ...currentOverrides,
-    [sourceId]: { ...(currentOverrides[sourceId] ?? {}), link: nextSourceLinks },
-    [targetId]: { ...(currentOverrides[targetId] ?? {}), link: nextTargetLinks },
-  });
-  workspaceUi$.lastModified.set(Date.now());
+  const me = getJazzMe();
+  if (!me) {
+    console.warn("removeBidirectionalLink: Jazz account non disponibile");
+    return;
+  }
+  const result = removeBidirectionalLinkAdapter(me, sourceId, targetId, tipo);
+  if (result.isErr()) {
+    console.warn("removeBidirectionalLink failed:", result.error);
+  }
 }

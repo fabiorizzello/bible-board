@@ -1,8 +1,11 @@
 /**
- * Display helpers — bridge between domain-typed mock data and UI components.
+ * Display helpers — bridge between Jazz-backed domain objects and UI components.
  *
  * Functions here adapt Elemento (branded IDs, DataStorica, ElementoLink)
  * to the display shapes the UI needs (formatted dates, resolved names, etc.).
+ *
+ * Element data is read from the Jazz-backed store (syncJazzState feeds it on
+ * every WorkspacePreviewPage render). Boards still use mock data pending S04.
  */
 
 import type { Elemento, ElementoTipo } from "@/features/elemento/elemento.model";
@@ -10,10 +13,11 @@ import type { Board } from "@/features/board/board.model";
 import { formatHistoricalEra } from "@/features/shared/value-objects";
 import type { DataStorica } from "@/features/shared/value-objects";
 import type { NormalizedFonte, FonteTipo } from "@/features/elemento/elemento.rules";
-import { ELEMENTI, BOARDS, ELEMENTI_MAP, ELEMENTO_IDS } from "@/mock/data";
+// Boards still use mock data — S04 will migrate these to Jazz.
+import { BOARDS } from "@/mock/data";
 
-import type { ElementoSessionPatch, ViewId } from "./workspace-ui-store";
-import { workspaceUi$ } from "./workspace-ui-store";
+import type { ViewId } from "./workspace-ui-store";
+import { getJazzElementi, getJazzFontiForElement } from "./workspace-ui-store";
 
 export type { NormalizedFonte, FonteTipo };
 
@@ -22,7 +26,7 @@ export type { ViewId };
 
 // ── Constants ──
 
-/** Simulated current user identity for the mock prototype. */
+/** Simulated current user identity (session). */
 export const CURRENT_AUTORE = "utente-corrente";
 
 /** Filter labels shown in the tipo filter bar. */
@@ -56,27 +60,12 @@ const tipoFilterMap: Record<string, ElementoTipo> = {
   Profezie: "profezia",
 };
 
-function mergeElemento(
-  element: Elemento,
-  patch?: ElementoSessionPatch,
-): Elemento {
-  if (!patch) {
-    return element;
-  }
-
-  return {
-    ...element,
-    ...patch,
-  };
-}
-
-function getResolvedElements(): Elemento[] {
-  const overrides = workspaceUi$.elementOverrides.peek();
-  return ELEMENTI.map((element) => mergeElemento(element, overrides[element.id as string]));
+function getResolvedElements(): readonly Elemento[] {
+  return getJazzElementi();
 }
 
 function getResolvedElementMap(): Map<string, Elemento> {
-  return new Map(getResolvedElements().map((element) => [element.id as string, element]));
+  return new Map(getJazzElementi().map((el) => [el.id as string, el]));
 }
 
 // ── Date formatting ──
@@ -110,18 +99,16 @@ export function formatElementDate(el: Elemento): string | undefined {
 
 /**
  * Get the elements for a board based on its selezione criteria.
- * For "fissa" boards: filter ELEMENTI by IDs in the selection.
- * For "dinamica" boards: filter ELEMENTI by tags/tipi.
  */
 function getBoardElements(board: Board): Elemento[] {
   const resolvedElements = getResolvedElements();
   const selezione = board.selezione;
   if (selezione.kind === "fissa") {
     const idSet = new Set(selezione.elementiIds);
-    return resolvedElements.filter((el) => idSet.has(el.id as string));
+    return [...resolvedElements].filter((el) => idSet.has(el.id as string));
   }
   // dinamica
-  return resolvedElements.filter((el) => {
+  return [...resolvedElements].filter((el) => {
     const matchesTag =
       !selezione.tags?.length ||
       el.tags.some((t) => selezione.tags!.includes(t));
@@ -135,11 +122,8 @@ function getBoardElements(board: Board): Elemento[] {
 /**
  * Get filtered elements for a given view, search text, and tipo filter.
  *
- * Replaces the monolith's useCallback-wrapped getElementsForView.
- *
- * @param deletedIds Optional list of soft-deleted element ids (string form
- *   of branded ElementoId). Matching elements are filtered out so they
- *   disappear from the visible list during the toast undo window.
+ * @param deletedIds Optional IDs to additionally filter out (for compatibility;
+ *   Jazz-deleted elements are already excluded from the store via deletedAt flag).
  */
 export function getElementsForView(
   viewId: ViewId,
@@ -151,15 +135,14 @@ export function getElementsForView(
 
   switch (viewId) {
     case "recenti":
-      // recenti view doesn't show the element list
+      // recenti view uses a separate recent-items display, not this filter
       return [];
 
     case "tutti":
-      items = getResolvedElements();
+      items = [...getResolvedElements()];
       break;
 
     default: {
-      // board-patriarchi → find matching board
       const board = BOARDS.find((b) => {
         if (viewId === "board-patriarchi") return b.nome === "Patriarchi e Giudici";
         if (viewId === "board-profeti") return b.nome === "Profeti di Israele";
@@ -170,7 +153,7 @@ export function getElementsForView(
     }
   }
 
-  // Soft-deleted filter — applied first so it composes with text/tipo filters
+  // Extra deleted-IDs filter (no-op when Jazz handles deletion via deletedAt)
   if (deletedIds.length > 0) {
     const deletedSet = new Set(deletedIds);
     items = items.filter((el) => !deletedSet.has(el.id as string));
@@ -207,7 +190,6 @@ export interface BoardDisplayItem {
 function boardToViewId(board: Board): ViewId {
   if (board.nome === "Patriarchi e Giudici") return "board-patriarchi";
   if (board.nome === "Profeti di Israele") return "board-profeti";
-  // Fallback for unknown boards — shouldn't happen with current mock data
   return `board-${board.id}` as ViewId;
 }
 
@@ -238,7 +220,7 @@ export interface ResolvedLink {
 export function resolveCollegamenti(el: Elemento): ResolvedLink[] {
   const resolvedMap = getResolvedElementMap();
   return el.link.map((link) => {
-    const target = resolvedMap.get(link.targetId) ?? ELEMENTI_MAP.get(link.targetId);
+    const target = resolvedMap.get(link.targetId);
     return {
       titolo: target?.titolo ?? link.targetId,
       tipo: link.tipo,
@@ -290,30 +272,11 @@ export const FONTE_TIPI_IN_SCOPE: readonly FonteTipo[] = [
 ];
 
 /**
- * Baseline mock fonti — only Abraamo has fonti seeded in the preview.
- * Keyed by ElementoId string value.
- */
-const MOCK_FONTI: ReadonlyMap<string, readonly NormalizedFonte[]> = new Map([
-  [
-    ELEMENTO_IDS.abraamo as string,
-    [
-      { tipo: "scrittura", valore: "Genesi 12:1-3" },
-      { tipo: "scrittura", valore: "Genesi 15:5-6" },
-      { tipo: "scrittura", valore: "Genesi 22:1-18" },
-      { tipo: "scrittura", valore: "Ebrei 11:8-10" },
-    ] satisfies NormalizedFonte[],
-  ],
-]);
-
-/**
- * Get fonti for an elemento, applying session overrides over MOCK_FONTI.
+ * Get fonti for an elemento from the Jazz-backed store.
  * Returns an empty array if no fonti are registered.
  */
 export function getFontiForElement(el: Elemento): readonly NormalizedFonte[] {
-  const overrides = workspaceUi$.fontiOverrides.peek();
-  const override = overrides[el.id as string];
-  if (override !== undefined) return override;
-  return MOCK_FONTI.get(el.id as string) ?? [];
+  return getJazzFontiForElement(el.id as string);
 }
 
 /**
@@ -344,15 +307,12 @@ export interface AnnotazioniResult {
 
 /**
  * Get annotations linked to an element, split by authorship.
- *
- * Filters ELEMENTI where tipo === "annotazione" AND at least one
- * link[].targetId matches the given elementId.
  */
 export function getAnnotazioniForElement(
   elementId: string,
   currentAutore: string,
 ): AnnotazioniResult {
-  const annotations = getResolvedElements().filter(
+  const annotations = [...getResolvedElements()].filter(
     (el) =>
       el.tipo === "annotazione" &&
       el.link.some((l) => l.targetId === elementId),
@@ -367,11 +327,8 @@ export function getAnnotazioniForElement(
 // ── Element lookup ──
 
 /**
- * Find an element by ID across all data sources (ELEMENTI).
- * Used by the detail pane to resolve the selected element.
+ * Find an element by ID in the Jazz-backed store.
  */
 export function findElementById(id: string): Elemento | undefined {
-  const overrides = workspaceUi$.elementOverrides.peek();
-  const base = ELEMENTI_MAP.get(id);
-  return base ? mergeElemento(base, overrides[id]) : undefined;
+  return getJazzElementi().find((el) => (el.id as string) === id);
 }

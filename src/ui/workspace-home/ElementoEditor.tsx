@@ -42,15 +42,18 @@ import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 
 import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
 import type { ElementoInput, FonteTipo, NormalizedFonte } from "@/features/elemento/elemento.rules";
-import { normalizeElementoInput, addFonte, removeFonte } from "@/features/elemento/elemento.rules";
+import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
 import { formatHistoricalEra, type DataStorica } from "@/features/shared/value-objects";
-import { ELEMENTI } from "@/mock/data";
+import {
+  addFonteToElemento,
+  removeFonteFromElemento,
+} from "@/features/elemento/elemento.adapter";
 import {
   closeFieldEditor,
-  commitElementPatch,
-  commitFontiOverride,
   commitNormalizedElement,
   createBidirectionalLink,
+  getJazzElementi,
+  getJazzMe,
   openFieldEditor,
   removeBidirectionalLink,
   type EditableFieldId,
@@ -368,26 +371,19 @@ export function ElementoEditor({
     [element.link],
   );
 
-  const familyCandidates = useMemo(
-    () =>
-      ELEMENTI.filter(
-        (candidate) =>
-          candidate.id !== element.id &&
-          !alreadyLinkedFamilyIds.has(candidate.id as string) &&
-          candidate.tipo === "personaggio" &&
-          candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
-      ),
-    [element.id, alreadyLinkedFamilyIds, familySearch],
+  // Computed fresh on every render — no useMemo so new Jazz elements are always visible
+  const familyCandidates = getJazzElementi().filter(
+    (candidate) =>
+      candidate.id !== element.id &&
+      !alreadyLinkedFamilyIds.has(candidate.id as string) &&
+      candidate.tipo === "personaggio" &&
+      candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
   );
-  const genericCandidates = useMemo(
-    () =>
-      ELEMENTI.filter(
-        (candidate) =>
-          candidate.id !== element.id &&
-          !alreadyLinkedGenericIds.has(candidate.id as string) &&
-          candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
-      ),
-    [element.id, alreadyLinkedGenericIds, genericSearch],
+  const genericCandidates = getJazzElementi().filter(
+    (candidate) =>
+      candidate.id !== element.id &&
+      !alreadyLinkedGenericIds.has(candidate.id as string) &&
+      candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
   );
 
   useEffect(() => {
@@ -421,9 +417,6 @@ export function ElementoEditor({
     result.match(
       (normalized) => {
         commitNormalizedElement(element.id as string, normalized);
-        if ("link" in patch) {
-          commitElementPatch(element.id as string, { link: patch.link });
-        }
         setSurfaceError(null);
         if (!options?.keepEditorOpen) {
           closeFieldEditor();
@@ -438,9 +431,6 @@ export function ElementoEditor({
               normalizeElementoInput(buildElementoInput(prevElement)).match(
                 (prevNormalized) => {
                   commitNormalizedElement(prevElement.id as string, prevNormalized);
-                  if ("link" in patch) {
-                    commitElementPatch(prevElement.id as string, { link: prevElement.link });
-                  }
                 },
                 () => {
                   // prevElement was already valid — this branch is a safeguard only
@@ -581,14 +571,18 @@ export function ElementoEditor({
   }
 
   function commitFonteAdd() {
-    const valore = fonteValoreDraft.trim();
-    if (!valore) return;
+    const capturedValore = fonteValoreDraft.trim();
+    if (!capturedValore) return;
     const elementId = element.id as string;
-    const prevFonti = getFontiForElement(element);
-    const result = addFonte(prevFonti, { tipo: fonteTipoDraft, valore });
+    const capturedTipo = fonteTipoDraft;
+    const me = getJazzMe();
+    if (!me) {
+      setSurfaceError("Account non disponibile");
+      return;
+    }
+    const result = addFonteToElemento(me, elementId, { tipo: capturedTipo, valore: capturedValore });
     result.match(
-      (nextFonti) => {
-        commitFontiOverride(elementId, nextFonti);
+      () => {
         setSurfaceError(null);
         setFonteValoreDraft("");
         toast("Fonte aggiunta", {
@@ -596,7 +590,10 @@ export function ElementoEditor({
           variant: "default",
           actionProps: {
             children: "Annulla",
-            onPress: () => commitFontiOverride(elementId, prevFonti),
+            onPress: () => {
+              const jazzMe = getJazzMe();
+              if (jazzMe) removeFonteFromElemento(jazzMe, elementId, capturedTipo, capturedValore);
+            },
           },
         });
       },
@@ -610,17 +607,23 @@ export function ElementoEditor({
 
   function commitFonteRemove(tipo: FonteTipo, valore: string) {
     const elementId = element.id as string;
-    const prevFonti = getFontiForElement(element);
-    const result = removeFonte(prevFonti, tipo, valore);
+    const me = getJazzMe();
+    if (!me) {
+      setSurfaceError("Account non disponibile");
+      return;
+    }
+    const result = removeFonteFromElemento(me, elementId, tipo, valore);
     result.match(
-      (nextFonti) => {
-        commitFontiOverride(elementId, nextFonti);
+      () => {
         toast("Fonte rimossa", {
           timeout: 5_000,
           variant: "default",
           actionProps: {
             children: "Annulla",
-            onPress: () => commitFontiOverride(elementId, prevFonti),
+            onPress: () => {
+              const jazzMe = getJazzMe();
+              if (jazzMe) addFonteToElemento(jazzMe, elementId, { tipo, valore });
+            },
           },
         });
       },
