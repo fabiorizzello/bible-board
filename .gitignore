@@ -34,7 +34,8 @@ coverage/
 .env.*
 !.env.example
 
-# ── GSD (project state — versionato nel repo) ──
+# ── GSD (project state — symlink verso ~/.gsd/projects/<hash>, standard GSD v2) ──
+.gsd
 *.code-workspace
 __pycache__/
 *.pyc
