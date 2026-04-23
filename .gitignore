@@ -44,6 +44,21 @@ coverage/
 .gsd/worktrees/
 .gsd/milestones/**/continue.md
 .gsd/milestones/**/*-CONTINUE.md
+.gsd/gsd.db-wal
+.gsd/gsd.db-shm
+.gsd/auto-*.lock
+.gsd/audit/
+.gsd/journal/
+.gsd/graphs/
+.gsd/parallel/
+.gsd/quick/
+.gsd/safety/
+.gsd/doctor-history.jsonl
+.gsd/event-log.jsonl
+.gsd/notifications.jsonl
+.gsd/routing-history.json
+.gsd/state-manifest.json
+.gsd/last-snapshot.md
 *.code-workspace
 __pycache__/
 *.pyc
@@ -64,5 +79,3 @@ vendor/
 .mcp.json
 .bg-shell/
 
-# ── GSD baseline (auto-generated) ──
-.gsd
