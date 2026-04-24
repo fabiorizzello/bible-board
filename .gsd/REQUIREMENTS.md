@@ -4,24 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R049 — Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
-- Class: quality-attribute
-- Status: active
-- Description: Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
-- Why it matters: Notifica su no-op è spam. L'utente perde fiducia nel segnale e lo inizia a ignorare.
-- Source: user
-- Primary owning slice: M002/S03
-- Validation: unmapped
-
-### R050 — Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
-- Class: primary-user-loop
-- Status: active
-- Description: Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
-- Why it matters: Feedback di successo dentro il field è meno invasivo del toast e più chiaro (lega visivamente il conferma al campo che ha appena cambiato).
-- Source: user
-- Primary owning slice: M002/S03
-- Validation: unmapped
-
 ### R051 — Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
 - Class: primary-user-loop
 - Status: active
@@ -204,6 +186,26 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/.
 - Notes: Implemented in M007/S02 — domain helper computeValidityWarnings in elemento.rules.ts; wired into ElementoEditor replacing local getWarnings.
 
+### R049 — Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
+- Class: quality-attribute
+- Status: validated
+- Description: Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
+- Why it matters: Notifica su no-op è spam. L'utente perde fiducia nel segnale e lo inizia a ignorare.
+- Source: user
+- Primary owning slice: M002/S03
+- Validation: S03 PASS 2026-04-24: useFieldStatus hook enforces strict === comparison on blur; onCommit is only called when prev !== next. Wired into InlineTitle, DescrizioneSection, and TipoChip (guard: if option === tipo, return early). 141/141 tests pass, tsc clean.
+- Notes: Implemented in M007/S03 — useFieldStatus hook + TipoChip no-op guard in ElementoEditor.tsx.
+
+### R050 — Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
+- Class: primary-user-loop
+- Status: validated
+- Description: Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
+- Why it matters: Feedback di successo dentro il field è meno invasivo del toast e più chiaro (lega visivamente il conferma al campo che ha appena cambiato).
+- Source: user
+- Primary owning slice: M002/S03
+- Validation: S03 PASS 2026-04-24: Check icon with transition-opacity duration-300 added to InlineTitle (endContent), DescrizioneSection (absolute bottom-right overlay), and TipoChip (adjacent ml-2). Fades in on real change, fades out after 1500ms (0ms with prefers-reduced-motion). 141/141 tests pass, tsc clean.
+- Notes: Implemented in M007/S03 — three presentation variants in ElementoEditor.tsx; hook useFieldStatus.ts is shared state machine.
+
 ## Deferred
 
 ### R057 — Notifiche persistite cross-sessione (sopravvivono al reload)
@@ -385,8 +387,8 @@ This file is the explicit capability and coverage contract for the project.
 | R046 | quality-attribute | validated | M002/S01 | none | S01 T01 PASS 2026-04-24: All 3 user-visible technical strings in ElementoEditor.tsx replaced with Italian domain language. rg scan confirms 0 user-visible markdown/mockup/detail-pane strings in src/ui/ (excluding mockups/). 126/126 tests pass, tsc clean. |
 | R047 | quality-attribute | validated | M002/S01 | none | S01 T02 PASS 2026-04-24: WorkspacePreviewPage root changed to h-dvh; NavSidebar nav and ListPane inner div have h-full. Verified: 0 h-screen hits in root, h-dvh present, h-full on both wrappers. 126/126 tests pass, tsc clean. |
 | R048 | failure-visibility | validated | M002/S02 | none | S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/. |
-| R049 | quality-attribute | active | M002/S03 | none | unmapped |
-| R050 | primary-user-loop | active | M002/S03 | none | unmapped |
+| R049 | quality-attribute | validated | M002/S03 | none | S03 PASS 2026-04-24: useFieldStatus hook enforces strict === comparison on blur; onCommit is only called when prev !== next. Wired into InlineTitle, DescrizioneSection, and TipoChip (guard: if option === tipo, return early). 141/141 tests pass, tsc clean. |
+| R050 | primary-user-loop | validated | M002/S03 | none | S03 PASS 2026-04-24: Check icon with transition-opacity duration-300 added to InlineTitle (endContent), DescrizioneSection (absolute bottom-right overlay), and TipoChip (adjacent ml-2). Fades in on real change, fades out after 1500ms (0ms with prefers-reduced-motion). 141/141 tests pass, tsc clean. |
 | R051 | primary-user-loop | active | M002/S04 | none | unmapped |
 | R052 | constraint | active | M002/S04 | none | unmapped |
 | R053 | compliance/security | active | M002/S05 | none | unmapped |
@@ -398,7 +400,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 8
-- Mapped to slices: 8
-- Validated: 14 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047, R048)
+- Active requirements: 6
+- Mapped to slices: 6
+- Validated: 16 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047, R048, R049, R050)
 - Unmapped active requirements: 0

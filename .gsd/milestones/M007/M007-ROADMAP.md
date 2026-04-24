@@ -22,10 +22,10 @@
 - [x] **S02: S02** `risk:low` `depends:[]`
   > After this: Elemento minimale (solo titolo) non genera warning; data malformata o link a elemento soft-deleted genera warning inline
 
-- [ ] **S03: S03** `risk:medium` `depends:[]`
+- [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Blur descrizione senza cambio non emette nulla; con cambio check fade-out 1.5s; chip tag check inline; select check accanto trigger
 
-- [ ] **S04: Notification center iPad-native (bell + drawer + rollback)** `risk:high` `depends:[S03]`
+- [ ] **S04: S04** `risk:high` `depends:[]`
   > After this: Click bell apre drawer da destra con lista create/update/delete di elementi/link/board/fonti; rollback funzionante; badge pulse+bell bounce su nuova entry; nessun toast residuo
 
 - [ ] **S05: A11y baseline + density uniforme + animation polish** `risk:medium` `depends:[S01]`
