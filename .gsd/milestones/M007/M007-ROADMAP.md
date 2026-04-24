@@ -28,10 +28,10 @@
 - [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Click bell apre drawer da destra con lista create/update/delete di elementi/link/board/fonti; rollback funzionante; badge pulse+bell bounce su nuova entry; nessun toast residuo
 
-- [ ] **S05: S05** `risk:medium` `depends:[]`
+- [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: Tab-nav sidebar->list->detail con focus ring visibile; ogni icon-only etichettato; prefers-reduced-motion disabilita animazioni; rg 'transition-all' zero
 
-- [ ] **S06: Audit Jazz reale con 4 scenari browser** `risk:high` `depends:[S04]`
+- [ ] **S06: S06** `risk:high` `depends:[]`
   > After this: S06-RESEARCH.md con 4 scenari + verdict + evidenza: reload dopo 5 mutazioni, 2 tab propagano, offline+modifica+online resync, sync:'never' confermato
 
 - [ ] **S07: Revisione ui-ux-pro-max finale + integrated proof** `risk:medium` `depends:[S02,S03,S04,S05,S06]`
