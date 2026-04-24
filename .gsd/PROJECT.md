@@ -10,18 +10,11 @@ Il feel dell'app — deve sembrare un'app iPad nativa con navigazione chiara, no
 
 ## Current State
 
-**M001 completato 2026-04-23.** Il prototipo completo è live: layout 3-pane con dark mode, editor inline per-campo su 8 ElementoTipo, fonti/link bidirezionali, board CRUD, timeline D3 SVG, Jazz CRDT persistence, e polish iPad-native. R001–R011 tutti validati. 141/141 test. tsc clean.
+**M007 (Polish & Refinement) completato 2026-04-24.** Il prototipo M001 è stato rifinito a qualità iPad-native: linguaggio di dominio italiano, layout fullheight h-dvh, warning solo per validità reale, inline success feedback su tutti i field con peso, notification center con rollback (sostituisce i toast), a11y baseline WCAG AA, audit Jazz 4 scenari documentati. R046–R050 tutti validati. 150/150 test. tsc clean.
 
-**M007 (Polish & Refinement) in corso — S01✅ S02✅ S03✅ S04–S07 pending:**
-- S01: Linguaggio UI di dominio (zero markdown/panel/toast/field) + layout fullheight h-dvh — R046, R047 validati
-- S02: Warning solo per validità reale (data invalida, referenza rotta) — computeValidityWarnings in elemento.rules.ts — R048 validato
-- S03: Hook useFieldStatus + inline success feedback + no-op guard su InlineTitle, DescrizioneSection, TipoChip — R049, R050 validati
-- S04: Notification center iPad-native (bell + drawer + rollback) — pending
-- S05: A11y baseline + density uniforme + animation polish — pending
-- S06: Audit Jazz reale (4 scenari browser) — pending
-- S07: Revisione ui-ux-pro-max finale + integrated proof — pending
+**Pronto per M002 (cloud sync Jazz).**
 
-**Tests:** 141/141 pass. `pnpm tsc --noEmit` clean.
+**Tests:** 150/150 pass. `pnpm tsc --noEmit` clean.
 
 **Jazz integration architecture:**
 - `elemento.schema.ts`: CoMap schemas completi (Elemento, Link, Fonte, Board, Workspace) con tutti i campi tipo-specifici
@@ -32,7 +25,7 @@ Il feel dell'app — deve sembrare un'app iPad nativa con navigazione chiara, no
 ## Architecture / Key Patterns
 
 - **Offline-first PWA** — zero server, build statico, service worker via vite-plugin-pwa
-- **Jazz CRDTs** — single source of truth per dati, auth, sync (local-only per M001 demo)
+- **Jazz CRDTs** — single source of truth per dati, auth, sync (local-only per M001/M007 demo)
 - **DDD con vertical slices** — `features/<domain>/` (model, rules, errors, schema, adapter) + `ui/<page>/`
 - **Adapter pattern** — Jazz CoMap → `coMapToElementoDomain()` → Domain model puro → React UI
 - **D3 su SVG via refs** — per timeline e grafi, separato dal rendering React (Principio IV)
@@ -51,18 +44,20 @@ Il feel dell'app — deve sembrare un'app iPad nativa con navigazione chiara, no
 - **Inline success feedback** — Check icon con transition-opacity; 3 varianti presentazione: endContent (Input), absolute overlay (Milkdown), adjacent ml-2 (popover trigger)
 - **press-commit widgets** (popover, toggle) usano local `justCommitted` + setTimeout anziché useFieldStatus — il contratto onFocus/onBlur non si applica
 - **computeValidityWarnings** — domain helper in `elemento.rules.ts`; warning solo per validità reale (data invalida, referenza rotta); completeness checks rimossi
+- **notifications-store** — Legend State observable + parallel Map (non observable) per function closures (undoFn); notifyMutation(tipo, label, undoFn) al boundary di ogni mutazione; 0 toast() in src/ui/
+- **h-dvh on root container** — non h-screen; gestisce Safari iPadOS dynamic toolbar; h-full su ogni wrapper flex intermedio che contiene un'area scroll flex-1
 
 ## Requirements
 
 See [`.gsd/REQUIREMENTS.md`](.gsd/REQUIREMENTS.md) for the explicit capability contract and coverage mapping.
 
-**Validati:** R001–R011 (M001), R046–R050 (M007 S01–S03).
+**Validati:** R001–R011 (M001), R046–R050 (M007).
 
 ## Milestone Sequence
 
 - [x] M001: Prototipo completo su layout 3-pane consolidato — **COMPLETATO 2026-04-23**
-- [ ] M007: Polish & Refinement — S01✅ S02✅ S03✅ S04–S07 pending (esegue prima di M002)
-- [ ] M002: Backend Jazz cloud sync — sync server, auth reale, gruppi, permessi (depends: M007)
+- [x] M007: Polish & Refinement — linguaggio dominio, layout, warning, inline success, notification center, a11y, Jazz audit — **COMPLETATO 2026-04-24**
+- [ ] M002: Backend Jazz cloud sync — sync server, auth reale, gruppi, permessi (depends: M007) — **PRONTO PER AVVIO**
 - [ ] M003: Annotazione video JW.org — FonteTipo video, Mediator API, playback inline
 - [ ] M004: Sharing, permessi, action log — Jazz groups, ruoli, rollback, portrait tablet
 - [ ] M005: Media e immagini — upload, gallery, visualizzatore
@@ -74,6 +69,7 @@ Feature post-prototipo documentate in `.gsd/REQUIREMENTS.md` sezione Deferred.
 
 - Milkdown rich editor per `descrizione` non ancora wired (mockup esiste, wiring deferred)
 - Video FonteTipo deferred a M003
-- `sync: { when: 'never' }` — Jazz locale only, nessun cloud sync (M002)
+- `sync: { when: 'never' }` — Jazz locale only, nessun cloud sync (M002 scope)
+- 5 touch-target secondari (size=sm in drawer/dialog footers) senza min-h-[44px] esplicito — logged in KNOWLEDGE.md, prossimo a11y pass
+- Jazz A/B/C live scenario confirmation deferred — auto-mode non ha browser interattivo; richiesta verifica manuale pre-M002
 - Edge case non testato: bidirectional link undo quando target è stato soft-deleted nel frattempo
-- Toast su mutazione ancora presente (verrà rimosso da S04 quando il drawer assorbirà il canale)

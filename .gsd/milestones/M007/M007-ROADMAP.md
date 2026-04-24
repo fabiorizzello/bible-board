@@ -34,7 +34,7 @@
 - [x] **S06: S06** `risk:high` `depends:[]`
   > After this: S06-RESEARCH.md con 4 scenari + verdict + evidenza: reload dopo 5 mutazioni, 2 tab propagano, offline+modifica+online resync, sync:'never' confermato
 
-- [ ] **S07: S07** `risk:medium` `depends:[]`
+- [x] **S07: S07** `risk:medium` `depends:[]`
   > After this: Skill eseguita, report salvato; blocker risolti, non-blocker in KNOWLEDGE.md; screenshot prima/dopo (linguaggio, fullheight, notification center, inline success, a11y) in S07-SUMMARY.md
 
 ## Boundary Map

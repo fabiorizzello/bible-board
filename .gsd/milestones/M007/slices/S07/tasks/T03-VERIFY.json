@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M007/S07/T03",
+  "timestamp": 1777032111051,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "test -f .gsd/milestones/M007/slices/S07/S07-SUMMARY.md",
+      "exitCode": 0,
+      "durationMs": 2,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -c '^## ' .gsd/milestones/M007/slices/S07/S07-SUMMARY.md",
+      "exitCode": 0,
+      "durationMs": 3,
+      "verdict": "pass",
+      "output": "7",
+      "note": "Original check had malformed shell syntax ('returns >=4' as extra file args, exit code 2). Actual count is 7 (>= 4 required). Fixed in auto-fix attempt 1."
+    },
+    {
+      "command": "grep -q 'ui-ux-pro-max' .gsd/milestones/M007/slices/S07/S07-SUMMARY.md",
+      "exitCode": 0,
+      "durationMs": 3,
+      "verdict": "pass"
+    },
+    {
+      "command": "grep -q 'Jazz' .gsd/milestones/M007/slices/S07/S07-SUMMARY.md",
+      "exitCode": 0,
+      "durationMs": 3,
+      "verdict": "pass"
+    }
+  ],
+  "retryAttempt": 2,
+  "maxRetries": 2
+}

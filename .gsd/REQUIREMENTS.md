@@ -147,7 +147,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Un'app iPad-nativa parla il linguaggio dell'utente, non dello sviluppatore. Termini tecnici rompono l'illusione di app finita.
 - Source: user
 - Primary owning slice: M002/S01
-- Validation: S01 T01 PASS 2026-04-24: All 3 user-visible technical strings in ElementoEditor.tsx replaced with Italian domain language. rg scan confirms 0 user-visible markdown/mockup/detail-pane strings in src/ui/ (excluding mockups/). 126/126 tests pass, tsc clean.
+- Validation: T01 PASS 2026-04-24: 3 user-visible technical strings replaced in ElementoEditor.tsx; rg gate clean; 126/126 tests pass
 
 ### R047 — Layout fullheight su iPad landscape 1180×820 e portrait — nessuno scroll esterno, content scroll interno
 - Class: quality-attribute
@@ -156,7 +156,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: App che non occupa 100% viewport si percepisce come sito web, non app nativa.
 - Source: user
 - Primary owning slice: M002/S01
-- Validation: S01 T02 PASS 2026-04-24: WorkspacePreviewPage root changed to h-dvh; NavSidebar nav and ListPane inner div have h-full. Verified: 0 h-screen hits in root, h-dvh present, h-full on both wrappers. 126/126 tests pass, tsc clean.
+- Validation: T02 PASS 2026-04-24: h-dvh on root, h-full on NavSidebar nav and ListPane inner div; all rg checks pass; 126/126 tests pass, tsc clean
 
 ### R048 — Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
 - Class: failure-visibility
@@ -165,7 +165,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Warning fasulli creano rumore e allenano l'utente a ignorare i segnali. Solo validità reale preserva la forza del warning.
 - Source: user
 - Primary owning slice: M002/S02
-- Validation: S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/.
+- Validation: computeValidityWarnings checks only date invalida and referenza rotta. Completeness strings fully absent from src/. 135/135 tests pass, tsc clean. 2026-04-24.
 - Notes: Implemented in M007/S02 — domain helper computeValidityWarnings in elemento.rules.ts; wired into ElementoEditor replacing local getWarnings.
 
 ### R049 — Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
@@ -175,7 +175,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Notifica su no-op è spam. L'utente perde fiducia nel segnale e lo inizia a ignorare.
 - Source: user
 - Primary owning slice: M002/S03
-- Validation: S03 PASS 2026-04-24: useFieldStatus hook enforces strict === comparison on blur; onCommit is only called when prev !== next. Wired into InlineTitle, DescrizioneSection, and TipoChip (guard: if option === tipo, return early). 141/141 tests pass, tsc clean.
+- Validation: useFieldStatus strict === comparison + TipoChip option===tipo guard: onCommit never called on identical values. 141/141 tests pass.
 - Notes: Implemented in M007/S03 — useFieldStatus hook + TipoChip no-op guard in ElementoEditor.tsx.
 
 ### R050 — Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
@@ -185,7 +185,7 @@ This file is the explicit capability and coverage contract for the project.
 - Why it matters: Feedback di successo dentro il field è meno invasivo del toast e più chiaro (lega visivamente il conferma al campo che ha appena cambiato).
 - Source: user
 - Primary owning slice: M002/S03
-- Validation: S03 PASS 2026-04-24: Check icon with transition-opacity duration-300 added to InlineTitle (endContent), DescrizioneSection (absolute bottom-right overlay), and TipoChip (adjacent ml-2). Fades in on real change, fades out after 1500ms (0ms with prefers-reduced-motion). 141/141 tests pass, tsc clean.
+- Validation: Check icon with transition-opacity on InlineTitle (endContent), DescrizioneSection (absolute overlay), TipoChip (adjacent). Fades out 1500ms, immediate on prefers-reduced-motion. 141/141 tests pass.
 - Notes: Implemented in M007/S03 — three presentation variants in ElementoEditor.tsx; hook useFieldStatus.ts is shared state machine.
 
 ### R051 — Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
@@ -384,11 +384,11 @@ This file is the explicit capability and coverage contract for the project.
 | R043 | ui | out-of-scope | S04 | none | unmapped |
 | R044 | ui-d3 | out-of-scope | S05 | none | unmapped |
 | R045 | ux | out-of-scope | S06 | none | unmapped |
-| R046 | quality-attribute | validated | M002/S01 | none | S01 T01 PASS 2026-04-24: All 3 user-visible technical strings in ElementoEditor.tsx replaced with Italian domain language. rg scan confirms 0 user-visible markdown/mockup/detail-pane strings in src/ui/ (excluding mockups/). 126/126 tests pass, tsc clean. |
-| R047 | quality-attribute | validated | M002/S01 | none | S01 T02 PASS 2026-04-24: WorkspacePreviewPage root changed to h-dvh; NavSidebar nav and ListPane inner div have h-full. Verified: 0 h-screen hits in root, h-dvh present, h-full on both wrappers. 126/126 tests pass, tsc clean. |
-| R048 | failure-visibility | validated | M002/S02 | none | S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/. |
-| R049 | quality-attribute | validated | M002/S03 | none | S03 PASS 2026-04-24: useFieldStatus hook enforces strict === comparison on blur; onCommit is only called when prev !== next. Wired into InlineTitle, DescrizioneSection, and TipoChip (guard: if option === tipo, return early). 141/141 tests pass, tsc clean. |
-| R050 | primary-user-loop | validated | M002/S03 | none | S03 PASS 2026-04-24: Check icon with transition-opacity duration-300 added to InlineTitle (endContent), DescrizioneSection (absolute bottom-right overlay), and TipoChip (adjacent ml-2). Fades in on real change, fades out after 1500ms (0ms with prefers-reduced-motion). 141/141 tests pass, tsc clean. |
+| R046 | quality-attribute | validated | M002/S01 | none | T01 PASS 2026-04-24: 3 user-visible technical strings replaced in ElementoEditor.tsx; rg gate clean; 126/126 tests pass |
+| R047 | quality-attribute | validated | M002/S01 | none | T02 PASS 2026-04-24: h-dvh on root, h-full on NavSidebar nav and ListPane inner div; all rg checks pass; 126/126 tests pass, tsc clean |
+| R048 | failure-visibility | validated | M002/S02 | none | computeValidityWarnings checks only date invalida and referenza rotta. Completeness strings fully absent from src/. 135/135 tests pass, tsc clean. 2026-04-24. |
+| R049 | quality-attribute | validated | M002/S03 | none | useFieldStatus strict === comparison + TipoChip option===tipo guard: onCommit never called on identical values. 141/141 tests pass. |
+| R050 | primary-user-loop | validated | M002/S03 | none | Check icon with transition-opacity on InlineTitle (endContent), DescrizioneSection (absolute overlay), TipoChip (adjacent). Fades out 1500ms, immediate on prefers-reduced-motion. 141/141 tests pass. |
 | R051 | primary-user-loop | validated | M002/S04 | none | S04 delivered: NotificationBell + NotificationDrawer replace all toast() calls. 7 notifyMutation sites across ElementoEditor (6) and DetailPane (1). Drawer shows create/update/delete entries ordered newest-first with rollback. rg 'toast\(' src/ui/ → 0 hits. pnpm test --run → 150 tests green. pnpm tsc --noEmit → clean. |
 | R052 | constraint | validated | M002/S04 | none | S04 delivered: rollback(id) implemented in notifications-store with idempotency guard (undoFn called exactly once). All 7 mutation sites pass undoFn closures. DetailPane soft-delete passes restoreElement. ElementoEditor passes compensating Jazz ops. Unit tests confirm rollback idempotency. |
 | R053 | compliance/security | active | M002/S05 | none | unmapped |
