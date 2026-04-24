@@ -39,7 +39,7 @@ Must-haves:
   - Files: `src/ui/workspace-home/NavSidebar.tsx`
   - Verify: pnpm tsc --noEmit && pnpm test --run && rg -n 'tabIndex=\{0\}' src/ui/workspace-home/NavSidebar.tsx
 
-- [ ] **T02: Aggiungere aria-label ai pulsanti icon-only/action residui in ElementoEditor e DetailPane** `est:20m`
+- [x] **T02: Aggiungere aria-label ai pulsanti icon-only/action residui in ElementoEditor e DetailPane** `est:20m`
   Il research audit (S05-RESEARCH sezione 3) ha identificato 3 pulsanti che espongono testo visibile ma non comunicano l'azione allo screen reader:
 - `ElementoEditor.tsx` ~riga 1022 (InlineTitle display button): aggiungere `aria-label="Modifica titolo"`
 - `ElementoEditor.tsx` ~riga 1354 (description display button che contiene MarkdownPreview): aggiungere `aria-label="Modifica descrizione"`

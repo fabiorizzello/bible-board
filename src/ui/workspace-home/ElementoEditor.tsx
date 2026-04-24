@@ -982,6 +982,7 @@ function InlineTitle({
     <button
       type="button"
       onClick={onStart}
+      aria-label="Modifica titolo"
       className="min-w-0 flex-1 rounded-xl px-2 py-1.5 text-left text-[1.65rem] font-semibold leading-tight text-ink-hi transition-colors hover:bg-primary/5"
     >
       {value}
@@ -1349,6 +1350,7 @@ function DescrizioneSection({
         <button
           type="button"
           onClick={onStart}
+          aria-label="Modifica descrizione"
           className="w-full rounded-2xl border border-primary/8 bg-chrome/40 px-4 py-4 text-left transition-colors hover:border-primary/20 hover:bg-primary/[0.03]"
         >
           <MarkdownPreview value={value} />

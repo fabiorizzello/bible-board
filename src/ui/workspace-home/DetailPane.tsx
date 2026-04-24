@@ -170,6 +170,7 @@ export function DetailBody({
                 <button
                   key={ann.id as string}
                   type="button"
+                  aria-label={`Apri annotazione: ${ann.titolo}`}
                   className="flex flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-primary/6"
                   onClick={() => selectElement(ann.id as string)}
                 >
