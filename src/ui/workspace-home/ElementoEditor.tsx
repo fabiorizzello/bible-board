@@ -1303,6 +1303,7 @@ function DescrizioneSection({
 }) {
   const [draft, setDraft] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { status, onFocus, onBlur } = useFieldStatus<string>(value, (_prev, next) => onCommit(next));
 
   useEffect(() => {
     setDraft(value);
@@ -1318,7 +1319,7 @@ function DescrizioneSection({
 
   function handleBlur(event: FocusEvent<HTMLDivElement>) {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      onCommit(draft);
+      onBlur(draft);
     }
   }
 
@@ -1342,12 +1343,18 @@ function DescrizioneSection({
         <div
           ref={containerRef}
           tabIndex={-1}
+          onFocus={onFocus}
           onBlur={handleBlur}
-          className="milkdown-host rounded-2xl border border-primary/20 bg-primary/[0.03] p-3"
+          className="relative milkdown-host rounded-2xl border border-primary/20 bg-primary/[0.03] p-3"
         >
           <MilkdownProvider>
             <MilkdownEditorInline defaultValue={value} onChange={setDraft} />
           </MilkdownProvider>
+          <Check
+            className="absolute bottom-2 right-2 h-4 w-4 pointer-events-none transition-opacity duration-300"
+            aria-hidden="true"
+            style={{ opacity: status === 'success' ? 1 : 0 }}
+          />
         </div>
       ) : (
         <button
