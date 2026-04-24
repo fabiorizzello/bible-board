@@ -215,20 +215,25 @@ export function commitElementPatch(
 
 /**
  * Persist a normalized element update to the Jazz CoMap.
+ * Returns true on success, false on any failure (account missing or adapter error).
  */
 export function commitNormalizedElement(
   elementId: string,
   normalized: NormalizedElementoInput,
-): void {
+): boolean {
   const me = getJazzMe();
+  console.log("[DEBUG-SAVE] commitNormalizedElement called", { elementId, me: !!me, titolo: normalized.titolo });
   if (!me) {
     console.warn("commitNormalizedElement: Jazz account non disponibile");
-    return;
+    return false;
   }
   const result = updateWorkspaceElemento(me, elementId, normalized);
   if (result.isErr()) {
     console.warn("commitNormalizedElement failed:", result.error);
+    return false;
   }
+  console.log("[DEBUG-SAVE] commitNormalizedElement SUCCESS");
+  return true;
 }
 
 /**

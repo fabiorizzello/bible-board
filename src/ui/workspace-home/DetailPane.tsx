@@ -235,6 +235,9 @@ export function DetailBody({
 export function DetailPane() {
   const selectedElementId = useValue(workspaceUi$.selectedElementId);
   const editingFieldId = useValue(workspaceUi$.editingFieldId);
+  // Subscribe to Jazz sync ticks so React Compiler doesn't memo-skip
+  // re-renders after syncJazzState updates _jazzElementi.
+  useValue(workspaceUi$.lastModified);
 
   const selectedElement = selectedElementId
     ? findElementById(selectedElementId)

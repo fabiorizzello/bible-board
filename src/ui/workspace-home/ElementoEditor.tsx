@@ -399,11 +399,18 @@ export function ElementoEditor({
     // Snapshot prev state before any mutation for per-field rollback
     const prevElement = { ...element };
     const next = { ...element, ...patch };
-    const result = normalizeElementoInput(buildElementoInput(next));
+    console.log("[DEBUG-SAVE] commitPatch called", { label, elementId: element.id, patchKeys: Object.keys(patch) });
+    const input = buildElementoInput(next);
+    const result = normalizeElementoInput(input);
+    console.log("[DEBUG-SAVE] normalize result:", result.isOk() ? "OK" : `ERR: ${result.isErr() ? JSON.stringify(result.error) : "?"}`);
 
     result.match(
       (normalized) => {
-        commitNormalizedElement(element.id as string, normalized);
+        const ok = commitNormalizedElement(element.id as string, normalized);
+        if (!ok) {
+          setSurfaceError("Salvataggio fallito — account non disponibile");
+          return;
+        }
         setSurfaceError(null);
         if (!options?.keepEditorOpen) {
           closeFieldEditor();

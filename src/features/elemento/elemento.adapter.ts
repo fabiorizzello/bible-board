@@ -227,6 +227,7 @@ export function updateWorkspaceElemento(
   }
 
   const elemento = workspace.elementi.find((entry: any) => entry?.id === elementoId);
+  console.log("[DEBUG-SAVE] updateWorkspaceElemento: looking for", elementoId, "found:", !!elemento, "elements in workspace:", workspace.elementi?.length);
   if (!elemento) {
     return err({ type: "elemento_non_trovato" });
   }

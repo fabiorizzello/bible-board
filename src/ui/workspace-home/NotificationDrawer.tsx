@@ -47,7 +47,7 @@ function NotificaRow({ n }: { n: Notifica }): React.ReactElement {
       ) : n.undoFn ? (
         <Button
           variant="ghost"
-          className="flex-shrink-0 text-[12px] text-ink-lo hover:text-primary h-auto px-2 py-1 min-h-0"
+          className="flex-shrink-0 text-[12px] text-ink-lo hover:text-primary min-h-[44px] px-3 py-2"
           onPress={() => rollback(n.id)}
         >
           Annulla

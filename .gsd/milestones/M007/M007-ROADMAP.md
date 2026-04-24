@@ -31,10 +31,10 @@
 - [x] **S05: S05** `risk:medium` `depends:[]`
   > After this: Tab-nav sidebar->list->detail con focus ring visibile; ogni icon-only etichettato; prefers-reduced-motion disabilita animazioni; rg 'transition-all' zero
 
-- [ ] **S06: S06** `risk:high` `depends:[]`
+- [x] **S06: S06** `risk:high` `depends:[]`
   > After this: S06-RESEARCH.md con 4 scenari + verdict + evidenza: reload dopo 5 mutazioni, 2 tab propagano, offline+modifica+online resync, sync:'never' confermato
 
-- [ ] **S07: Revisione ui-ux-pro-max finale + integrated proof** `risk:medium` `depends:[S02,S03,S04,S05,S06]`
+- [ ] **S07: S07** `risk:medium` `depends:[]`
   > After this: Skill eseguita, report salvato; blocker risolti, non-blocker in KNOWLEDGE.md; screenshot prima/dopo (linguaggio, fullheight, notification center, inline success, a11y) in S07-SUMMARY.md
 
 ## Boundary Map
