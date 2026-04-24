@@ -41,6 +41,7 @@ import {
 import type { ViewId } from "./workspace-ui-store";
 import { getBoardDisplayItems } from "./display-helpers";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { NotificationBell } from "./NotificationBell";
 
 export function NavSidebar() {
   const currentView = useValue(workspaceUi$.currentView);
@@ -391,6 +392,7 @@ export function NavSidebar() {
             <Settings className="h-4 w-4" />
             Impostazioni
           </Button>
+          <NotificationBell />
           <ThemeSwitcher />
           <Tooltip>
             <Button

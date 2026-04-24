@@ -63,7 +63,7 @@ Nessuna UI in questo task. Deve importare SOLO da `@legendapp/state` e `@legenda
   - Files: `src/ui/workspace-home/notifications-store.ts`, `src/ui/workspace-home/__tests__/notifications-store.test.ts`
   - Verify: pnpm test --run src/ui/workspace-home/__tests__/notifications-store.test.ts → tutti i test verdi (8 scenari). pnpm tsc --noEmit → clean. rg 'observer\(|use\$\(' src/ui/workspace-home/notifications-store.ts → 0 hit.
 
-- [ ] **T02: Implementare <NotificationBell> e <NotificationDrawer> con HeroUI; integrare bell nel footer di NavSidebar** `est:M`
+- [x] **T02: Implementare <NotificationBell> e <NotificationDrawer> con HeroUI; integrare bell nel footer di NavSidebar** `est:M`
   Costruire i componenti UI che leggono dalla store creata in T01 e integrarli nel chrome della workspace. Nessun mutation site viene toccato in questo task — verrà cablato in T03/T04. Il drawer deve renderizzare correttamente una lista vuota (empty state) e una lista con entry fake (iniettate manualmente via notifyMutation da devtools per smoke test).
 
 **File nuovi:**
