@@ -4,24 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R051 — Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
-- Class: primary-user-loop
-- Status: active
-- Description: Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
-- Why it matters: Sostituisce toast invasivo con pattern iOS Mail/Messages. Offre scorrimento di modifiche recenti e rollback esplicito.
-- Source: user
-- Primary owning slice: M002/S04
-- Validation: unmapped
-
-### R052 — Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
-- Class: constraint
-- Status: active
-- Description: Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
-- Why it matters: Coerenza: un solo canale di feedback per tutte le mutazioni. Elimina ambiguità "quando esce toast vs drawer".
-- Source: user
-- Primary owning slice: M002/S04
-- Validation: unmapped
-
 ### R053 — A11y baseline: focus ring su tutti gli interattivi, keyboard nav sidebar→list→detail, aria-label su icon-only button, prefers-reduced-motion rispettato
 - Class: compliance/security
 - Status: active
@@ -206,6 +188,24 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S03 PASS 2026-04-24: Check icon with transition-opacity duration-300 added to InlineTitle (endContent), DescrizioneSection (absolute bottom-right overlay), and TipoChip (adjacent ml-2). Fades in on real change, fades out after 1500ms (0ms with prefers-reduced-motion). 141/141 tests pass, tsc clean.
 - Notes: Implemented in M007/S03 — three presentation variants in ElementoEditor.tsx; hook useFieldStatus.ts is shared state machine.
 
+### R051 — Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
+- Class: primary-user-loop
+- Status: validated
+- Description: Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
+- Why it matters: Sostituisce toast invasivo con pattern iOS Mail/Messages. Offre scorrimento di modifiche recenti e rollback esplicito.
+- Source: user
+- Primary owning slice: M002/S04
+- Validation: S04 delivered: NotificationBell + NotificationDrawer replace all toast() calls. 7 notifyMutation sites across ElementoEditor (6) and DetailPane (1). Drawer shows create/update/delete entries ordered newest-first with rollback. rg 'toast\(' src/ui/ → 0 hits. pnpm test --run → 150 tests green. pnpm tsc --noEmit → clean.
+
+### R052 — Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
+- Class: constraint
+- Status: validated
+- Description: Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
+- Why it matters: Coerenza: un solo canale di feedback per tutte le mutazioni. Elimina ambiguità "quando esce toast vs drawer".
+- Source: user
+- Primary owning slice: M002/S04
+- Validation: S04 delivered: rollback(id) implemented in notifications-store with idempotency guard (undoFn called exactly once). All 7 mutation sites pass undoFn closures. DetailPane soft-delete passes restoreElement. ElementoEditor passes compensating Jazz ops. Unit tests confirm rollback idempotency.
+
 ## Deferred
 
 ### R057 — Notifiche persistite cross-sessione (sopravvivono al reload)
@@ -389,8 +389,8 @@ This file is the explicit capability and coverage contract for the project.
 | R048 | failure-visibility | validated | M002/S02 | none | S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/. |
 | R049 | quality-attribute | validated | M002/S03 | none | S03 PASS 2026-04-24: useFieldStatus hook enforces strict === comparison on blur; onCommit is only called when prev !== next. Wired into InlineTitle, DescrizioneSection, and TipoChip (guard: if option === tipo, return early). 141/141 tests pass, tsc clean. |
 | R050 | primary-user-loop | validated | M002/S03 | none | S03 PASS 2026-04-24: Check icon with transition-opacity duration-300 added to InlineTitle (endContent), DescrizioneSection (absolute bottom-right overlay), and TipoChip (adjacent ml-2). Fades in on real change, fades out after 1500ms (0ms with prefers-reduced-motion). 141/141 tests pass, tsc clean. |
-| R051 | primary-user-loop | active | M002/S04 | none | unmapped |
-| R052 | constraint | active | M002/S04 | none | unmapped |
+| R051 | primary-user-loop | validated | M002/S04 | none | S04 delivered: NotificationBell + NotificationDrawer replace all toast() calls. 7 notifyMutation sites across ElementoEditor (6) and DetailPane (1). Drawer shows create/update/delete entries ordered newest-first with rollback. rg 'toast\(' src/ui/ → 0 hits. pnpm test --run → 150 tests green. pnpm tsc --noEmit → clean. |
+| R052 | constraint | validated | M002/S04 | none | S04 delivered: rollback(id) implemented in notifications-store with idempotency guard (undoFn called exactly once). All 7 mutation sites pass undoFn closures. DetailPane soft-delete passes restoreElement. ElementoEditor passes compensating Jazz ops. Unit tests confirm rollback idempotency. |
 | R053 | compliance/security | active | M002/S05 | none | unmapped |
 | R054 | quality-attribute | active | M002/S05 | none | unmapped |
 | R055 | integration | active | M002/S06 | none | unmapped |
@@ -400,7 +400,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 6
-- Mapped to slices: 6
-- Validated: 16 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047, R048, R049, R050)
+- Active requirements: 4
+- Mapped to slices: 4
+- Validated: 18 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047, R048, R049, R050, R051, R052)
 - Unmapped active requirements: 0

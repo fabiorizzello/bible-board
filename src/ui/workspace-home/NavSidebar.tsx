@@ -224,6 +224,7 @@ export function NavSidebar() {
                 key={board.id}
                 role="option"
                 aria-selected={isSelected}
+                tabIndex={0}
                 className={`group flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] cursor-pointer text-[13px] font-medium transition-colors ${
                   isSelected
                     ? "bg-accent/10 text-accent font-semibold"
@@ -231,6 +232,12 @@ export function NavSidebar() {
                 }`}
                 onClick={() => {
                   if (!isRenaming) handleNavChange(board.viewId);
+                }}
+                onKeyDown={(e) => {
+                  if (!isRenaming && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handleNavChange(board.viewId);
+                  }
                 }}
               >
                 <LayoutGrid className="h-4 w-4 flex-shrink-0 text-ink-dim" />

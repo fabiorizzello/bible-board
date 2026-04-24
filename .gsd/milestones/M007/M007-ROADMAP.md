@@ -25,10 +25,10 @@
 - [x] **S03: S03** `risk:medium` `depends:[]`
   > After this: Blur descrizione senza cambio non emette nulla; con cambio check fade-out 1.5s; chip tag check inline; select check accanto trigger
 
-- [ ] **S04: S04** `risk:high` `depends:[]`
+- [x] **S04: S04** `risk:high` `depends:[]`
   > After this: Click bell apre drawer da destra con lista create/update/delete di elementi/link/board/fonti; rollback funzionante; badge pulse+bell bounce su nuova entry; nessun toast residuo
 
-- [ ] **S05: A11y baseline + density uniforme + animation polish** `risk:medium` `depends:[S01]`
+- [ ] **S05: S05** `risk:medium` `depends:[]`
   > After this: Tab-nav sidebar->list->detail con focus ring visibile; ogni icon-only etichettato; prefers-reduced-motion disabilita animazioni; rg 'transition-all' zero
 
 - [ ] **S06: Audit Jazz reale con 4 scenari browser** `risk:high` `depends:[S04]`
