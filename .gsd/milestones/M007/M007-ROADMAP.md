@@ -19,10 +19,10 @@
 - [x] **S01: S01** `risk:low` `depends:[]`
   > After this: App su iPad 1180x820 e 820x1180 non mostra più markdown/panel/toast/field; root/FullscreenOverlay/DetailPane 100% viewport senza scroll esterno
 
-- [ ] **S02: S02** `risk:low` `depends:[]`
+- [x] **S02: S02** `risk:low` `depends:[]`
   > After this: Elemento minimale (solo titolo) non genera warning; data malformata o link a elemento soft-deleted genera warning inline
 
-- [ ] **S03: Hook useFieldStatus + inline success + fix toast no-op** `risk:medium` `depends:[S01]`
+- [ ] **S03: S03** `risk:medium` `depends:[]`
   > After this: Blur descrizione senza cambio non emette nulla; con cambio check fade-out 1.5s; chip tag check inline; select check accanto trigger
 
 - [ ] **S04: Notification center iPad-native (bell + drawer + rollback)** `risk:high` `depends:[S03]`

@@ -4,15 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R048 — Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
-- Class: failure-visibility
-- Status: active
-- Description: Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
-- Why it matters: Warning fasulli creano rumore e allenano l'utente a ignorare i segnali. Solo validità reale preserva la forza del warning.
-- Source: user
-- Primary owning slice: M002/S02
-- Validation: unmapped
-
 ### R049 — Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
 - Class: quality-attribute
 - Status: active
@@ -203,6 +194,16 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: M002/S01
 - Validation: S01 T02 PASS 2026-04-24: WorkspacePreviewPage root changed to h-dvh; NavSidebar nav and ListPane inner div have h-full. Verified: 0 h-screen hits in root, h-dvh present, h-full on both wrappers. 126/126 tests pass, tsc clean.
 
+### R048 — Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
+- Class: failure-visibility
+- Status: validated
+- Description: Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
+- Why it matters: Warning fasulli creano rumore e allenano l'utente a ignorare i segnali. Solo validità reale preserva la forza del warning.
+- Source: user
+- Primary owning slice: M002/S02
+- Validation: S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/.
+- Notes: Implemented in M007/S02 — domain helper computeValidityWarnings in elemento.rules.ts; wired into ElementoEditor replacing local getWarnings.
+
 ## Deferred
 
 ### R057 — Notifiche persistite cross-sessione (sopravvivono al reload)
@@ -383,7 +384,7 @@ This file is the explicit capability and coverage contract for the project.
 | R045 | ux | out-of-scope | S06 | none | unmapped |
 | R046 | quality-attribute | validated | M002/S01 | none | S01 T01 PASS 2026-04-24: All 3 user-visible technical strings in ElementoEditor.tsx replaced with Italian domain language. rg scan confirms 0 user-visible markdown/mockup/detail-pane strings in src/ui/ (excluding mockups/). 126/126 tests pass, tsc clean. |
 | R047 | quality-attribute | validated | M002/S01 | none | S01 T02 PASS 2026-04-24: WorkspacePreviewPage root changed to h-dvh; NavSidebar nav and ListPane inner div have h-full. Verified: 0 h-screen hits in root, h-dvh present, h-full on both wrappers. 126/126 tests pass, tsc clean. |
-| R048 | failure-visibility | active | M002/S02 | none | unmapped |
+| R048 | failure-visibility | validated | M002/S02 | none | S02 PASS 2026-04-24: computeValidityWarnings checks only real validity (date invalida, referenza rotta). Completeness strings (manca descrizione, nessun ruolo, tag vuoti, nessun collegamento) fully removed from ElementoEditor. 135/135 tests pass, tsc clean. rg scan confirms 0 completeness strings in src/. |
 | R049 | quality-attribute | active | M002/S03 | none | unmapped |
 | R050 | primary-user-loop | active | M002/S03 | none | unmapped |
 | R051 | primary-user-loop | active | M002/S04 | none | unmapped |
@@ -397,7 +398,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 9
-- Mapped to slices: 9
-- Validated: 13 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047)
+- Active requirements: 8
+- Mapped to slices: 8
+- Validated: 14 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047, R048)
 - Unmapped active requirements: 0
