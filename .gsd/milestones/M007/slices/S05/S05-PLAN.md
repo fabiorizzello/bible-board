@@ -62,7 +62,7 @@ Must-haves:
   - Files: `src/ui/workspace-home/ElementoEditor.tsx`, `src/ui/workspace-home/DetailPane.tsx`
   - Verify: pnpm tsc --noEmit && pnpm test --run && rg -n 'aria-label="Modifica titolo"' src/ui/workspace-home/ElementoEditor.tsx && rg -n 'aria-label="Modifica descrizione"' src/ui/workspace-home/ElementoEditor.tsx && rg -n 'aria-label=\{`Apri annotazione' src/ui/workspace-home/DetailPane.tsx
 
-- [ ] **T03: Aggiungere aria-pressed ai palette button del ThemeSwitcher** `est:10m`
+- [x] **T03: Aggiungere aria-pressed ai palette button del ThemeSwitcher** `est:10m`
   I pulsanti palette in `ThemeSwitcher.tsx` (~riga 201) sono toggle di selezione ma mancano di `aria-pressed` per comunicare lo stato attivo allo screen reader. Aggiungere `aria-pressed={activePalette === p.name}` (o equivalente — usa il nome reale della variabile di stato presente nel file). Il test del toggle: quando la palette corrente combacia con p.name → aria-pressed="true", altrimenti "false".
 
 Steps:

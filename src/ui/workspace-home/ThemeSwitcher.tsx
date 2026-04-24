@@ -201,6 +201,7 @@ export function ThemeSwitcher() {
                 <button
                   key={p.name}
                   type="button"
+                  aria-pressed={activePalette === p.name}
                   onClick={() => handleSelect(p)}
                   className={`flex items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors cursor-pointer ${
                     activePalette === p.name
