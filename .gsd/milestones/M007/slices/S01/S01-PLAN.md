@@ -55,7 +55,7 @@ Assumption: non risultano test che asseriscano sul testo esatto di queste 2 warn
 3. `pnpm test` → 126/126 pass.
 4. `pnpm tsc --noEmit` → clean.
 
-- [ ] **T02: Applicare layout fullheight iPad: h-dvh root + h-full su NavSidebar e ListPane wrapper** `est:20min`
+- [x] **T02: Applicare layout fullheight iPad: h-dvh root + h-full su NavSidebar e ListPane wrapper** `est:20min`
   Tre modifiche className mirate per far sì che il layout riempia il viewport iPad senza scroll esterno, e che le scroll region interne (`flex-1 overflow-y-auto`) abbiano un parent di altezza bounded.
 
 **Modifica 1 — `src/ui/workspace-home/WorkspacePreviewPage.tsx` (~line 130):**

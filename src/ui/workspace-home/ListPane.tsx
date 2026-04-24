@@ -145,7 +145,7 @@ export function ListPane() {
   return (
     <div className={`flex-shrink-0 overflow-hidden ${fullscreen ? "w-0" : "w-[300px]"}`}>
     <div
-      className={`w-[300px] flex flex-col border-r border-primary/10 transition-opacity duration-200 overflow-hidden ${
+      className={`w-[300px] h-full flex flex-col border-r border-primary/10 transition-opacity duration-200 overflow-hidden ${
         fullscreen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
       aria-hidden={fullscreen}

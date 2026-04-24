@@ -127,7 +127,7 @@ export function WorkspacePreviewPage() {
   syncJazzBoards(domainBoards);
 
   return (
-    <div className="flex h-screen bg-panel font-body">
+    <div className="flex h-dvh bg-panel font-body">
       <NavSidebar />
       {showTimeline ? (
         <Timeline />

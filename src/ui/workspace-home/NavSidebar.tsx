@@ -99,7 +99,7 @@ export function NavSidebar() {
   return (
     <div className={`flex-shrink-0 overflow-hidden ${sidebarOpen ? "w-[220px]" : "w-0"}`}>
     <nav
-      className={`w-[220px] flex flex-col border-r border-primary/10 bg-chrome transition-opacity duration-200 ${
+      className={`w-[220px] h-full flex flex-col border-r border-primary/10 bg-chrome transition-opacity duration-200 ${
         sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       aria-label="Navigazione workspace"
