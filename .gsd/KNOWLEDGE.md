@@ -278,6 +278,21 @@ Quando il riferimento è `src/ui/mockups/UnifiedEditorMockup.tsx`, le aspettativ
 
 ---
 
+## Pattern: Touch Target — P2 residual (S07 / 2026-04-24)
+
+Five secondary `size="sm"` buttons in drawer/dialog footers do NOT have explicit `min-h-[44px]`:
+
+| Location | Buttons |
+|---|---|
+| `DescrizioneSection` Drawer.Footer | Annulla, Fatto |
+| `ArraySection` Drawer.Footer | Chiudi, Aggiungi |
+| `VitaChip` Drawer.Footer | Annulla |
+| `NavSidebar` AlertDialog footer | Annulla, Crea, Elimina |
+
+Layout padding brings rendered height close to 44px in context but is not guaranteed. These are non-blockers (no task was filed) but are tracked here for the next a11y pass. Primary blocker (NotificationDrawer Annulla button) was fixed in M007/S07/T01.
+
+---
+
 ## Verifiche pendenti
 
 - [ ] Jazz BinaryCoStream: verificare supporto blob per immagini offline
