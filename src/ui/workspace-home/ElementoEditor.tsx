@@ -41,8 +41,8 @@ import { commonmark } from "@milkdown/preset-commonmark";
 import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 
 import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
-import type { ElementoInput, FonteTipo, NormalizedFonte } from "@/features/elemento/elemento.rules";
-import { normalizeElementoInput } from "@/features/elemento/elemento.rules";
+import type { ElementoInput, FonteTipo, NormalizedFonte, ValidityWarning } from "@/features/elemento/elemento.rules";
+import { computeValidityWarnings, normalizeElementoInput } from "@/features/elemento/elemento.rules";
 import { formatHistoricalEra, type DataStorica } from "@/features/shared/value-objects";
 import {
   addFonteToElemento,
@@ -75,6 +75,20 @@ type ValidationWarning = {
   field: EditableFieldId;
   label: string;
   message: string;
+};
+
+const VALIDITY_FIELD_MAP: Record<ValidityWarning["field"], EditableFieldId> = {
+  date: "vita",
+  nascita: "vita",
+  morte: "vita",
+  link: "collegamenti-generici",
+};
+
+const VALIDITY_LABEL_MAP: Record<ValidityWarning["field"], string> = {
+  date: "Data",
+  nascita: "Nascita",
+  morte: "Morte",
+  link: "Collegamento",
 };
 
 const INVALID_DATA = Symbol("INVALID_DATA");
@@ -190,43 +204,6 @@ function MilkdownEditorInline({
   return <Milkdown />;
 }
 
-function getWarnings(element: Elemento): ValidationWarning[] {
-  const warnings: ValidationWarning[] = [];
-
-  if (!element.descrizione.trim()) {
-    warnings.push({
-      field: "descrizione",
-      label: "Descrizione",
-      message: "Manca una descrizione. Aggiungila direttamente qui.",
-    });
-  }
-
-  if (element.tipo === "personaggio" && (!element.ruoli || element.ruoli.length === 0)) {
-    warnings.push({
-      field: "ruoli",
-      label: "Ruoli",
-      message: "Nessun ruolo definito.",
-    });
-  }
-
-  if (element.tipo !== "annotazione" && element.tags.length === 0) {
-    warnings.push({
-      field: "tags",
-      label: "Tag",
-      message: "I tag sono vuoti. I board dinamici rispondono ai tag di sessione.",
-    });
-  }
-
-  if (element.tipo !== "annotazione" && element.link.length === 0) {
-    warnings.push({
-      field: "collegamenti-generici",
-      label: "Collegamenti",
-      message: "Nessun collegamento visibile. Usa il picker inline, non il vecchio form globale.",
-    });
-  }
-
-  return warnings;
-}
 
 function buildElementoInput(next: Elemento): ElementoInput {
   const hasDate =
@@ -352,7 +329,16 @@ export function ElementoEditor({
   const [fonteTipoDraft, setFonteTipoDraft] = useState<FonteTipo>("scrittura");
   const [fonteValoreDraft, setFonteValoreDraft] = useState("");
 
-  const warnings = useMemo(() => getWarnings(element), [element]);
+  // Jazz elements are read fresh on every render (no useMemo) — same pattern as familyCandidates below
+  const liveElementoIds = new Set(getJazzElementi().map((e) => e.id as string));
+  const warnings: ValidationWarning[] = computeValidityWarnings(
+    element,
+    (id) => liveElementoIds.has(id),
+  ).map((w) => ({
+    field: VALIDITY_FIELD_MAP[w.field],
+    label: VALIDITY_LABEL_MAP[w.field],
+    message: w.message,
+  }));
   const boards = useMemo(() => resolveBoardsForElement(element), [element]);
   const fonti = useMemo(() => getFontiForElement(element), [element]);
   const fontiGrouped = useMemo(() => getFontiGroupedByTipo(element), [element]);

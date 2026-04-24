@@ -65,7 +65,7 @@ Test da aggiungere (tutti in `describe('computeValidityWarnings', ...)`):
   - Files: `src/features/elemento/elemento.rules.ts`, `src/features/elemento/__tests__/elemento.rules.test.ts`
   - Verify: pnpm test --run src/features/elemento/__tests__/elemento.rules.test.ts && pnpm tsc --noEmit && rg -n 'export function computeValidityWarnings' src/features/elemento/elemento.rules.ts
 
-- [ ] **T02: Rewire ElementoEditor al nuovo warning helper di validità** `est:45m`
+- [x] **T02: Rewire ElementoEditor al nuovo warning helper di validità** `est:45m`
   In `src/ui/workspace-home/ElementoEditor.tsx`:
 
 1. **Rimuovere** la funzione locale `getWarnings` (linee ~193–229) inclusa ogni variabile/import rimasto orfano.

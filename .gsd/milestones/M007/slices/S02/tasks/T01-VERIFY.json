@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T01",
+  "unitId": "M007/S02/T01",
+  "timestamp": 1777024149638,
+  "passed": true,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "pnpm test --run src/features/elemento/__tests__/elemento.rules.test.ts",
+      "exitCode": 0,
+      "durationMs": 830,
+      "verdict": "pass"
+    },
+    {
+      "command": "pnpm tsc --noEmit",
+      "exitCode": 0,
+      "durationMs": 259,
+      "verdict": "pass"
+    },
+    {
+      "command": "rg -n 'export function computeValidityWarnings' src/features/elemento/elemento.rules.ts",
+      "exitCode": 0,
+      "durationMs": 3,
+      "verdict": "pass"
+    }
+  ]
+}
