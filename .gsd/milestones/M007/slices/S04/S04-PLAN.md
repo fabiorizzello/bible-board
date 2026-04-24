@@ -108,7 +108,7 @@ Le 6 migrazioni preservano l'intento di ogni actionProps.onPress corrente — l'
   - Files: `src/ui/workspace-home/ElementoEditor.tsx`
   - Verify: rg -n 'toast\(' src/ui/workspace-home/ElementoEditor.tsx → 0 hit. rg -n 'notifyMutation' src/ui/workspace-home/ElementoEditor.tsx → 6 hit. rg -n 'from "\./notifications-store"' src/ui/workspace-home/ElementoEditor.tsx → 1 hit. pnpm tsc --noEmit → clean. pnpm test --run → 141+ verdi (no regressions). Manual smoke: editare un Elemento (titolo/descrizione/tipo) → drawer mostra entry 'update' con rollback funzionante.
 
-- [ ] **T04: Migrare DetailPane soft-delete; convertire errori ListPane in inline; rimuovere Toast.Provider** `est:S`
+- [x] **T04: Migrare DetailPane soft-delete; convertire errori ListPane in inline; rimuovere Toast.Provider** `est:S`
   Completare la rimozione di tutti i toast. Tre siti distinti:
 
 **DetailPane.tsx (~linea 58)** — soft-delete toast:

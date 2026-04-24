@@ -15,8 +15,8 @@ import {
   Link,
   ScrollShadow,
   Text,
-  toast,
 } from "@heroui/react";
+import { notifyMutation } from "./notifications-store";
 import {
   LayoutGrid,
   MessageSquareText,
@@ -45,24 +45,16 @@ import type { Elemento } from "@/features/elemento/elemento.model";
 // ── Shared helpers (exported for FullscreenOverlay) ──
 
 /**
- * Soft-delete an element with a 30-second toast undo window.
+ * Soft-delete an element with notification-center undo entry.
  *
- * Captures titolo and id before clearing the selection so the toast message
- * and undo handler keep working after the store mutation. Action label and
- * placement are tuned for iPad-native bottom-center display.
+ * Captures titolo and id before clearing the selection so the notification
+ * and undo handler keep working after the store mutation.
  */
 export function handleSoftDelete(element: Elemento): void {
   const elementId = element.id as string;
   const titolo = element.titolo;
   softDeleteElement(elementId);
-  toast(`"${titolo}" eliminato`, {
-    timeout: 30_000,
-    variant: "default",
-    actionProps: {
-      children: "Annulla",
-      onPress: () => restoreElement(elementId),
-    },
-  });
+  notifyMutation('delete', `"${titolo}" eliminato`, () => restoreElement(elementId));
 }
 
 /** Render the detail body sections: Descrizione, Collegamenti, Fonti, Board. */

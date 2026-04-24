@@ -5,6 +5,7 @@
  * Reads/writes shared state via Legend State workspace-ui-store.
  */
 
+import { useState } from "react";
 import {
   Button,
   Chip,
@@ -18,7 +19,6 @@ import {
   Tag,
   TagGroup,
   Text,
-  toast,
   Tooltip,
 } from "@heroui/react";
 import {
@@ -64,6 +64,7 @@ import {
 import { createElementoInWorkspace } from "@/features/elemento/elemento.adapter";
 
 export function ListPane() {
+  const [systemError, setSystemError] = useState<string | null>(null);
   const currentView = useValue(workspaceUi$.currentView);
   const filterText = useValue(workspaceUi$.filterText);
   const activeTipo = useValue(workspaceUi$.activeTipo);
@@ -117,7 +118,7 @@ export function ListPane() {
   function handleCreateElemento(tipo: ElementoTipo) {
     const me = getJazzMe();
     if (!me) {
-      toast("Account non disponibile", { variant: "default" });
+      setSystemError("Account non disponibile");
       return;
     }
     const result = createElementoInWorkspace(me, {
@@ -128,6 +129,7 @@ export function ListPane() {
     });
     result.match(
       (newCoMap) => {
+        setSystemError(null);
         // Select the newly created element so the user can rename it immediately
         selectElement(newCoMap.id as string);
         if (currentView === "recenti" || currentView === "tutti") {
@@ -137,7 +139,7 @@ export function ListPane() {
         }
       },
       (error) => {
-        toast(`Errore creazione: ${error.type}`, { variant: "default" });
+        setSystemError(`Errore creazione: ${error.type}`);
       },
     );
   }
@@ -239,6 +241,10 @@ export function ListPane() {
           </Dropdown.Popover>
         </Dropdown>
       </div>
+
+      {systemError && (
+        <p className="text-danger text-sm px-3 py-2">{systemError}</p>
+      )}
 
       {/* Search bar — HeroUI SearchField */}
       <div className="border-b border-primary/6 px-3 py-1.5">

@@ -7,13 +7,9 @@
  * This is the Jazz-aware root: it calls useWorkspaceElementiState() and
  * syncJazzState() on every render so all child components read fresh data
  * via the module-level Jazz store without needing Jazz hooks themselves.
- *
- * Mounts Toast.Provider here (composition shell level) so imperative
- * `toast()` calls from any pane render into a shared bottom region.
- * iPad-native: bottom placement keeps undo affordances near the thumb.
  */
 
-import { Dropdown, Label, Toast } from "@heroui/react";
+import { Dropdown, Label } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
@@ -139,7 +135,6 @@ export function WorkspacePreviewPage() {
           <FullscreenOverlay />
         </>
       )}
-      <Toast.Provider placement="bottom end" />
     </div>
   );
 }
