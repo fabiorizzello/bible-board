@@ -1,5 +1,6 @@
 import { Group, co, z } from "jazz-tools";
 import { ElementoSchema } from "@/features/elemento/elemento.schema";
+import { BoardSchema } from "@/features/board/board.schema";
 import { createInitialWorkspace } from "@/features/workspace/workspace.rules";
 
 export const TagRegistrationSchema = co.map({
@@ -14,7 +15,7 @@ export const WorkspaceSchema = co.map({
   nome: z.string(),
   descrizione: z.string().optional(),
   createdAt: z.string(),
-  boardIds: co.list(z.string()),
+  boards: co.list(BoardSchema),
   tagRegistry: co.list(TagRegistrationSchema),
   elementi: co.list(ElementoSchema)
 });
@@ -40,7 +41,7 @@ export const TimelineBoardAccount = co
           workspace: WorkspaceSchema.create(
             {
               ...initialWorkspace,
-              boardIds: co.list(z.string()).create([], account),
+              boards: co.list(BoardSchema).create([], account),
               tagRegistry: co.list(TagRegistrationSchema).create([], account),
               elementi: co.list(ElementoSchema).create([], account)
             },
@@ -49,6 +50,11 @@ export const TimelineBoardAccount = co
         },
         account
       );
+    }
+
+    // Migrate existing workspaces that pre-date the boards CoList (old boardIds schema)
+    if (account.root?.workspace !== undefined && (account.root.workspace as any).boards === undefined) {
+      (account.root.workspace as any).boards = co.list(BoardSchema).create([], account);
     }
 
     if (account.profile === undefined) {

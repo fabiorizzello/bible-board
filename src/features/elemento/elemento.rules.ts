@@ -3,7 +3,7 @@ import type { ElementoError } from "@/features/elemento/elemento.errors";
 import { resolveWolStudyEditionUrl } from "@/features/elemento/wol-link-resolver";
 import type { DataStorica, DataTemporale } from "@/features/shared/value-objects";
 import { validateDataStorica, validateDataTemporale } from "@/features/shared/value-objects";
-import type { ElementoLink, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
+import type { Elemento, ElementoLink, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
 
 export interface ElementoInput {
   readonly titolo: string;
@@ -324,4 +324,43 @@ export function cascadeRemoveLinks(
   deletedElementoId: string
 ): readonly ElementoLink[] {
   return links.filter((l) => l.targetId !== deletedElementoId);
+}
+
+// --- Validity Warnings ---
+
+export interface ValidityWarning {
+  readonly field: 'date' | 'nascita' | 'morte' | 'link';
+  readonly targetId?: string;
+  readonly message: string;
+}
+
+export function computeValidityWarnings(
+  elemento: Elemento,
+  resolveId: (id: string) => boolean
+): readonly ValidityWarning[] {
+  const warnings: ValidityWarning[] = [];
+
+  if (elemento.date !== undefined && validateDataTemporale(elemento.date).isErr()) {
+    warnings.push({ field: 'date', message: "La data dell'elemento non è valida." });
+  }
+
+  if (elemento.nascita !== undefined && validateDataStorica(elemento.nascita).isErr()) {
+    warnings.push({ field: 'nascita', message: 'La data di nascita non è valida.' });
+  }
+
+  if (elemento.morte !== undefined && validateDataStorica(elemento.morte).isErr()) {
+    warnings.push({ field: 'morte', message: 'La data di morte non è valida.' });
+  }
+
+  for (const link of elemento.link) {
+    if (!resolveId(link.targetId)) {
+      warnings.push({
+        field: 'link',
+        targetId: link.targetId,
+        message: 'Collegamento a elemento non trovato (potrebbe essere stato eliminato).',
+      });
+    }
+  }
+
+  return warnings;
 }

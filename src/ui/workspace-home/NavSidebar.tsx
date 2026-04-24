@@ -6,6 +6,7 @@
  */
 
 import {
+  AlertDialog,
   Avatar,
   Button,
   Dropdown,
@@ -22,16 +23,25 @@ import {
   Clock,
   LayoutGrid,
   List,
+  MoreHorizontal,
   PanelLeft,
   Plus,
   Settings,
 } from "lucide-react";
+import { useState } from "react";
 import { useValue } from "@legendapp/state/react";
 
-import { workspaceUi$, navigateToView } from "./workspace-ui-store";
+import {
+  workspaceUi$,
+  navigateToView,
+  createBoardInWorkspace,
+  renameBoardInWorkspace,
+  deleteBoardFromWorkspace,
+} from "./workspace-ui-store";
 import type { ViewId } from "./workspace-ui-store";
 import { getBoardDisplayItems } from "./display-helpers";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { NotificationBell } from "./NotificationBell";
 
 export function NavSidebar() {
   const currentView = useValue(workspaceUi$.currentView);
@@ -40,16 +50,61 @@ export function NavSidebar() {
   void lastModified;
   const boardItems = getBoardDisplayItems();
 
+  // Create board modal state
+  const [showCreate, setShowCreate] = useState(false);
+  const [newBoardName, setNewBoardName] = useState("");
+
+  // Inline rename state
+  const [renamingBoardId, setRenamingBoardId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  // Delete confirmation state
+  const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null);
+  const deletingBoard = boardItems.find((b) => b.id === deletingBoardId);
+
   function handleNavChange(viewId: ViewId) {
     navigateToView(viewId);
   }
 
+  function handleCreateBoard() {
+    const name = newBoardName.trim();
+    if (!name) return;
+    createBoardInWorkspace(name);
+    setNewBoardName("");
+    setShowCreate(false);
+  }
+
+  function startRename(boardId: string, currentNome: string) {
+    setRenamingBoardId(boardId);
+    setRenameValue(currentNome);
+  }
+
+  function confirmRename(boardId: string) {
+    const name = renameValue.trim();
+    if (name) renameBoardInWorkspace(boardId, name);
+    setRenamingBoardId(null);
+    setRenameValue("");
+  }
+
+  function cancelRename() {
+    setRenamingBoardId(null);
+    setRenameValue("");
+  }
+
+  function confirmDelete() {
+    if (!deletingBoardId) return;
+    deleteBoardFromWorkspace(deletingBoardId);
+    setDeletingBoardId(null);
+  }
+
   return (
+    <div className={`flex-shrink-0 overflow-hidden ${sidebarOpen ? "w-[220px]" : "w-0"}`}>
     <nav
-      className={`flex flex-col border-r border-primary/10 bg-chrome transition-all duration-200 ease-in-out overflow-hidden ${
-        sidebarOpen ? "w-[220px] min-w-[220px]" : "w-0 min-w-0"
+      className={`w-[220px] h-full flex flex-col border-r border-primary/10 bg-chrome transition-opacity duration-200 ${
+        sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       aria-label="Navigazione workspace"
+      aria-hidden={!sidebarOpen}
     >
       {/* Workspace switcher — Dropdown + Avatar */}
       <div className="px-2 pt-2 pb-1">
@@ -127,7 +182,7 @@ export function NavSidebar() {
           <ListBox.Item
             id="recenti"
             textValue="Recenti"
-            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
+            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
           >
             <Clock className="h-4 w-4 flex-shrink-0" />
             <Label>Recenti</Label>
@@ -135,7 +190,7 @@ export function NavSidebar() {
           <ListBox.Item
             id="tutti"
             textValue="Tutti gli elementi"
-            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
+            className="flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-primary/10 data-[selected]:text-primary data-[selected]:font-semibold"
           >
             <List className="h-4 w-4 flex-shrink-0" />
             <Label>Tutti gli elementi</Label>
@@ -149,8 +204,9 @@ export function NavSidebar() {
             <Button
               variant="ghost"
               isIconOnly
-              className="h-[24px] w-[24px] rounded text-ink-dim hover:bg-primary/6 hover:text-accent"
+              className="h-[44px] w-[44px] rounded text-ink-dim hover:bg-primary/6 hover:text-accent"
               aria-label="Nuovo board"
+              onPress={() => { setNewBoardName(""); setShowCreate(true); }}
             >
               <Plus className="h-3 w-3" />
             </Button>
@@ -158,31 +214,179 @@ export function NavSidebar() {
           </Tooltip>
         </div>
 
-        {/* Board ListBox — separate to keep orange selection styling */}
-        <ListBox
-          aria-label="Board"
-          selectionMode="single"
-          selectedKeys={currentView.startsWith("board-") ? new Set([currentView]) : new Set()}
-          onSelectionChange={(keys) => {
-            if (keys !== "all" && keys.size > 0) {
-              handleNavChange(String([...keys][0]) as ViewId);
-            }
-          }}
-          className="border-none p-0 outline-none"
+        {/* Board items — custom rows to support inline rename */}
+        <div role="listbox" aria-label="Board" className="flex flex-col gap-px">
+          {boardItems.map((board) => {
+            const isSelected = currentView === board.viewId;
+            const isRenaming = renamingBoardId === board.id;
+            return (
+              <div
+                key={board.id}
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={0}
+                className={`group flex items-center gap-2 rounded-lg px-2.5 min-h-[44px] cursor-pointer text-[13px] font-medium transition-colors ${
+                  isSelected
+                    ? "bg-accent/10 text-accent font-semibold"
+                    : "text-ink-lo hover:bg-primary/6"
+                }`}
+                onClick={() => {
+                  if (!isRenaming) handleNavChange(board.viewId);
+                }}
+                onKeyDown={(e) => {
+                  if (!isRenaming && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handleNavChange(board.viewId);
+                  }
+                }}
+              >
+                <LayoutGrid className="h-4 w-4 flex-shrink-0 text-ink-dim" />
+
+                {isRenaming ? (
+                  <input
+                    autoFocus
+                    className="flex-1 bg-transparent text-[13px] outline-none border-b border-primary/40 py-0.5 text-ink-hi"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); confirmRename(board.id); }
+                      if (e.key === "Escape") cancelRename();
+                      e.stopPropagation();
+                    }}
+                    onBlur={() => confirmRename(board.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <Text
+                    className="flex-1 truncate"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startRename(board.id, board.nome);
+                    }}
+                  >
+                    {board.nome}
+                  </Text>
+                )}
+
+                <Text className="font-heading text-[10px] text-ink-dim flex-shrink-0">
+                  {board.count}
+                </Text>
+
+                {!isRenaming && (
+                  <Dropdown>
+                    <Button
+                      variant="ghost"
+                      isIconOnly
+                      className="h-[44px] w-[44px] rounded opacity-0 group-hover:opacity-100 text-ink-dim hover:bg-primary/10 flex-shrink-0"
+                      aria-label={`Azioni per ${board.nome}`}
+                      onPress={(e) => { (e as any).stopPropagation?.(); }}
+                    >
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                    <Dropdown.Popover placement="bottom end" className="min-w-[140px]">
+                      <Dropdown.Menu
+                        onAction={(key) => {
+                          if (key === "rinomina") startRename(board.id, board.nome);
+                          if (key === "elimina") setDeletingBoardId(board.id);
+                        }}
+                      >
+                        <Dropdown.Item id="rinomina" textValue="Rinomina">
+                          <Label>Rinomina</Label>
+                        </Dropdown.Item>
+                        <Dropdown.Item id="elimina" textValue="Elimina" className="text-danger">
+                          <Label>Elimina</Label>
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown.Popover>
+                  </Dropdown>
+                )}
+              </div>
+            );
+          })}
+          {boardItems.length === 0 && (
+            <Text className="px-2.5 text-[12px] text-ink-ghost italic">
+              Nessun board
+            </Text>
+          )}
+        </div>
+
+        {/* Create board dialog */}
+        <AlertDialog isOpen={showCreate} onOpenChange={(open) => !open && setShowCreate(false)}>
+          <AlertDialog.Backdrop isDismissable isKeyboardDismissDisabled={false}>
+            <AlertDialog.Container>
+              <AlertDialog.Dialog>
+                <AlertDialog.Header>
+                  <AlertDialog.Heading>Nuovo board</AlertDialog.Heading>
+                </AlertDialog.Header>
+                <AlertDialog.Body>
+                  <input
+                    autoFocus
+                    className="w-full rounded-lg border border-primary/20 bg-transparent px-3 py-2 text-[13px] outline-none focus:border-primary/50 text-ink-hi placeholder:text-ink-ghost"
+                    placeholder="Nome del board..."
+                    value={newBoardName}
+                    onChange={(e) => setNewBoardName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateBoard();
+                      if (e.key === "Escape") setShowCreate(false);
+                    }}
+                  />
+                </AlertDialog.Body>
+                <AlertDialog.Footer>
+                  <Button
+                    variant="ghost"
+                    onPress={() => setShowCreate(false)}
+                    className="text-[13px]"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    onPress={handleCreateBoard}
+                    isDisabled={!newBoardName.trim()}
+                    className="text-[13px]"
+                  >
+                    Crea
+                  </Button>
+                </AlertDialog.Footer>
+              </AlertDialog.Dialog>
+            </AlertDialog.Container>
+          </AlertDialog.Backdrop>
+        </AlertDialog>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog
+          isOpen={deletingBoardId !== null}
+          onOpenChange={(open) => !open && setDeletingBoardId(null)}
         >
-          {boardItems.map((board) => (
-            <ListBox.Item
-              key={board.id}
-              id={board.viewId}
-              textValue={board.nome}
-              className="flex items-center gap-2 rounded-lg px-2.5 min-h-[40px] text-[13px] font-medium text-ink-lo cursor-pointer data-[hovered]:bg-primary/6 data-[selected]:bg-accent/10 data-[selected]:text-accent data-[selected]:font-semibold"
-            >
-              <LayoutGrid className="h-4 w-4 flex-shrink-0 text-ink-dim" />
-              <Text className="flex-1 truncate">{board.nome}</Text>
-              <Text className="font-heading text-[10px] text-ink-dim">{board.count}</Text>
-            </ListBox.Item>
-          ))}
-        </ListBox>
+          <AlertDialog.Backdrop isDismissable isKeyboardDismissDisabled={false}>
+            <AlertDialog.Container>
+              <AlertDialog.Dialog>
+                <AlertDialog.Header>
+                  <AlertDialog.Heading>Elimina board</AlertDialog.Heading>
+                </AlertDialog.Header>
+                <AlertDialog.Body>
+                  <Text className="text-[13px] text-ink-md">
+                    Elimina &ldquo;{deletingBoard?.nome}&rdquo;? Gli elementi del workspace non verranno eliminati.
+                  </Text>
+                </AlertDialog.Body>
+                <AlertDialog.Footer>
+                  <Button
+                    variant="ghost"
+                    onPress={() => setDeletingBoardId(null)}
+                    className="text-[13px]"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    onPress={confirmDelete}
+                    className="text-[13px] bg-danger text-white"
+                  >
+                    Elimina
+                  </Button>
+                </AlertDialog.Footer>
+              </AlertDialog.Dialog>
+            </AlertDialog.Container>
+          </AlertDialog.Backdrop>
+        </AlertDialog>
       </ScrollShadow>
 
       {/* Settings footer */}
@@ -190,17 +394,18 @@ export function NavSidebar() {
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
-            className="flex-1 justify-start gap-2 rounded-lg px-2.5 min-h-[36px] text-[13px] font-medium text-ink-lo hover:bg-primary/6"
+            className="flex-1 justify-start gap-2 rounded-lg px-2.5 min-h-[44px] text-[13px] font-medium text-ink-lo hover:bg-primary/6"
           >
             <Settings className="h-4 w-4" />
             Impostazioni
           </Button>
+          <NotificationBell />
           <ThemeSwitcher />
           <Tooltip>
             <Button
               variant="ghost"
               isIconOnly
-              className="h-[36px] w-[36px] rounded-lg text-ink-dim hover:bg-primary/6"
+              className="h-[44px] w-[44px] rounded-lg text-ink-dim hover:bg-primary/6"
               onPress={() => workspaceUi$.sidebarOpen.set(false)}
               aria-label="Chiudi navigazione"
             >
@@ -211,5 +416,6 @@ export function NavSidebar() {
         </div>
       </div>
     </nav>
+    </div>
   );
 }

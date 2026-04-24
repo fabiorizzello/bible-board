@@ -16,7 +16,6 @@ import {
   Label,
   Popover,
   TextField,
-  toast,
 } from "@heroui/react";
 import {
   AlertTriangle,
@@ -41,20 +40,24 @@ import { commonmark } from "@milkdown/preset-commonmark";
 import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 
 import type { Elemento, ElementoTipo, RuoloLink, TipoLink } from "@/features/elemento/elemento.model";
-import type { ElementoInput, FonteTipo, NormalizedFonte } from "@/features/elemento/elemento.rules";
-import { normalizeElementoInput, addFonte, removeFonte } from "@/features/elemento/elemento.rules";
+import type { ElementoInput, FonteTipo, NormalizedFonte, ValidityWarning } from "@/features/elemento/elemento.rules";
+import { computeValidityWarnings, normalizeElementoInput } from "@/features/elemento/elemento.rules";
 import { formatHistoricalEra, type DataStorica } from "@/features/shared/value-objects";
-import { ELEMENTI } from "@/mock/data";
+import {
+  addFonteToElemento,
+  removeFonteFromElemento,
+} from "@/features/elemento/elemento.adapter";
 import {
   closeFieldEditor,
-  commitElementPatch,
-  commitFontiOverride,
   commitNormalizedElement,
   createBidirectionalLink,
+  getJazzElementi,
+  getJazzMe,
   openFieldEditor,
   removeBidirectionalLink,
   type EditableFieldId,
 } from "./workspace-ui-store";
+import { useFieldStatus } from "./useFieldStatus";
 import {
   CURRENT_AUTORE,
   FONTE_TIPI_IN_SCOPE,
@@ -66,12 +69,27 @@ import {
   resolveBoardsForElement,
   resolveCollegamenti,
 } from "./display-helpers";
+import { notifyMutation } from "./notifications-store";
 import "../mockups/milkdown-iframe.css";
 
 type ValidationWarning = {
   field: EditableFieldId;
   label: string;
   message: string;
+};
+
+const VALIDITY_FIELD_MAP: Record<ValidityWarning["field"], EditableFieldId> = {
+  date: "vita",
+  nascita: "vita",
+  morte: "vita",
+  link: "collegamenti-generici",
+};
+
+const VALIDITY_LABEL_MAP: Record<ValidityWarning["field"], string> = {
+  date: "Data",
+  nascita: "Nascita",
+  morte: "Morte",
+  link: "Collegamento",
 };
 
 const INVALID_DATA = Symbol("INVALID_DATA");
@@ -187,43 +205,6 @@ function MilkdownEditorInline({
   return <Milkdown />;
 }
 
-function getWarnings(element: Elemento): ValidationWarning[] {
-  const warnings: ValidationWarning[] = [];
-
-  if (!element.descrizione.trim()) {
-    warnings.push({
-      field: "descrizione",
-      label: "Descrizione",
-      message: "Manca una descrizione markdown. Aggiungila inline senza lasciare il detail pane.",
-    });
-  }
-
-  if (element.tipo === "personaggio" && (!element.ruoli || element.ruoli.length === 0)) {
-    warnings.push({
-      field: "ruoli",
-      label: "Ruoli",
-      message: "Nessun ruolo visibile. Il mockup canonico prevede chip modificabili per i ruoli principali.",
-    });
-  }
-
-  if (element.tipo !== "annotazione" && element.tags.length === 0) {
-    warnings.push({
-      field: "tags",
-      label: "Tag",
-      message: "I tag sono vuoti. I board dinamici rispondono ai tag di sessione.",
-    });
-  }
-
-  if (element.tipo !== "annotazione" && element.link.length === 0) {
-    warnings.push({
-      field: "collegamenti-generici",
-      label: "Collegamenti",
-      message: "Nessun collegamento visibile. Usa il picker inline, non il vecchio form globale.",
-    });
-  }
-
-  return warnings;
-}
 
 function buildElementoInput(next: Elemento): ElementoInput {
   const hasDate =
@@ -300,7 +281,7 @@ function ChipButton({
     <button
       type="button"
       onClick={onPress}
-      className={`inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-left transition-colors ${
+      className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-left transition-colors ${
         active
           ? "border-primary/35 bg-primary/8 text-primary"
           : "border-edge bg-chrome text-ink-md hover:border-primary/25 hover:bg-primary/5"
@@ -349,7 +330,16 @@ export function ElementoEditor({
   const [fonteTipoDraft, setFonteTipoDraft] = useState<FonteTipo>("scrittura");
   const [fonteValoreDraft, setFonteValoreDraft] = useState("");
 
-  const warnings = useMemo(() => getWarnings(element), [element]);
+  // Jazz elements are read fresh on every render (no useMemo) — same pattern as familyCandidates below
+  const liveElementoIds = new Set(getJazzElementi().map((e) => e.id as string));
+  const warnings: ValidationWarning[] = computeValidityWarnings(
+    element,
+    (id) => liveElementoIds.has(id),
+  ).map((w) => ({
+    field: VALIDITY_FIELD_MAP[w.field],
+    label: VALIDITY_LABEL_MAP[w.field],
+    message: w.message,
+  }));
   const boards = useMemo(() => resolveBoardsForElement(element), [element]);
   const fonti = useMemo(() => getFontiForElement(element), [element]);
   const fontiGrouped = useMemo(() => getFontiGroupedByTipo(element), [element]);
@@ -368,26 +358,19 @@ export function ElementoEditor({
     [element.link],
   );
 
-  const familyCandidates = useMemo(
-    () =>
-      ELEMENTI.filter(
-        (candidate) =>
-          candidate.id !== element.id &&
-          !alreadyLinkedFamilyIds.has(candidate.id as string) &&
-          candidate.tipo === "personaggio" &&
-          candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
-      ),
-    [element.id, alreadyLinkedFamilyIds, familySearch],
+  // Computed fresh on every render — no useMemo so new Jazz elements are always visible
+  const familyCandidates = getJazzElementi().filter(
+    (candidate) =>
+      candidate.id !== element.id &&
+      !alreadyLinkedFamilyIds.has(candidate.id as string) &&
+      candidate.tipo === "personaggio" &&
+      candidate.titolo.toLowerCase().includes(familySearch.toLowerCase()),
   );
-  const genericCandidates = useMemo(
-    () =>
-      ELEMENTI.filter(
-        (candidate) =>
-          candidate.id !== element.id &&
-          !alreadyLinkedGenericIds.has(candidate.id as string) &&
-          candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
-      ),
-    [element.id, alreadyLinkedGenericIds, genericSearch],
+  const genericCandidates = getJazzElementi().filter(
+    (candidate) =>
+      candidate.id !== element.id &&
+      !alreadyLinkedGenericIds.has(candidate.id as string) &&
+      candidate.titolo.toLowerCase().includes(genericSearch.toLowerCase()),
   );
 
   useEffect(() => {
@@ -416,38 +399,32 @@ export function ElementoEditor({
     // Snapshot prev state before any mutation for per-field rollback
     const prevElement = { ...element };
     const next = { ...element, ...patch };
-    const result = normalizeElementoInput(buildElementoInput(next));
+    console.log("[DEBUG-SAVE] commitPatch called", { label, elementId: element.id, patchKeys: Object.keys(patch) });
+    const input = buildElementoInput(next);
+    const result = normalizeElementoInput(input);
+    console.log("[DEBUG-SAVE] normalize result:", result.isOk() ? "OK" : `ERR: ${result.isErr() ? JSON.stringify(result.error) : "?"}`);
 
     result.match(
       (normalized) => {
-        commitNormalizedElement(element.id as string, normalized);
-        if ("link" in patch) {
-          commitElementPatch(element.id as string, { link: patch.link });
+        const ok = commitNormalizedElement(element.id as string, normalized);
+        if (!ok) {
+          setSurfaceError("Salvataggio fallito — account non disponibile");
+          return;
         }
         setSurfaceError(null);
         if (!options?.keepEditorOpen) {
           closeFieldEditor();
         }
-        // Blur-to-save + toast undo: every field mutation gets a rollback action
-        toast(label, {
-          timeout: 5_000,
-          variant: "default",
-          actionProps: {
-            children: "Annulla",
-            onPress: () => {
-              normalizeElementoInput(buildElementoInput(prevElement)).match(
-                (prevNormalized) => {
-                  commitNormalizedElement(prevElement.id as string, prevNormalized);
-                  if ("link" in patch) {
-                    commitElementPatch(prevElement.id as string, { link: prevElement.link });
-                  }
-                },
-                () => {
-                  // prevElement was already valid — this branch is a safeguard only
-                },
-              );
+        // Blur-to-save + undo: every field mutation gets a rollback action
+        notifyMutation("update", label, () => {
+          normalizeElementoInput(buildElementoInput(prevElement)).match(
+            (prevNormalized) => {
+              commitNormalizedElement(prevElement.id as string, prevNormalized);
             },
-          },
+            () => {
+              // prevElement was already valid — this branch is a safeguard only
+            },
+          );
         });
       },
       (error) => {
@@ -531,15 +508,9 @@ export function ElementoEditor({
     setFamilyTargetId("");
     setFamilySearch("");
     setSurfaceError(null);
-    toast("Collegamento famiglia aggiunto", {
-      timeout: 5_000,
-      variant: "default",
-      actionProps: {
-        children: "Annulla",
-        onPress: () =>
-          removeBidirectionalLink(element.id as string, capturedTargetId, "parentela"),
-      },
-    });
+    notifyMutation("create", "Collegamento famiglia aggiunto", () =>
+      removeBidirectionalLink(element.id as string, capturedTargetId, "parentela"),
+    );
   }
 
   function addGenericLink() {
@@ -554,50 +525,38 @@ export function ElementoEditor({
     setGenericTargetId("");
     setGenericSearch("");
     setSurfaceError(null);
-    toast("Collegamento aggiunto", {
-      timeout: 5_000,
-      variant: "default",
-      actionProps: {
-        children: "Annulla",
-        onPress: () =>
-          removeBidirectionalLink(element.id as string, capturedTargetId, capturedType),
-      },
-    });
+    notifyMutation("create", "Collegamento aggiunto", () =>
+      removeBidirectionalLink(element.id as string, capturedTargetId, capturedType),
+    );
   }
 
   function removeLink(targetId: string, tipo: string) {
     const linkToRemove = element.link.find((l) => l.targetId === targetId && l.tipo === tipo);
     const ruolo = linkToRemove?.ruolo;
     removeBidirectionalLink(element.id as string, targetId, tipo as TipoLink);
-    toast("Collegamento rimosso", {
-      timeout: 5_000,
-      variant: "default",
-      actionProps: {
-        children: "Annulla",
-        onPress: () =>
-          createBidirectionalLink(element.id as string, targetId, tipo as TipoLink, ruolo),
-      },
-    });
+    notifyMutation("delete", "Collegamento rimosso", () =>
+      createBidirectionalLink(element.id as string, targetId, tipo as TipoLink, ruolo),
+    );
   }
 
   function commitFonteAdd() {
-    const valore = fonteValoreDraft.trim();
-    if (!valore) return;
+    const capturedValore = fonteValoreDraft.trim();
+    if (!capturedValore) return;
     const elementId = element.id as string;
-    const prevFonti = getFontiForElement(element);
-    const result = addFonte(prevFonti, { tipo: fonteTipoDraft, valore });
+    const capturedTipo = fonteTipoDraft;
+    const me = getJazzMe();
+    if (!me) {
+      setSurfaceError("Account non disponibile");
+      return;
+    }
+    const result = addFonteToElemento(me, elementId, { tipo: capturedTipo, valore: capturedValore });
     result.match(
-      (nextFonti) => {
-        commitFontiOverride(elementId, nextFonti);
+      () => {
         setSurfaceError(null);
         setFonteValoreDraft("");
-        toast("Fonte aggiunta", {
-          timeout: 5_000,
-          variant: "default",
-          actionProps: {
-            children: "Annulla",
-            onPress: () => commitFontiOverride(elementId, prevFonti),
-          },
+        notifyMutation("create", "Fonte aggiunta", () => {
+          const jazzMe = getJazzMe();
+          if (jazzMe) removeFonteFromElemento(jazzMe, elementId, capturedTipo, capturedValore);
         });
       },
       (error) => {
@@ -610,18 +569,17 @@ export function ElementoEditor({
 
   function commitFonteRemove(tipo: FonteTipo, valore: string) {
     const elementId = element.id as string;
-    const prevFonti = getFontiForElement(element);
-    const result = removeFonte(prevFonti, tipo, valore);
+    const me = getJazzMe();
+    if (!me) {
+      setSurfaceError("Account non disponibile");
+      return;
+    }
+    const result = removeFonteFromElemento(me, elementId, tipo, valore);
     result.match(
-      (nextFonti) => {
-        commitFontiOverride(elementId, nextFonti);
-        toast("Fonte rimossa", {
-          timeout: 5_000,
-          variant: "default",
-          actionProps: {
-            children: "Annulla",
-            onPress: () => commitFontiOverride(elementId, prevFonti),
-          },
+      () => {
+        notifyMutation("delete", "Fonte rimossa", () => {
+          const jazzMe = getJazzMe();
+          if (jazzMe) addFonteToElemento(jazzMe, elementId, { tipo, valore });
         });
       },
       () => {
@@ -665,7 +623,7 @@ export function ElementoEditor({
               <Button
                 variant="ghost"
                 isIconOnly
-                className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+                className="h-[44px] w-[44px] rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
                 onPress={onExpand}
                 aria-label="Apri in fullscreen"
               >
@@ -712,7 +670,7 @@ export function ElementoEditor({
             />
           )}
           {(element.tipo === "evento" || element.tipo === "periodo" || element.tipo === "regno" || element.tipo === "profezia") && (
-            <Chip className="min-h-[38px] border border-edge bg-chrome px-3.5 text-sm text-ink-md">
+            <Chip className="min-h-[44px] border border-edge bg-chrome px-3.5 text-sm text-ink-md">
               <Calendar className="mr-2 h-3.5 w-3.5 text-ink-dim" />
               {formatElementDate(element) ?? "Data non definita"}
             </Chip>
@@ -769,7 +727,7 @@ export function ElementoEditor({
         >
           <TextField value={familySearch} onChange={setFamilySearch}>
             <Label className="text-xs text-ink-lo">Cerca personaggio</Label>
-            <Input className="min-h-[40px]" />
+            <Input className="min-h-[44px]" />
           </TextField>
           <div className="grid gap-2 sm:grid-cols-2">
             {familyCandidates.length === 0 && (
@@ -814,7 +772,7 @@ export function ElementoEditor({
       >
         <TextField value={genericSearch} onChange={setGenericSearch}>
           <Label className="text-xs text-ink-lo">Cerca elemento</Label>
-          <Input className="min-h-[40px]" />
+          <Input className="min-h-[44px]" />
         </TextField>
         <div className="grid gap-2 sm:grid-cols-2">
           {genericCandidates.length === 0 && (
@@ -852,7 +810,7 @@ export function ElementoEditor({
         <div className="border-t border-primary/8 pt-3 flex justify-end">
           <Dropdown>
             <Dropdown.Trigger>
-              <Button variant="ghost" size="sm" className="min-h-[36px] gap-1.5 rounded-full px-3 text-primary">
+              <Button variant="ghost" size="sm" className="min-h-[44px] gap-1.5 rounded-full px-3 text-primary">
                 <Plus className="h-3.5 w-3.5" />
                 Aggiungi campo
               </Button>
@@ -932,7 +890,7 @@ function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
         <Button
           variant="ghost"
           isIconOnly
-          className="h-10 w-10 rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
+          className="h-[44px] w-[44px] rounded-full border border-edge text-ink-dim transition-colors hover:bg-primary/6"
           aria-label="Azioni elemento"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -942,7 +900,7 @@ function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
         <Dropdown.Menu
           onAction={(key) => {
             if (key === "duplicate") {
-              toast("Duplicazione rimandata a una fase successiva", { variant: "default" });
+              // not yet implemented
             }
             if (key === "delete") {
               onDelete?.();
@@ -982,6 +940,10 @@ function InlineTitle({
 }) {
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { status, onFocus, onBlur } = useFieldStatus<string>(
+    value,
+    (_prev, next) => onCommit(next),
+  );
 
   useEffect(() => {
     setDraft(value);
@@ -1008,8 +970,16 @@ function InlineTitle({
         <Input
           ref={inputRef}
           className="min-h-[56px] text-[1.65rem] font-semibold"
-          onBlur={() => onCommit(draft)}
+          onFocus={onFocus}
+          onBlur={() => onBlur(draft)}
           onKeyDown={handleKeyDown}
+          endContent={
+            <Check
+              className="h-4 w-4 transition-opacity duration-300"
+              aria-hidden="true"
+              style={{ opacity: status === "success" ? 1 : 0 }}
+            />
+          }
         />
       </TextField>
     );
@@ -1019,6 +989,7 @@ function InlineTitle({
     <button
       type="button"
       onClick={onStart}
+      aria-label="Modifica titolo"
       className="min-w-0 flex-1 rounded-xl px-2 py-1.5 text-left text-[1.65rem] font-semibold leading-tight text-ink-hi transition-colors hover:bg-primary/5"
     >
       {value}
@@ -1041,7 +1012,7 @@ function ReviewDrawer({
     <>
       <Button
         variant={warnings.length > 0 ? "outline" : "ghost"}
-        className={`min-h-[38px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
+        className={`min-h-[44px] rounded-full px-3 ${warnings.length > 0 ? "border-warning/35 bg-warning/10 text-warning" : "text-ink-dim"}`}
         onPress={() => onOpenChange(true)}
       >
         <AlertTriangle className="h-4 w-4" />
@@ -1059,7 +1030,7 @@ function ReviewDrawer({
             </Drawer.Header>
             <Drawer.Body className="space-y-3 px-5 py-4">
               {warnings.length === 0 && (
-                <p className="text-sm text-ink-md">Nessun warning bloccante. Il dettaglio e allineato al mockup.</p>
+                <p className="text-sm text-ink-md">Nessun avviso attivo.</p>
               )}
               {warnings.map((warning) => (
                 <button
@@ -1096,32 +1067,61 @@ function TipoChip({
   onOpenChange: (open: boolean) => void;
   onCommit: (tipo: ElementoTipo) => void;
 }) {
+  const [justCommitted, setJustCommitted] = useState(false);
+
+  const handleSelect = (option: ElementoTipo) => {
+    // No-op guard (R049): selecting the already-active type closes popover without committing
+    if (option === tipo) {
+      onOpenChange(false);
+      return;
+    }
+    onCommit(option);
+    onOpenChange(false);
+    setJustCommitted(true);
+
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    setTimeout(
+      () => setJustCommitted(false),
+      prefersReduced ? 0 : 1500,
+    );
+  };
+
   return (
-    <Popover isOpen={open} onOpenChange={onOpenChange}>
-      <Popover.Trigger>
-        <ChipButton
-          icon={<Users className="h-3.5 w-3.5" />}
-          label="Tipo"
-          value={tipo}
-          active={open}
-          onPress={() => onOpenChange(!open)}
-        />
-      </Popover.Trigger>
-      <Popover.Content placement="bottom" className="w-[220px]">
-        <Popover.Dialog className="space-y-1 p-2">
-          {TIPO_OPTIONS.map((option) => (
-            <Button
-              key={option}
-              variant={option === tipo ? "primary" : "ghost"}
-              className="w-full justify-start"
-              onPress={() => onCommit(option)}
-            >
-              {option}
-            </Button>
-          ))}
-        </Popover.Dialog>
-      </Popover.Content>
-    </Popover>
+    <div className="flex items-center">
+      <Popover isOpen={open} onOpenChange={onOpenChange}>
+        <Popover.Trigger>
+          <ChipButton
+            icon={<Users className="h-3.5 w-3.5" />}
+            label="Tipo"
+            value={tipo}
+            active={open}
+            onPress={() => onOpenChange(!open)}
+          />
+        </Popover.Trigger>
+        <Popover.Content placement="bottom" className="w-[220px]">
+          <Popover.Dialog className="space-y-1 p-2">
+            {TIPO_OPTIONS.map((option) => (
+              <Button
+                key={option}
+                variant={option === tipo ? "primary" : "ghost"}
+                className="w-full justify-start"
+                onPress={() => handleSelect(option)}
+              >
+                {option}
+              </Button>
+            ))}
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+      <Check
+        aria-hidden="true"
+        className="ml-2 h-4 w-4 transition-opacity duration-300"
+        style={{ opacity: justCommitted ? 1 : 0 }}
+      />
+    </div>
   );
 }
 
@@ -1152,7 +1152,6 @@ function VitaChip({
     const nascita = parseDataStorica(nascitaAnno, nascitaEra);
     const morte = parseDataStorica(morteAnno, morteEra);
     if (nascita === INVALID_DATA || morte === INVALID_DATA) {
-      toast("Usa solo anni interi positivi", { variant: "default" });
       return;
     }
     onCommit(nascita, morte);
@@ -1178,7 +1177,7 @@ function VitaChip({
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <TextField value={nascitaAnno} onChange={setNascitaAnno}>
                   <Label className="text-xs text-ink-lo">Nascita</Label>
-                  <Input className="min-h-[40px]" />
+                  <Input className="min-h-[44px]" />
                 </TextField>
                 <div className="flex gap-2 pt-5">
                   <Button variant={nascitaEra === "aev" ? "primary" : "outline"} size="sm" onPress={() => setNascitaEra("aev")}>
@@ -1192,7 +1191,7 @@ function VitaChip({
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <TextField value={morteAnno} onChange={setMorteAnno}>
                   <Label className="text-xs text-ink-lo">Morte</Label>
-                  <Input className="min-h-[40px]" />
+                  <Input className="min-h-[44px]" />
                 </TextField>
                 <div className="flex gap-2 pt-5">
                   <Button variant={morteEra === "aev" ? "primary" : "outline"} size="sm" onPress={() => setMorteEra("aev")}>
@@ -1262,7 +1261,7 @@ function ScalarChip({
           <TextField value={draft} onChange={setDraft}>
             <Label className="text-xs text-ink-lo">{label}</Label>
             <Input
-              className="min-h-[40px]"
+              className="min-h-[44px]"
               autoFocus
               onBlur={() => {
                 if (!skipBlur.current) submit();
@@ -1301,6 +1300,7 @@ function DescrizioneSection({
 }) {
   const [draft, setDraft] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { status, onFocus, onBlur } = useFieldStatus<string>(value, (_prev, next) => onCommit(next));
 
   useEffect(() => {
     setDraft(value);
@@ -1316,7 +1316,7 @@ function DescrizioneSection({
 
   function handleBlur(event: FocusEvent<HTMLDivElement>) {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      onCommit(draft);
+      onBlur(draft);
     }
   }
 
@@ -1340,17 +1340,24 @@ function DescrizioneSection({
         <div
           ref={containerRef}
           tabIndex={-1}
+          onFocus={onFocus}
           onBlur={handleBlur}
-          className="milkdown-host rounded-2xl border border-primary/20 bg-primary/[0.03] p-3"
+          className="relative milkdown-host rounded-2xl border border-primary/20 bg-primary/[0.03] p-3"
         >
           <MilkdownProvider>
             <MilkdownEditorInline defaultValue={value} onChange={setDraft} />
           </MilkdownProvider>
+          <Check
+            className="absolute bottom-2 right-2 h-4 w-4 pointer-events-none transition-opacity duration-300"
+            aria-hidden="true"
+            style={{ opacity: status === 'success' ? 1 : 0 }}
+          />
         </div>
       ) : (
         <button
           type="button"
           onClick={onStart}
+          aria-label="Modifica descrizione"
           className="w-full rounded-2xl border border-primary/8 bg-chrome/40 px-4 py-4 text-left transition-colors hover:border-primary/20 hover:bg-primary/[0.03]"
         >
           <MarkdownPreview value={value} />
@@ -1393,7 +1400,7 @@ function ArraySection({
           <span className="text-ink-dim">{icon}</span>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
         </div>
-        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
+        <Button variant="ghost" size="sm" className="min-h-[44px] rounded-full px-3 text-primary" onPress={onOpenAdd}>
           <Plus className="h-3.5 w-3.5" />
           {addLabel}
         </Button>
@@ -1401,7 +1408,7 @@ function ArraySection({
           <TextField value={draftValue} onChange={onDraftChange}>
             <Label className="text-xs text-ink-lo">{title}</Label>
             <Input
-              className="min-h-[40px]"
+              className="min-h-[44px]"
               autoFocus
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -1427,7 +1434,7 @@ function ArraySection({
         {items.map((item) => (
           <Chip
             key={item}
-            className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            className="min-h-[44px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
           >
             <span className="flex items-center gap-1.5">
               {item}
@@ -1469,7 +1476,7 @@ function LinkSection({
     <section className="border-t border-primary/8 pt-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-dim">{title}</p>
-        <Button variant="ghost" size="sm" className="min-h-[36px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
+        <Button variant="ghost" size="sm" className="min-h-[44px] rounded-full px-3 text-primary" onPress={() => onOpenChange(true)}>
           <Plus className="h-3.5 w-3.5" />
           Aggiungi
         </Button>
@@ -1481,7 +1488,7 @@ function LinkSection({
         {links.map((link) => (
           <Chip
             key={`${fieldId}-${link.targetId}-${link.tipo}`}
-            className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+            className="min-h-[44px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
           >
             <span className="flex items-center gap-1.5">
               {link.titolo}
@@ -1565,7 +1572,7 @@ function FontiSection({
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-[36px] rounded-full px-3 text-primary"
+          className="min-h-[44px] rounded-full px-3 text-primary"
           onPress={onOpenAdd}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -1592,7 +1599,7 @@ function FontiSection({
               {fonteTipo === "scrittura" ? "Riferimento (es. Genesi 12:1-3)" : "Valore"}
             </Label>
             <Input
-              className="min-h-[40px]"
+              className="min-h-[44px]"
               autoFocus
               onKeyDown={(event) => {
                 if (event.key === "Enter") onAdd();
@@ -1624,7 +1631,7 @@ function FontiSection({
               {group.map((fonte) => (
                 <Chip
                   key={`${tipo}-${fonte.valore}`}
-                  className="min-h-[34px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
+                  className="min-h-[44px] border border-primary/10 bg-panel px-2.5 text-sm text-ink-hi"
                 >
                   <span className="flex items-center gap-1.5">
                     {fonte.urlCalcolata ? (

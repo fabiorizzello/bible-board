@@ -1892,7 +1892,7 @@ function UndoToast({
   return (
     <div
       aria-live="polite"
-      className={`pointer-events-none fixed left-1/2 -translate-x-1/2 bottom-6 z-50 transition-all duration-200 ${
+      className={`pointer-events-none fixed left-1/2 -translate-x-1/2 bottom-6 z-50 transition-[opacity,transform] duration-200 ${
         toast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
       }`}
     >

@@ -1,11 +1,12 @@
 # Codebase Map
 
-Generated: 2026-04-22T12:43:18Z | Files: 70 | Described: 0/70
-<!-- gsd:codebase-meta {"generatedAt":"2026-04-22T12:43:18Z","fingerprint":"c28f27c307ae136f812549d21762155730be6b2c","fileCount":70,"truncated":false} -->
+Generated: 2026-04-24T12:27:46Z | Files: 80 | Described: 0/80
+<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T12:27:46Z","fingerprint":"2d0ff2c71494f6e93af8cf09782f6a288c81f63c","fileCount":80,"truncated":false} -->
 
 ### (root)/
 - `.gitignore`
 - `.mcp.json`
+- `=4`
 - `AGENTS.md`
 - `CLAUDE.md`
 - `codex.md`
@@ -45,6 +46,7 @@ Generated: 2026-04-22T12:43:18Z | Files: 70 | Described: 0/70
 - `src/features/elemento/wol-link-resolver.ts`
 
 ### src/features/elemento/__tests__/
+- `src/features/elemento/__tests__/elemento.adapter.test.ts`
 - `src/features/elemento/__tests__/elemento.rules.test.ts`
 
 ### src/features/shared/
@@ -89,6 +91,10 @@ Generated: 2026-04-22T12:43:18Z | Files: 70 | Described: 0/70
 ### src/ui/not-found/
 - `src/ui/not-found/NotFoundPage.tsx`
 
+### src/ui/timeline/
+- `src/ui/timeline/timeline-d3.ts`
+- `src/ui/timeline/Timeline.tsx`
+
 ### src/ui/workspace-home/
 - `src/ui/workspace-home/DetailPane.tsx`
 - `src/ui/workspace-home/display-helpers.ts`
@@ -96,13 +102,19 @@ Generated: 2026-04-22T12:43:18Z | Files: 70 | Described: 0/70
 - `src/ui/workspace-home/FullscreenOverlay.tsx`
 - `src/ui/workspace-home/ListPane.tsx`
 - `src/ui/workspace-home/NavSidebar.tsx`
+- `src/ui/workspace-home/NotificationBell.tsx`
+- `src/ui/workspace-home/NotificationDrawer.tsx`
+- `src/ui/workspace-home/notifications-store.ts`
 - `src/ui/workspace-home/ThemeSwitcher.tsx`
+- `src/ui/workspace-home/useFieldStatus.ts`
 - `src/ui/workspace-home/workspace-ui-store.ts`
 - `src/ui/workspace-home/WorkspacePreviewPage.tsx`
 
 ### src/ui/workspace-home/__tests__/
 - `src/ui/workspace-home/__tests__/display-helpers.test.ts`
 - `src/ui/workspace-home/__tests__/link-helpers.test.ts`
+- `src/ui/workspace-home/__tests__/notifications-store.test.ts`
+- `src/ui/workspace-home/__tests__/useFieldStatus.test.ts`
 
 ### tests/
 - `tests/setup.ts`

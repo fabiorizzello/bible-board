@@ -34,7 +34,31 @@ coverage/
 .env.*
 !.env.example
 
-# ── GSD (project state — versionato nel repo) ──
+# ── GSD: Runtime / Ephemeral (per-developer, per-session) ──────
+.gsd/auto.lock
+.gsd/completed-units.json
+.gsd/STATE.md
+.gsd/metrics.json
+.gsd/activity/
+.gsd/runtime/
+.gsd/worktrees/
+.gsd/milestones/**/continue.md
+.gsd/milestones/**/*-CONTINUE.md
+.gsd/gsd.db-wal
+.gsd/gsd.db-shm
+.gsd/auto-*.lock
+.gsd/audit/
+.gsd/journal/
+.gsd/graphs/
+.gsd/parallel/
+.gsd/quick/
+.gsd/safety/
+.gsd/doctor-history.jsonl
+.gsd/event-log.jsonl
+.gsd/notifications.jsonl
+.gsd/routing-history.json
+.gsd/state-manifest.json
+.gsd/last-snapshot.md
 *.code-workspace
 __pycache__/
 *.pyc
@@ -54,3 +78,4 @@ vendor/
 # ── GSD baseline (auto-generated) ──
 .mcp.json
 .bg-shell/
+

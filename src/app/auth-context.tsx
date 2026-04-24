@@ -1,43 +1,45 @@
-import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
+import { useAccount, useDemoAuth, useIsAuthenticated } from "jazz-react";
+import { TimelineBoardAccount } from "@/features/workspace/workspace.schema";
 
-interface AuthState {
+export interface AuthState {
   /** The authenticated user's name, or null if unauthenticated */
   nome: string | null;
-  /** Log in with a display name */
-  login: (nome: string) => void;
-  /** Log out and clear auth state */
+  /** Log in (or sign up) with a display name — async, backed by Jazz DemoAuth */
+  login: (nome: string) => Promise<void>;
+  /** Log out */
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthState | null>(null);
-
+/**
+ * No-op wrapper kept for component tree compatibility.
+ * Auth state is provided by JazzProvider (in main.tsx).
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [nome, setNome] = useState<string | null>(null);
-
-  const login = useCallback((n: string) => {
-    setNome(n);
-  }, []);
-
-  const logout = useCallback(() => {
-    setNome(null);
-  }, []);
-
-  return (
-    <AuthContext value={{ nome, login, logout }}>
-      {children}
-    </AuthContext>
-  );
+  return <>{children}</>;
 }
 
 /**
  * Access auth state and actions.
- * Must be used within an AuthProvider.
+ * Must be used within a JazzProvider.
  */
 export function useAuth(): AuthState {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return ctx;
+  const { logIn, signUp, existingUsers } = useDemoAuth();
+  const { me, logOut } = useAccount(TimelineBoardAccount, {
+    resolve: { profile: true }
+  });
+  const isAuthenticated = useIsAuthenticated();
+
+  const nome = isAuthenticated ? (me?.profile?.name ?? null) : null;
+
+  const login = async (username: string) => {
+    const trimmed = username.trim();
+    if (existingUsers.includes(trimmed)) {
+      await logIn(trimmed);
+    } else {
+      await signUp(trimmed);
+    }
+  };
+
+  return { nome, login, logout: logOut };
 }

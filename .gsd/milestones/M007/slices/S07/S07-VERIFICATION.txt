@@ -1,0 +1,87 @@
+M007 Acceptance Verification Gate Sequence
+Run date: 2026-04-24
+Executor: GSD auto-mode (T02)
+Working directory: /home/fabio/dev/bible-board
+
+=============================================================================
+GATE 1: pnpm test --run
+Command: pnpm test --run
+Exit code: 0
+Criterion: exit 0 with >=150 passing
+Output snippet:
+  Test Files  7 passed (7)
+       Tests  150 passed (150)
+    Duration  719ms
+PASS (150 tests)
+
+=============================================================================
+GATE 2: pnpm tsc --noEmit
+Command: pnpm tsc --noEmit
+Exit code: 0
+Criterion: exit 0 (no type errors)
+Output snippet: (no output — clean build)
+PASS
+
+=============================================================================
+GATE 3: rg 'toast(' src/ui/
+Command: rg 'toast(' src/ui/
+Exit code: 1
+Criterion: 0 hits (exit 1 = no matches)
+Output snippet: (no matches)
+PASS (0 hits)
+
+=============================================================================
+GATE 4: rg 'transition-all' src/ui/
+Command: rg 'transition-all' src/ui/
+Exit code: 1
+Criterion: 0 hits (exit 1 = no matches)
+Output snippet: (no matches)
+PASS (0 hits)
+
+=============================================================================
+GATE 5: grep -c 'notifyMutation' src/ui/workspace-home/ElementoEditor.tsx
+Command: grep -c 'notifyMutation' src/ui/workspace-home/ElementoEditor.tsx
+Exit code: 0
+Criterion: >=6
+Output snippet: 7
+PASS (7 occurrences)
+
+=============================================================================
+GATE 6: grep -c 'h-dvh' src/ui/workspace-home/WorkspacePreviewPage.tsx
+Command: grep -c 'h-dvh' src/ui/workspace-home/WorkspacePreviewPage.tsx
+Exit code: 0
+Criterion: >=1
+Output snippet: 1
+PASS (1 occurrence)
+
+=============================================================================
+GATE 7: rg -c 'aria-label' src/ui/workspace-home/NotificationBell.tsx
+Command: rg -c 'aria-label' src/ui/workspace-home/NotificationBell.tsx
+Exit code: 0
+Criterion: >=1
+Output snippet: 1
+PASS (1 occurrence)
+
+=============================================================================
+GATE 8: rg -n 'min-h-0' src/ui/workspace-home/NotificationDrawer.tsx
+Command: rg -n 'min-h-0' src/ui/workspace-home/NotificationDrawer.tsx
+Exit code: 1
+Criterion: 0 hits (exit 1 = no matches, confirms T01 fix is in place)
+Output snippet: (no matches)
+PASS (0 hits — T01 min-h-0 removal confirmed)
+
+=============================================================================
+GATE 9: grep -n 'when.*never' src/main.tsx
+Command: grep -n 'when.*never' src/main.tsx
+Exit code: 0
+Criterion: must hit line ~14 (Jazz scenario D — sync disabled for offline-only mode)
+Output snippet: 14:      sync={{ when: "never" }}
+PASS (line 14 confirmed)
+
+=============================================================================
+SUMMARY
+Total gates: 9
+PASS: 9
+FAIL: 0
+
+All M007 acceptance criteria verified. Slice S07 may proceed to T03 (write S07-SUMMARY.md).

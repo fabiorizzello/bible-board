@@ -1,24 +1,24 @@
 ---
 estimated_steps: 1
-estimated_files: 3
+estimated_files: 4
 skills_used: []
 ---
 
-# T01: Fonti cliccabili + editor link inline con ruolo parentela
+# T01: Board CRUD: create / rename / delete dalla sidebar
 
-Sezione Fonti nel detail: link cliccabili raggruppati per FonteTipo. Editor link inline su detail con picker HeroUI popover e selettore tipo/ruolo. Creazione link propaga inverso automatico.
+Azioni CRUD su Board persistite via Jazz (adapter da S08). Pulsante + nella sezione Board apre prompt per nome e crea il board. Click sul nome del board nella sidebar permette rinomina inline (Enter conferma, Esc annulla). Menu azioni board (tre puntini) con opzione Elimina che apre modal di conferma. Integrazione con board.rules.ts (pure helpers già esistenti) e board.adapter.ts (nuovo, da S08).
 
 ## Inputs
 
-- `S03 output: Jazz CRUD attivo`
-- `src/features/elemento/elemento.model.ts (link types)`
+- `S08 board.schema.ts + board.adapter.ts pronti`
+- `board.rules.ts pure helpers esistenti`
 
 ## Expected Output
 
-- `Fonti raggruppate per tipo con link cliccabili`
-- `Editor link inline con selettore tipo/ruolo parentela`
-- `Link inverso creato automaticamente`
+- `CRUD board funzionante dalla sidebar`
+- `Persistenza al reload verificata`
+- `Test unit per board.rules nuove funzioni (rename, delete) se necessarie`
 
 ## Verification
 
-Fonte bibbia mostra URL WOL cliccabile; link padre da A→B crea figlio B→A; R006 e R007 coperti
+Crea board 'Test' dalla sidebar -> appare in lista Board con conteggio 0; rinomina inline 'Test' -> 'Rinominato' -> Enter -> persiste; ricarica pagina -> board persiste; elimina 'Rinominato' -> modal conferma -> sparisce; elementi del workspace invariati.

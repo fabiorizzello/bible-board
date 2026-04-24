@@ -22,14 +22,17 @@
 - [x] **S03: S03** `risk:high` `depends:[]`
   > After this: detail mostra fonti come link cliccabili raggruppati per tipo; editor link inline con selettore tipo e ruolo parentela.
 
-- [ ] **S04: Fonti e link editor inline** `risk:low` `depends:[S01,S03]`
-  > After this: crea board da sidebar, rinomina inline, elimina con conferma, vista lista compatta con ordinamento, ricerca cross-view.
+- [x] **S04: S04** `risk:medium` `depends:[]`
+  > After this: crea board da sidebar, rinomina inline, elimina con conferma, vista lista compatta con ordinamento, ricerca cross-view
 
-- [ ] **S05: Board CRUD e ricerca** `risk:medium` `depends:[S01,S03]`
-  > After this: vista timeline con asse verticale SVG, card posizionate, zoom cambia scala, pan con drag, popup compatto su click card.
+- [x] **S05: S05** `risk:high` `depends:[]`
+  > After this: vista timeline con asse verticale SVG, card posizionate, zoom cambia scala, pan con drag, popup compatto su click card
 
-- [ ] **S06: Timeline D3 SVG con zoom/pan e popup** `risk:high` `depends:[S01,S05]`
-  > After this: app completa che sembra iPad nativa, scenario UAT end-to-end passa.
+- [x] **S06: S06** `risk:high` `depends:[]`
+  > After this: 
 
-- [ ] **S07: Polish iPad-native e UAT finale** `risk:low` `depends:[S01,S02,S03,S04,S05,S06]`
+- [x] **S07: S07** `risk:low` `depends:[]`
   > After this: App completa iPad-native, scenario UAT end-to-end PASS
+
+- [x] **S08: S08** `risk:high` `depends:[]`
+  > After this: crea elemento, ricarica pagina, persiste; crea link padre A to B, inverso figlio appare su B senza intervento; fonti persistite per tipo sopravvivono al reload; DemoAuth con account Jazz locale

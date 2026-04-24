@@ -21,7 +21,7 @@ Not provided.
 
 ## Tasks
 
-- [ ] **T01: Board CRUD + ricerca cross-view** `est:3h`
+- [x] **T01: Board CRUD + ricerca cross-view** `est:3h`
   Board CRUD dalla sidebar (crea, rinomina inline, elimina con conferma). Vista lista compatta con ordinamento. Ricerca cross-view. Consegna R008 e R009.
   - Files: `src/features/board/board.rules.ts`, `src/ui/workspace-home/NavSidebar.tsx`, `src/ui/workspace-home/ListPane.tsx`
   - Verify: Crea board → appare in sidebar; rinomina inline → persiste; elimina con conferma → scompare; search trova board e elementi; R008 e R009 coperti

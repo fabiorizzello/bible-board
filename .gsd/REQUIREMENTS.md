@@ -4,51 +4,41 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R006 — Fonti documentabili con link cliccabili raggruppati per FonteTipo
-- Class: ui
+### R053 — A11y baseline: focus ring su tutti gli interattivi, keyboard nav sidebar→list→detail, aria-label su icon-only button, prefers-reduced-motion rispettato
+- Class: compliance/security
 - Status: active
-- Description: Fonti documentabili con link cliccabili raggruppati per FonteTipo
-- Source: .planning/REQUIREMENTS.md (migrated)
-- Primary owning slice: S03
-- Notes: Link cliccabili raggruppati per FonteTipo nel detail.
+- Description: A11y baseline: focus ring su tutti gli interattivi, keyboard nav sidebar→list→detail, aria-label su icon-only button, prefers-reduced-motion rispettato
+- Why it matters: WCAG 2.1 AA è principio fondamentale (Principio III). M001 ha gap a11y lasciati su icon-only controls.
+- Source: user
+- Primary owning slice: M002/S05
+- Validation: unmapped
 
-### R007 — Link bidirezionali tra elementi con editor inline e propagazione automatica inverso
-- Class: domain+ui
+### R054 — Density/spacing uniforme + feedback tattile &lt;100ms + transizioni solo opacity/transform su tutti i nuovi componenti
+- Class: quality-attribute
 - Status: active
-- Description: Link bidirezionali tra elementi con editor inline e propagazione automatica inverso
-- Source: .planning/REQUIREMENTS.md (migrated)
-- Primary owning slice: S03
-- Notes: Selettore TipoLink + RuoloLink parentela; creazione propaga inverso automatico.
+- Description: Density/spacing uniforme + feedback tattile &lt;100ms + transizioni solo opacity/transform su tutti i nuovi componenti
+- Why it matters: Principio IX performance + feel nativo. Previene regressioni future (transition-all su width/height).
+- Source: inferred
+- Primary owning slice: M002/S05
+- Validation: unmapped
 
-### R008 — Board CRUD: crea da sidebar, rinomina inline, elimina con conferma, vista lista compatta
-- Class: ui
+### R055 — Audit Jazz reale: 4 scenari browser documentati (reload persistenza, multi-tab CRDT propagation, offline→online resync, conferma intenzionalità sync:never per assenza API key)
+- Class: integration
 - Status: active
-- Description: Board CRUD: crea da sidebar, rinomina inline, elimina con conferma, vista lista compatta
-- Source: .planning/REQUIREMENTS.md (migrated)
-- Primary owning slice: S04
-- Notes: Crea da sidebar, rinomina inline, elimina con conferma, vista lista compatta con ordinamento.
+- Description: Audit Jazz reale: 4 scenari browser documentati (reload persistenza, multi-tab CRDT propagation, offline→online resync, conferma intenzionalità sync:never per assenza API key)
+- Why it matters: Jazz già integrato in M001 ma mai stress-tested. M003 (cloud sync) partirà da basi note.
+- Source: user
+- Primary owning slice: M002/S06
+- Validation: unmapped
 
-### R009 — Ricerca cross-view in titolo, tags e descrizione
-- Class: ui
+### R056 — Quality gate pre-slice-complete: revisione skill ui-ux-pro-max obbligatoria su ogni slice UI di M002
+- Class: quality-attribute
 - Status: active
-- Description: Ricerca cross-view in titolo, tags e descrizione
-- Source: .planning/REQUIREMENTS.md (migrated)
-- Primary owning slice: S04
-
-### R010 — Vista timeline D3 SVG: asse verticale, card posizionate, zoom/pan, popup compatto su click
-- Class: ui-d3
-- Status: active
-- Description: Vista timeline D3 SVG: asse verticale, card posizionate, zoom/pan, popup compatto su click
-- Source: .planning/REQUIREMENTS.md (migrated)
-- Primary owning slice: S05
-- Notes: Asse verticale, card posizionate, zoom/pan con drag, popup compatto su click card.
-
-### R011 — Polish iPad-native + scenario UAT end-to-end PASS
-- Class: ux
-- Status: active
-- Description: Polish iPad-native + scenario UAT end-to-end PASS
-- Source: .planning/REQUIREMENTS.md (migrated)
-- Primary owning slice: S06
+- Description: Quality gate pre-slice-complete: revisione skill ui-ux-pro-max obbligatoria su ogni slice UI di M002
+- Why it matters: Polish milestone ha polish come output. Senza audit esterno sistematico i fix sono guidati solo da sensibilità del momento.
+- Source: user
+- Primary owning slice: M002/S07
+- Validation: unmapped
 
 ## Validated
 
@@ -96,6 +86,144 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: S02
 - Validation: S02 plan 02-04 + 02-05: ElementoEditor riscritto su UnifiedEditorMockup con editingFieldId, commit grammar unificato (blur-to-save + toast undo 5s), add-field globale, popover/drawer per flow compositi. Lint + 78 test pass 2026-04-22.
 - Notes: No mode swap, editingFieldId sostituisce isEditing, Milkdown per descrizione, data-driven empty fields + menu + aggiungi campo, collegamento picker HeroUI popover.
+
+### R006 — Fonti documentabili con link cliccabili raggruppati per FonteTipo
+- Class: ui
+- Status: validated
+- Description: Fonti documentabili con link cliccabili raggruppati per FonteTipo
+- Source: .planning/REQUIREMENTS.md (migrated)
+- Primary owning slice: S03
+- Validation: S03 SUMMARY (completed 2026-04-22): FonteTipo union 5-variant, addFonte/removeFonte puri con Result<T,E>, grouped fonti rendering nel detail. 126/126 test.
+- Notes: Link cliccabili raggruppati per FonteTipo nel detail.
+
+### R007 — Link bidirezionali tra elementi con editor inline e propagazione automatica inverso
+- Class: domain+ui
+- Status: validated
+- Description: Link bidirezionali tra elementi con editor inline e propagazione automatica inverso
+- Source: .planning/REQUIREMENTS.md (migrated)
+- Primary owning slice: S03
+- Validation: S03 SUMMARY (completed 2026-04-22): createBidirectionalLink/removeBidirectionalLink atomici, selettore TipoLink + RuoloLink parentela, inverso propagato automaticamente. 126/126 test.
+- Notes: Selettore TipoLink + RuoloLink parentela; creazione propaga inverso automatico.
+
+### R008 — Board CRUD: crea da sidebar, rinomina inline, elimina con conferma, vista lista compatta
+- Class: ui
+- Status: validated
+- Description: Board CRUD: crea da sidebar, rinomina inline, elimina con conferma, vista lista compatta
+- Source: .planning/REQUIREMENTS.md (migrated)
+- Primary owning slice: S04
+- Validation: S04 T01 PASS: Board CRUD (create, rename, delete) wired from NavSidebar via Jazz CoList. 111/111 tests pass, tsc clean, build OK. Console.debug events board-creato/rinominato/eliminato verified. 2026-04-23.
+- Notes: Crea da sidebar, rinomina inline, elimina con conferma, vista lista compatta con ordinamento.
+
+### R009 — Ricerca cross-view in titolo, tags e descrizione
+- Class: ui
+- Status: validated
+- Description: Ricerca cross-view in titolo, tags e descrizione
+- Source: .planning/REQUIREMENTS.md (migrated)
+- Primary owning slice: S04
+- Validation: S04 T02 PASS: isElementMatchingSearch covers titolo+descrizione+tags; getElementsForView delegates to it; sortElementi pure sort (titolo/data/tipo, asc/desc); 126/126 tests pass. 2026-04-23.
+
+### R010 — Vista timeline D3 SVG: asse verticale, card posizionate, zoom/pan, popup compatto su click
+- Class: ui-d3
+- Status: validated
+- Description: Vista timeline D3 SVG: asse verticale, card posizionate, zoom/pan, popup compatto su click
+- Source: .planning/REQUIREMENTS.md (migrated)
+- Primary owning slice: S06
+- Validation: S06 SUMMARY (completed 2026-04-23): timeline D3 SVG verticale con zoom/pan via rescaleY, card collision-free, popup compatto su click. 126/126 test, tsc+build clean.
+- Notes: Owner corretto: S06 (non S05 — S05 era un ghost slice duplicato di S04, skippato).
+
+### R011 — Polish iPad-native + scenario UAT end-to-end PASS
+- Class: ux
+- Status: validated
+- Description: Polish iPad-native + scenario UAT end-to-end PASS
+- Source: .planning/REQUIREMENTS.md (migrated)
+- Primary owning slice: S07
+- Validation: S07 T01 PASS: all forbidden width/height animations replaced with transition-[opacity,transform]; touch targets ≥44px across NavSidebar, ListPane, FullscreenOverlay, ElementoEditor, ThemeSwitcher, Timeline popup button; prefers-reduced-motion in tokens.css confirmed. 126/126 tests pass, tsc clean. 2026-04-23.
+- Notes: Owner corretto: S07 (il file S06-PLAN.md aveva titolo "Polish" ma contenuto Timeline; R011 Polish+UAT è in S07).
+
+### R046 — Linguaggio UI di dominio — zero termini tecnici esposti (markdown, panel, toast, field)
+- Class: quality-attribute
+- Status: validated
+- Description: Linguaggio UI di dominio — zero termini tecnici esposti (markdown, panel, toast, field)
+- Why it matters: Un'app iPad-nativa parla il linguaggio dell'utente, non dello sviluppatore. Termini tecnici rompono l'illusione di app finita.
+- Source: user
+- Primary owning slice: M002/S01
+- Validation: T01 PASS 2026-04-24: 3 user-visible technical strings replaced in ElementoEditor.tsx; rg gate clean; 126/126 tests pass
+
+### R047 — Layout fullheight su iPad landscape 1180×820 e portrait — nessuno scroll esterno, content scroll interno
+- Class: quality-attribute
+- Status: validated
+- Description: Layout fullheight su iPad landscape 1180×820 e portrait — nessuno scroll esterno, content scroll interno
+- Why it matters: App che non occupa 100% viewport si percepisce come sito web, non app nativa.
+- Source: user
+- Primary owning slice: M002/S01
+- Validation: T02 PASS 2026-04-24: h-dvh on root, h-full on NavSidebar nav and ListPane inner div; all rg checks pass; 126/126 tests pass, tsc clean
+
+### R048 — Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
+- Class: failure-visibility
+- Status: validated
+- Description: Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
+- Why it matters: Warning fasulli creano rumore e allenano l'utente a ignorare i segnali. Solo validità reale preserva la forza del warning.
+- Source: user
+- Primary owning slice: M002/S02
+- Validation: computeValidityWarnings checks only date invalida and referenza rotta. Completeness strings fully absent from src/. 135/135 tests pass, tsc clean. 2026-04-24.
+- Notes: Implemented in M007/S02 — domain helper computeValidityWarnings in elemento.rules.ts; wired into ElementoEditor replacing local getWarnings.
+
+### R049 — Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
+- Class: quality-attribute
+- Status: validated
+- Description: Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
+- Why it matters: Notifica su no-op è spam. L'utente perde fiducia nel segnale e lo inizia a ignorare.
+- Source: user
+- Primary owning slice: M002/S03
+- Validation: useFieldStatus strict === comparison + TipoChip option===tipo guard: onCommit never called on identical values. 141/141 tests pass.
+- Notes: Implemented in M007/S03 — useFieldStatus hook + TipoChip no-op guard in ElementoEditor.tsx.
+
+### R050 — Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
+- Class: primary-user-loop
+- Status: validated
+- Description: Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
+- Why it matters: Feedback di successo dentro il field è meno invasivo del toast e più chiaro (lega visivamente il conferma al campo che ha appena cambiato).
+- Source: user
+- Primary owning slice: M002/S03
+- Validation: Check icon with transition-opacity on InlineTitle (endContent), DescrizioneSection (absolute overlay), TipoChip (adjacent). Fades out 1500ms, immediate on prefers-reduced-motion. 141/141 tests pass.
+- Notes: Implemented in M007/S03 — three presentation variants in ElementoEditor.tsx; hook useFieldStatus.ts is shared state machine.
+
+### R051 — Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
+- Class: primary-user-loop
+- Status: validated
+- Description: Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
+- Why it matters: Sostituisce toast invasivo con pattern iOS Mail/Messages. Offre scorrimento di modifiche recenti e rollback esplicito.
+- Source: user
+- Primary owning slice: M002/S04
+- Validation: S04 delivered: NotificationBell + NotificationDrawer replace all toast() calls. 7 notifyMutation sites across ElementoEditor (6) and DetailPane (1). Drawer shows create/update/delete entries ordered newest-first with rollback. rg 'toast\(' src/ui/ → 0 hits. pnpm test --run → 150 tests green. pnpm tsc --noEmit → clean.
+
+### R052 — Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
+- Class: constraint
+- Status: validated
+- Description: Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
+- Why it matters: Coerenza: un solo canale di feedback per tutte le mutazioni. Elimina ambiguità "quando esce toast vs drawer".
+- Source: user
+- Primary owning slice: M002/S04
+- Validation: S04 delivered: rollback(id) implemented in notifications-store with idempotency guard (undoFn called exactly once). All 7 mutation sites pass undoFn closures. DetailPane soft-delete passes restoreElement. ElementoEditor passes compensating Jazz ops. Unit tests confirm rollback idempotency.
+
+## Deferred
+
+### R057 — Notifiche persistite cross-sessione (sopravvivono al reload)
+- Class: admin/support
+- Status: deferred
+- Description: Notifiche persistite cross-sessione (sopravvivono al reload)
+- Why it matters: Potenzialmente utile per tracking storico mutazioni, ma aggiunge CoMap Notifica e complica schema Jazz. Rimandato.
+- Source: user
+- Validation: unmapped
+- Notes: Oggi in-memory per sessione corrente. Riconsiderare dopo M003 se multi-device sync lo rende più valorioso.
+
+### R058 — Inline success feedback esteso a field leggeri (toggle, switch, chip tag)
+- Class: admin/support
+- Status: deferred
+- Description: Inline success feedback esteso a field leggeri (toggle, switch, chip tag)
+- Why it matters: Field leggeri rischiano affollamento visivo. Valutare dopo aver osservato il pattern su field con peso.
+- Source: user
+- Validation: unmapped
 
 ## Out of Scope
 
@@ -235,12 +363,12 @@ This file is the explicit capability and coverage contract for the project.
 | R003 | domain+ui | validated | S02 | none | S02 plan 02-01 summary |
 | R004 | ui | validated | S02 | none | S02 plan 02-01 summary |
 | R005 | ux-ui | validated | S02 | none | S02 plan 02-04 + 02-05: ElementoEditor riscritto su UnifiedEditorMockup con editingFieldId, commit grammar unificato (blur-to-save + toast undo 5s), add-field globale, popover/drawer per flow compositi. Lint + 78 test pass 2026-04-22. |
-| R006 | ui | active | S03 | none | unmapped |
-| R007 | domain+ui | active | S03 | none | unmapped |
-| R008 | ui | active | S04 | none | unmapped |
-| R009 | ui | active | S04 | none | unmapped |
-| R010 | ui-d3 | active | S05 | none | unmapped |
-| R011 | ux | active | S06 | none | unmapped |
+| R006 | ui | validated | S03 | none | S03 SUMMARY (completed 2026-04-22): FonteTipo union 5-variant, addFonte/removeFonte puri con Result<T,E>, grouped fonti rendering nel detail. 126/126 test. |
+| R007 | domain+ui | validated | S03 | none | S03 SUMMARY (completed 2026-04-22): createBidirectionalLink/removeBidirectionalLink atomici, selettore TipoLink + RuoloLink parentela, inverso propagato automaticamente. 126/126 test. |
+| R008 | ui | validated | S04 | none | S04 T01 PASS: Board CRUD (create, rename, delete) wired from NavSidebar via Jazz CoList. 111/111 tests pass, tsc clean, build OK. Console.debug events board-creato/rinominato/eliminato verified. 2026-04-23. |
+| R009 | ui | validated | S04 | none | S04 T02 PASS: isElementMatchingSearch covers titolo+descrizione+tags; getElementsForView delegates to it; sortElementi pure sort (titolo/data/tipo, asc/desc); 126/126 tests pass. 2026-04-23. |
+| R010 | ui-d3 | validated | S06 | none | S06 SUMMARY (completed 2026-04-23): timeline D3 SVG verticale con zoom/pan via rescaleY, card collision-free, popup compatto su click. 126/126 test, tsc+build clean. |
+| R011 | ux | validated | S07 | none | S07 T01 PASS: all forbidden width/height animations replaced with transition-[opacity,transform]; touch targets ≥44px across NavSidebar, ListPane, FullscreenOverlay, ElementoEditor, ThemeSwitcher, Timeline popup button; prefers-reduced-motion in tokens.css confirmed. 126/126 tests pass, tsc clean. 2026-04-23. |
 | R031 | core-capability | out-of-scope | none | none | unmapped |
 | R032 | core-capability | out-of-scope | none | none | unmapped |
 | R033 | core-capability | out-of-scope | none | none | unmapped |
@@ -256,10 +384,23 @@ This file is the explicit capability and coverage contract for the project.
 | R043 | ui | out-of-scope | S04 | none | unmapped |
 | R044 | ui-d3 | out-of-scope | S05 | none | unmapped |
 | R045 | ux | out-of-scope | S06 | none | unmapped |
+| R046 | quality-attribute | validated | M002/S01 | none | T01 PASS 2026-04-24: 3 user-visible technical strings replaced in ElementoEditor.tsx; rg gate clean; 126/126 tests pass |
+| R047 | quality-attribute | validated | M002/S01 | none | T02 PASS 2026-04-24: h-dvh on root, h-full on NavSidebar nav and ListPane inner div; all rg checks pass; 126/126 tests pass, tsc clean |
+| R048 | failure-visibility | validated | M002/S02 | none | computeValidityWarnings checks only date invalida and referenza rotta. Completeness strings fully absent from src/. 135/135 tests pass, tsc clean. 2026-04-24. |
+| R049 | quality-attribute | validated | M002/S03 | none | useFieldStatus strict === comparison + TipoChip option===tipo guard: onCommit never called on identical values. 141/141 tests pass. |
+| R050 | primary-user-loop | validated | M002/S03 | none | Check icon with transition-opacity on InlineTitle (endContent), DescrizioneSection (absolute overlay), TipoChip (adjacent). Fades out 1500ms, immediate on prefers-reduced-motion. 141/141 tests pass. |
+| R051 | primary-user-loop | validated | M002/S04 | none | S04 delivered: NotificationBell + NotificationDrawer replace all toast() calls. 7 notifyMutation sites across ElementoEditor (6) and DetailPane (1). Drawer shows create/update/delete entries ordered newest-first with rollback. rg 'toast\(' src/ui/ → 0 hits. pnpm test --run → 150 tests green. pnpm tsc --noEmit → clean. |
+| R052 | constraint | validated | M002/S04 | none | S04 delivered: rollback(id) implemented in notifications-store with idempotency guard (undoFn called exactly once). All 7 mutation sites pass undoFn closures. DetailPane soft-delete passes restoreElement. ElementoEditor passes compensating Jazz ops. Unit tests confirm rollback idempotency. |
+| R053 | compliance/security | active | M002/S05 | none | unmapped |
+| R054 | quality-attribute | active | M002/S05 | none | unmapped |
+| R055 | integration | active | M002/S06 | none | unmapped |
+| R056 | quality-attribute | active | M002/S07 | none | unmapped |
+| R057 | admin/support | deferred | none | none | unmapped |
+| R058 | admin/support | deferred | none | none | unmapped |
 
 ## Coverage Summary
 
-- Active requirements: 6
-- Mapped to slices: 6
-- Validated: 5 (R001, R002, R003, R004, R005)
+- Active requirements: 4
+- Mapped to slices: 4
+- Validated: 18 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R046, R047, R048, R049, R050, R051, R052)
 - Unmapped active requirements: 0

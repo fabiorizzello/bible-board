@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { flushSync } from "react-dom";
 import { useNavigate } from "react-router";
 import { Button, FieldError, Input, Label, TextField } from "@heroui/react";
 import { useAuth } from "@/app/auth-context";
 
 /**
  * DemoAuth — full-page login screen.
- * Single-field name entry for mock authentication (R001 placeholder).
+ * Single-field name entry; creates a local Jazz account on first login.
  *
  * Uses HeroUI v3 TextField composition: TextField > Label + Input + FieldError
  */
@@ -18,6 +17,7 @@ export function DemoAuthPage() {
   const [nome, setNome] = useState("");
   const [errore, setErrore] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -31,19 +31,24 @@ export function DemoAuthPage() {
     return null;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const err = validate(nome);
-    if (err) {
-      setErrore(err);
+    const validationErr = validate(nome);
+    if (validationErr) {
+      setErrore(validationErr);
       setTouched(true);
       inputRef.current?.focus();
       return;
     }
-    // flushSync ensures the auth state is committed before navigation triggers
-    // RequireAuth guards — otherwise React batching defers the update.
-    flushSync(() => login(nome.trim()));
-    navigate("/", { replace: true });
+    setLoading(true);
+    try {
+      await login(nome.trim());
+      navigate("/", { replace: true });
+    } catch {
+      setErrore("Errore durante il login. Riprova.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleBlur() {
@@ -78,6 +83,7 @@ export function DemoAuthPage() {
             onChange={handleChange}
             isRequired
             isInvalid={touched && !!errore}
+            isDisabled={loading}
             autoComplete="name"
           >
             <Label className="font-body text-sm text-ink-md">Il tuo nome</Label>
@@ -98,8 +104,10 @@ export function DemoAuthPage() {
           className="mt-6 w-full min-h-[44px] bg-accent text-white font-body font-medium"
           variant="primary"
           size="sm"
+          isDisabled={loading}
+          isLoading={loading}
         >
-          Accedi
+          {loading ? "Accesso in corso…" : "Accedi"}
         </Button>
       </form>
     </div>

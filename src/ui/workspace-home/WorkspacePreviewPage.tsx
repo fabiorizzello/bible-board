@@ -4,12 +4,12 @@
  * Assembles the 3-pane layout from extracted components:
  * NavSidebar, ListPane, DetailPane, ThemeSwitcher, FullscreenOverlay.
  *
- * Mounts Toast.Provider here (composition shell level) so imperative
- * `toast()` calls from any pane render into a shared bottom region.
- * iPad-native: bottom placement keeps undo affordances near the thumb.
+ * This is the Jazz-aware root: it calls useWorkspaceElementiState() and
+ * syncJazzState() on every render so all child components read fresh data
+ * via the module-level Jazz store without needing Jazz hooks themselves.
  */
 
-import { Dropdown, Label, Toast } from "@heroui/react";
+import { Dropdown, Label } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useValue } from "@legendapp/state/react";
 
@@ -17,18 +17,24 @@ import { NavSidebar } from "./NavSidebar";
 import { ListPane } from "./ListPane";
 import { DetailPane } from "./DetailPane";
 import { FullscreenOverlay } from "./FullscreenOverlay";
-import { workspaceUi$, openFieldEditor } from "./workspace-ui-store";
-import type { EditableFieldId } from "./workspace-ui-store";
+import { Timeline } from "@/ui/timeline/Timeline";
+import { workspaceUi$, openFieldEditor, syncJazzState, syncJazzBoards } from "./workspace-ui-store";
 import { findElementById } from "./display-helpers";
+import type { EditableFieldId } from "./workspace-ui-store";
+import {
+  useWorkspaceElementiState,
+  coMapToElementoDomain,
+} from "@/features/elemento/elemento.adapter";
+import { coMapToBoard } from "@/features/board/board.adapter";
+import type { Elemento } from "@/features/elemento/elemento.model";
+import type { Board } from "@/features/board/board.model";
 
 type AddOption = { field: EditableFieldId; label: string };
 
 function getAddOptions(selectedId: string | null): AddOption[] {
   if (!selectedId) return [];
-  const overrides = workspaceUi$.elementOverrides.peek();
-  const base = findElementById(selectedId);
-  if (!base) return [];
-  const element = { ...base, ...(overrides[selectedId] ?? {}) };
+  const element = findElementById(selectedId);
+  if (!element) return [];
 
   const familyLinks = (element.link ?? []).filter((l) => l.tipo === "parentela");
   const genericLinks = (element.link ?? []).filter((l) => l.tipo !== "parentela");
@@ -86,14 +92,49 @@ function ElementoFieldFab() {
 }
 
 export function WorkspacePreviewPage() {
+  const { account, workspace } = useWorkspaceElementiState();
+  const currentView = useValue(workspaceUi$.currentView);
+  const activeBoardView = useValue(workspaceUi$.activeBoardView);
+  const showTimeline = currentView.startsWith("board-") && activeBoardView === "timeline";
+
+  // Build raw CoMap list excluding soft-deleted elements (deletedAt flag set)
+  const rawCoMaps: any[] = workspace?.elementi
+    ? Array.from(workspace.elementi as any[])
+        .filter(Boolean)
+        .filter((e: any) => !e.deletedAt)
+    : [];
+
+  // Convert to domain objects; skip malformed CoMaps (coMapToElementoDomain logs warn)
+  const domainElementi: Elemento[] = rawCoMaps
+    .map(coMapToElementoDomain)
+    .filter((e): e is Elemento => e !== null);
+
+  const rawBoards = workspace?.boards
+    ? Array.from(workspace.boards as any[]).filter(Boolean)
+    : [];
+  const domainBoards = rawBoards
+    .map(coMapToBoard)
+    .filter((b): b is Board => b !== null);
+
+  // Sync Jazz state into the module-level store.
+  // Called during render (not in useEffect) so child components read fresh data
+  // in the same render cycle without an extra flash of stale content.
+  syncJazzState(account.me, rawCoMaps, domainElementi);
+  syncJazzBoards(domainBoards);
+
   return (
-    <div className="flex h-screen bg-panel font-body">
+    <div className="flex h-dvh bg-panel font-body">
       <NavSidebar />
-      <ListPane />
-      <DetailPane />
-      <ElementoFieldFab />
-      <FullscreenOverlay />
-      <Toast.Provider placement="bottom end" />
+      {showTimeline ? (
+        <Timeline />
+      ) : (
+        <>
+          <ListPane />
+          <DetailPane />
+          <ElementoFieldFab />
+          <FullscreenOverlay />
+        </>
+      )}
     </div>
   );
 }

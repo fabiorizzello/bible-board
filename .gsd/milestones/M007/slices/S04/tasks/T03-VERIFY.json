@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "T03",
+  "unitId": "M007/S04/T03",
+  "timestamp": 1777026754861,
+  "passed": false,
+  "discoverySource": "task-plan",
+  "checks": [
+    {
+      "command": "rg -n 'toast\\(' src/ui/workspace-home/ElementoEditor.tsx → 0 hit. rg -n 'notifyMutation' src/ui/workspace-home/ElementoEditor.tsx → 6 hit. rg -n 'from \"\\./notifications-store\"' src/ui/workspace-home/ElementoEditor.tsx → 1 hit. pnpm tsc --noEmit → clean. pnpm test --run → 141+ verdi (no regressions). Manual smoke: editare un Elemento (titolo/descrizione/tipo) → drawer mostra entry 'update' con rollback funzionante.",
+      "exitCode": 2,
+      "durationMs": 2,
+      "verdict": "fail"
+    }
+  ],
+  "retryAttempt": 1,
+  "maxRetries": 2
+}

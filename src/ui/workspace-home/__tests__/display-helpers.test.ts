@@ -4,6 +4,8 @@ import {
   TIPO_ABBREV,
   formatElementDate,
   getElementsForView,
+  sortElementi,
+  isElementMatchingSearch,
   resolveCollegamenti,
   resolveBoardsForElement,
   getFontiForElement,
@@ -12,15 +14,32 @@ import {
   getAnnotazioniForElement,
   CURRENT_AUTORE,
 } from "../display-helpers";
-import { ELEMENTI, ELEMENTO_IDS } from "@/mock/data";
+import { ELEMENTI, ELEMENTO_IDS, BOARDS, BOARD_IDS } from "@/mock/data";
 import {
-  commitElementPatch,
   resetWorkspaceUiState,
-  softDeleteElement,
+  syncJazzElementiForTest,
+  syncJazzBoardsForTest,
 } from "../workspace-ui-store";
+import type { Board } from "@/features/board/board.model";
+import type { NormalizedFonte } from "../display-helpers";
+import type { Elemento } from "@/features/elemento/elemento.model";
+
+const MOCK_TEST_FONTI: ReadonlyMap<string, readonly NormalizedFonte[]> = new Map([
+  [
+    ELEMENTO_IDS.abraamo as string,
+    [
+      { tipo: "scrittura", valore: "Genesi 12:1-3" },
+      { tipo: "scrittura", valore: "Genesi 15:1-6" },
+      { tipo: "scrittura", valore: "Genesi 22:1-18" },
+      { tipo: "scrittura", valore: "Ebrei 11:8-10" },
+    ],
+  ],
+]);
 
 beforeEach(() => {
   resetWorkspaceUiState();
+  syncJazzElementiForTest(ELEMENTI as unknown as Elemento[], MOCK_TEST_FONTI);
+  syncJazzBoardsForTest(BOARDS as unknown as Board[]);
 });
 
 // ── Constants ──
@@ -96,14 +115,14 @@ describe("getElementsForView", () => {
   });
 
   it("returns board elements for board-patriarchi", () => {
-    const result = getElementsForView("board-patriarchi", "", "Tutti");
+    const result = getElementsForView(`board-${BOARD_IDS.patriarchi as string}`, "", "Tutti");
     expect(result.length).toBe(7); // Fixed selection: 7 elements
     expect(result.map((e) => e.titolo)).toContain("Abraamo");
     expect(result.map((e) => e.titolo)).toContain("Giosuè");
   });
 
   it("returns board elements for board-profeti via dynamic selection", () => {
-    const result = getElementsForView("board-profeti", "", "Tutti");
+    const result = getElementsForView(`board-${BOARD_IDS.profeti as string}`, "", "Tutti");
     expect(result.length).toBeGreaterThan(0);
     // Should include Profezia Isaia 53 (tag messianico + tipo profezia)
     expect(result.map((e) => e.titolo)).toContain("Profezia Isaia 53");
@@ -124,7 +143,8 @@ describe("getElementsForView", () => {
   it("combines text and tipo filters", () => {
     const result = getElementsForView("tutti", "isa", "Personaggi");
     expect(result.every((e) => e.tipo === "personaggio")).toBe(true);
-    expect(result.every((e) => e.titolo.toLowerCase().includes("isa"))).toBe(true);
+    // Search now covers titolo + descrizione + tags, so all results must match in at least one
+    expect(result.every((e) => isElementMatchingSearch(e, "isa"))).toBe(true);
   });
 
   it("returns empty when filters match nothing", () => {
@@ -159,8 +179,6 @@ describe("getElementsForView", () => {
   });
 
   it("composes deletedIds with text + tipo filters", () => {
-    // "abr" + Personaggi matches only Abraamo. Deleting Abraamo leaves zero
-    // results, proving the soft-delete filter composes with the others.
     const baseline = getElementsForView("tutti", "abr", "Personaggi");
     expect(baseline.map((e) => e.id)).toContain(ELEMENTO_IDS.abraamo as string);
 
@@ -176,9 +194,10 @@ describe("getElementsForView", () => {
   });
 
   it("filters soft-deleted elements from board views", () => {
-    const baseline = getElementsForView("board-patriarchi", "", "Tutti");
+    const patriarchiViewId = `board-${BOARD_IDS.patriarchi as string}`;
+    const baseline = getElementsForView(patriarchiViewId, "", "Tutti");
     const result = getElementsForView(
-      "board-patriarchi",
+      patriarchiViewId,
       "",
       "Tutti",
       [ELEMENTO_IDS.abraamo as string],
@@ -191,44 +210,6 @@ describe("getElementsForView", () => {
     const withoutArg = getElementsForView("tutti", "", "Tutti");
     const withEmpty = getElementsForView("tutti", "", "Tutti", []);
     expect(withoutArg.length).toBe(withEmpty.length);
-  });
-
-  it("shows session override fields in list results", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      titolo: "Abramo (sessione)",
-      tags: ["patriarchi", "promessa"],
-      nascita: { anno: 2020, era: "aev", precisione: "esatta" },
-    });
-
-    const result = getElementsForView("tutti", "sessione", "Tutti");
-    expect(result).toHaveLength(1);
-    expect(result[0]?.titolo).toBe("Abramo (sessione)");
-    expect(result[0]?.tags).toContain("promessa");
-    expect(formatElementDate(result[0]!)).toBe("2020 a.e.v.");
-  });
-
-  it("recomputes dynamic board membership from session tags", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      tags: ["messianico"],
-    });
-
-    const result = getElementsForView("board-profeti", "", "Tutti");
-    expect(result.map((element) => element.id)).toContain(ELEMENTO_IDS.abraamo);
-  });
-
-  it("keeps deleted filtering after session overrides", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      titolo: "Abramo nascosto",
-    });
-    softDeleteElement(ELEMENTO_IDS.abraamo as string);
-
-    const result = getElementsForView(
-      "tutti",
-      "",
-      "Tutti",
-      [ELEMENTO_IDS.abraamo as string],
-    );
-    expect(result.find((element) => element.id === ELEMENTO_IDS.abraamo)).toBeUndefined();
   });
 });
 
@@ -276,15 +257,6 @@ describe("resolveBoardsForElement", () => {
     const babilonia = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.babilonia as string))!;
     const boards = resolveBoardsForElement(babilonia);
     expect(boards).toEqual([]);
-  });
-
-  it("uses session tags when resolving boards for an element", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      tags: ["messianico"],
-    });
-
-    const abraamo = findElementById(ELEMENTO_IDS.abraamo as string)!;
-    expect(resolveBoardsForElement(abraamo)).toContain("Profeti di Israele");
   });
 });
 
@@ -354,17 +326,6 @@ describe("getAnnotazioniForElement", () => {
     expect(result.mie).toHaveLength(0);
     expect(result.altreCount).toBe(0);
   });
-
-  it("returns session-edited annotation content", () => {
-    commitElementPatch(ELEMENTO_IDS.annotazioneAbraamo as string, {
-      titolo: "Nota aggiornata",
-      descrizione: "Contenuto aggiornato",
-    });
-
-    const result = getAnnotazioniForElement(ELEMENTO_IDS.abraamo as string, CURRENT_AUTORE);
-    expect(result.mie[0]?.titolo).toBe("Nota aggiornata");
-    expect(result.mie[0]?.descrizione).toBe("Contenuto aggiornato");
-  });
 });
 
 // ── Element lookup ──
@@ -379,15 +340,127 @@ describe("findElementById", () => {
   it("returns undefined for nonexistent ID", () => {
     expect(findElementById("nonexistent-id")).toBeUndefined();
   });
+});
 
-  it("returns the merged session element", () => {
-    commitElementPatch(ELEMENTO_IDS.abraamo as string, {
-      titolo: "Abramo unito",
-      tribu: "Ebrei",
-    });
+// ── Search matching ──
 
-    const result = findElementById(ELEMENTO_IDS.abraamo as string);
-    expect(result?.titolo).toBe("Abramo unito");
-    expect(result?.tribu).toBe("Ebrei");
+describe("isElementMatchingSearch", () => {
+  const abraamo = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.abraamo as string))!;
+  const babilonia = ELEMENTI.find((e) => e.id === (ELEMENTO_IDS.babilonia as string))!;
+
+  it("returns true for empty query (always match)", () => {
+    expect(isElementMatchingSearch(abraamo, "")).toBe(true);
+    expect(isElementMatchingSearch(babilonia, "")).toBe(true);
+  });
+
+  it("matches on titolo (case-insensitive)", () => {
+    expect(isElementMatchingSearch(abraamo, "abr")).toBe(true);
+    expect(isElementMatchingSearch(abraamo, "ABR")).toBe(true);
+    expect(isElementMatchingSearch(babilonia, "abr")).toBe(false);
+  });
+
+  it("matches on descrizione", () => {
+    // Abraamo has descrizione containing 'Patriarca'
+    expect(isElementMatchingSearch(abraamo, "patriarca")).toBe(true);
+    // Babilonia has empty descrizione
+    expect(isElementMatchingSearch(babilonia, "patriarca")).toBe(false);
+  });
+
+  it("matches on tags", () => {
+    // Abraamo has tag 'patriarchi'
+    expect(isElementMatchingSearch(abraamo, "patriarchi")).toBe(true);
+    // Babilonia has tag 'esilio'
+    expect(isElementMatchingSearch(babilonia, "esilio")).toBe(true);
+    expect(isElementMatchingSearch(abraamo, "esilio")).toBe(false);
+  });
+
+  it("returns false when nothing matches", () => {
+    expect(isElementMatchingSearch(abraamo, "zzznomatch")).toBe(false);
+  });
+});
+
+describe("getElementsForView - search covers descrizione and tags", () => {
+  it("finds Abraamo via tag 'patriarchi'", () => {
+    const result = getElementsForView("tutti", "patriarchi", "Tutti");
+    expect(result.map((e) => e.titolo)).toContain("Abraamo");
+  });
+
+  it("finds Abraamo via descrizione keyword 'ur dei caldei'", () => {
+    const result = getElementsForView("tutti", "ur dei caldei", "Tutti");
+    expect(result.map((e) => e.titolo)).toContain("Abraamo");
+  });
+
+  it("excludes elements that don't match descrizione/tags/titolo", () => {
+    const result = getElementsForView("tutti", "zzznomatch", "Tutti");
+    expect(result).toHaveLength(0);
+  });
+});
+
+// ── Sort helpers ──
+
+describe("sortElementi", () => {
+  it("sorts ascending by titolo", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const sorted = sortElementi(elementi, "titolo", "asc");
+    for (let i = 1; i < sorted.length; i++) {
+      expect(
+        sorted[i - 1]!.titolo.toLowerCase() <= sorted[i]!.titolo.toLowerCase()
+      ).toBe(true);
+    }
+  });
+
+  it("sorts descending by titolo (reverses order)", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const asc = sortElementi(elementi, "titolo", "asc");
+    const desc = sortElementi(elementi, "titolo", "desc");
+    expect(desc[0]!.titolo).toBe(asc[asc.length - 1]!.titolo);
+  });
+
+  it("sorts ascending by tipo groups same-tipo elements together", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const sorted = sortElementi(elementi, "tipo", "asc");
+    // Collect types in order — they should be monotonically non-decreasing alphabetically
+    const types = sorted.map((e) => e.tipo);
+    for (let i = 1; i < types.length; i++) {
+      expect(types[i - 1]!.localeCompare(types[i]!)).toBeLessThanOrEqual(0);
+    }
+  });
+
+  it("sorts ascending by data puts BC dates first (earliest first)", () => {
+    const boardElementi = getElementsForView(`board-${BOARD_IDS.patriarchi as string}`, "", "Tutti");
+    const sorted = sortElementi(boardElementi, "data", "asc");
+    // Abraamo 2018 aev should come before Isacco 1918 aev (larger BC year = older)
+    const abraamoIdx = sorted.findIndex((e) => e.titolo === "Abraamo");
+    const isaccoIdx = sorted.findIndex((e) => e.titolo === "Isacco");
+    expect(abraamoIdx).toBeLessThan(isaccoIdx);
+  });
+
+  it("sorts descending by data puts newest first", () => {
+    const boardElementi = getElementsForView(`board-${BOARD_IDS.patriarchi as string}`, "", "Tutti");
+    const asc = sortElementi(boardElementi, "data", "asc");
+    const desc = sortElementi(boardElementi, "data", "desc");
+    // First element of desc should be last of asc (excluding undated)
+    const ascDated = asc.filter((e) => e.nascita || e.date);
+    const descDated = desc.filter((e) => e.nascita || e.date);
+    expect(ascDated[0]!.titolo).toBe(descDated[descDated.length - 1]!.titolo);
+  });
+
+  it("does not mutate input array", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const originalOrder = elementi.map((e) => e.titolo);
+    sortElementi(elementi, "titolo", "asc");
+    expect(elementi.map((e) => e.titolo)).toEqual(originalOrder);
+  });
+
+  it("elements without dates are sorted last in ascending order", () => {
+    const elementi = getElementsForView("tutti", "", "Tutti");
+    const sorted = sortElementi(elementi, "data", "asc");
+    const undated = sorted.filter((e) => !e.nascita && !e.date);
+    const dated = sorted.filter((e) => e.nascita || e.date);
+    if (undated.length > 0 && dated.length > 0) {
+      const lastDatedIdx = sorted.lastIndexOf(dated[dated.length - 1]!);
+      const firstUndatedIdx = sorted.indexOf(undated[0]!);
+      expect(firstUndatedIdx).toBeGreaterThan(lastDatedIdx);
+    }
   });
 });

@@ -21,7 +21,7 @@ Not provided.
 
 ## Tasks
 
-- [ ] **T01: Timeline D3 SVG con zoom/pan e popup card** `est:5h`
+- [x] **T01: Timeline D3 SVG con zoom/pan e popup card** `est:5h`
   Timeline con asse verticale SVG (D3 su ref, React non renderizza SVG). Card posizionate, layout collision-free. Zoom/pan con D3 behavior; transizioni throttled per 60fps su iPad. Popup compatto on click. Consegna R010.
   - Files: `src/ui/timeline/Timeline.tsx`, `src/ui/timeline/timeline-d3.ts`
   - Verify: Timeline renderizza a 60fps su iPad; zoom/pan funzionanti; click card apre popup; R010 coperto

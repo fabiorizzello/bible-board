@@ -7,9 +7,25 @@ export const MediaImmagineSchema = co.map({
 });
 
 export const FonteSchema = co.map({
-  tipo: z.enum(["scrittura", "articolo", "altro"]),
+  tipo: z.enum(["scrittura", "articolo-wol", "pubblicazione", "link", "altro"]),
   valore: z.string(),
   urlCalcolata: z.string().optional()
+});
+
+export const LinkSchema = co.map({
+  targetId: z.string(),
+  tipo: z.enum([
+    "adempimento",
+    "causa-effetto",
+    "parallelo",
+    "successione",
+    "parentela",
+    "localizzazione",
+    "residenza",
+    "correlato"
+  ]),
+  ruolo: z.enum(["padre", "madre", "figlio", "figlia", "coniuge"]).optional(),
+  nota: z.string().optional()
 });
 
 const DataStoricaSchema = z
@@ -50,5 +66,17 @@ export const ElementoSchema = co.map({
   ]),
   tags: co.list(z.string()),
   fonti: co.list(FonteSchema),
-  media: co.list(MediaImmagineSchema)
+  links: co.list(LinkSchema),
+  media: co.list(MediaImmagineSchema),
+  // Tipo-specific optional fields (serialized as plain strings)
+  tribu: z.string().optional(),
+  ruoliStr: z.string().optional(),      // personaggio: CSV of ruoli array
+  fazioni: z.string().optional(),
+  esito: z.string().optional(),
+  statoProfezia: z.string().optional(),
+  dettagliRegno: z.string().optional(),
+  regione: z.string().optional(),
+  autore: z.string().optional(),
+  // Soft delete
+  deletedAt: z.string().optional()
 });

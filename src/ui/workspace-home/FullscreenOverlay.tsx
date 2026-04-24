@@ -38,7 +38,7 @@ export function FullscreenOverlay() {
 
   return (
     <div
-      className={`fixed inset-0 z-40 flex flex-col bg-panel transition-all duration-300 ease-in-out ${
+      className={`fixed inset-0 z-40 flex flex-col bg-panel transition-[opacity,transform] duration-300 ease-in-out ${
         fullscreen
           ? "opacity-100 translate-y-0"
           : "opacity-0 translate-y-4 pointer-events-none"
@@ -48,7 +48,7 @@ export function FullscreenOverlay() {
         <Tooltip>
           <Button
             variant="ghost"
-            className="min-h-[40px] gap-2 rounded-full px-4 text-sm font-medium text-ink-lo hover:bg-primary/6"
+            className="min-h-[44px] gap-2 rounded-full px-4 text-sm font-medium text-ink-lo hover:bg-primary/6"
             onPress={() => workspaceUi$.fullscreen.set(false)}
             aria-label="Torna alla lista"
           >
@@ -62,7 +62,7 @@ export function FullscreenOverlay() {
           <Button
             variant="ghost"
             isIconOnly
-            className="h-10 w-10 rounded-full text-ink-lo hover:bg-primary/6"
+            className="h-[44px] w-[44px] rounded-full text-ink-lo hover:bg-primary/6"
             onPress={() => workspaceUi$.fullscreen.set(false)}
             aria-label="Esci da schermo intero"
           >
