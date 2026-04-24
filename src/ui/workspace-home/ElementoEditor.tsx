@@ -1098,32 +1098,61 @@ function TipoChip({
   onOpenChange: (open: boolean) => void;
   onCommit: (tipo: ElementoTipo) => void;
 }) {
+  const [justCommitted, setJustCommitted] = useState(false);
+
+  const handleSelect = (option: ElementoTipo) => {
+    // No-op guard (R049): selecting the already-active type closes popover without committing
+    if (option === tipo) {
+      onOpenChange(false);
+      return;
+    }
+    onCommit(option);
+    onOpenChange(false);
+    setJustCommitted(true);
+
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    setTimeout(
+      () => setJustCommitted(false),
+      prefersReduced ? 0 : 1500,
+    );
+  };
+
   return (
-    <Popover isOpen={open} onOpenChange={onOpenChange}>
-      <Popover.Trigger>
-        <ChipButton
-          icon={<Users className="h-3.5 w-3.5" />}
-          label="Tipo"
-          value={tipo}
-          active={open}
-          onPress={() => onOpenChange(!open)}
-        />
-      </Popover.Trigger>
-      <Popover.Content placement="bottom" className="w-[220px]">
-        <Popover.Dialog className="space-y-1 p-2">
-          {TIPO_OPTIONS.map((option) => (
-            <Button
-              key={option}
-              variant={option === tipo ? "primary" : "ghost"}
-              className="w-full justify-start"
-              onPress={() => onCommit(option)}
-            >
-              {option}
-            </Button>
-          ))}
-        </Popover.Dialog>
-      </Popover.Content>
-    </Popover>
+    <div className="flex items-center">
+      <Popover isOpen={open} onOpenChange={onOpenChange}>
+        <Popover.Trigger>
+          <ChipButton
+            icon={<Users className="h-3.5 w-3.5" />}
+            label="Tipo"
+            value={tipo}
+            active={open}
+            onPress={() => onOpenChange(!open)}
+          />
+        </Popover.Trigger>
+        <Popover.Content placement="bottom" className="w-[220px]">
+          <Popover.Dialog className="space-y-1 p-2">
+            {TIPO_OPTIONS.map((option) => (
+              <Button
+                key={option}
+                variant={option === tipo ? "primary" : "ghost"}
+                className="w-full justify-start"
+                onPress={() => handleSelect(option)}
+              >
+                {option}
+              </Button>
+            ))}
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+      <Check
+        aria-hidden="true"
+        className="ml-2 h-4 w-4 transition-opacity duration-300"
+        style={{ opacity: justCommitted ? 1 : 0 }}
+      />
+    </div>
   );
 }
 
