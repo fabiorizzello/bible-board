@@ -33,7 +33,7 @@ What remains: live-browser confirmation of Jazz scenarios A/B/C — explicitly o
   - Files: `src/ui/workspace-home/NotificationDrawer.tsx`
   - Verify: rg -n 'min-h-0' src/ui/workspace-home/NotificationDrawer.tsx returns 0 hits; rg -n 'min-h-\[44px\]' src/ui/workspace-home/NotificationDrawer.tsx returns >=1 hit on the Annulla button; pnpm tsc --noEmit exits 0; pnpm test --run reports >=150/150 passing
 
-- [ ] **T02: Execute M007 acceptance verification gate sequence** `est:15m`
+- [x] **T02: Execute M007 acceptance verification gate sequence** `est:15m`
   Run the full M007 acceptance-criteria verification sequence and capture exit codes + match counts for each gate. Commands (run in this order):
 
 1. `pnpm test --run` — must exit 0 with >=150 passing
