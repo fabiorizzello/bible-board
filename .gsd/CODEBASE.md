@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-04-24T09:49:10Z | Files: 73 | Described: 0/73
-<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T09:49:10Z","fingerprint":"313882aa48282c356ac5147318cc6dff9266d3b4","fileCount":73,"truncated":false} -->
+Generated: 2026-04-24T10:02:59Z | Files: 75 | Described: 0/75
+<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T10:02:59Z","fingerprint":"aaae4747e4a8c4b2a8c5c897928043bd9b5ca2b0","fileCount":75,"truncated":false} -->
 
 ### (root)/
 - `.gitignore`
@@ -102,12 +102,14 @@ Generated: 2026-04-24T09:49:10Z | Files: 73 | Described: 0/73
 - `src/ui/workspace-home/ListPane.tsx`
 - `src/ui/workspace-home/NavSidebar.tsx`
 - `src/ui/workspace-home/ThemeSwitcher.tsx`
+- `src/ui/workspace-home/useFieldStatus.ts`
 - `src/ui/workspace-home/workspace-ui-store.ts`
 - `src/ui/workspace-home/WorkspacePreviewPage.tsx`
 
 ### src/ui/workspace-home/__tests__/
 - `src/ui/workspace-home/__tests__/display-helpers.test.ts`
 - `src/ui/workspace-home/__tests__/link-helpers.test.ts`
+- `src/ui/workspace-home/__tests__/useFieldStatus.test.ts`
 
 ### tests/
 - `tests/setup.ts`

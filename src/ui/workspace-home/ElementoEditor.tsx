@@ -58,6 +58,7 @@ import {
   removeBidirectionalLink,
   type EditableFieldId,
 } from "./workspace-ui-store";
+import { useFieldStatus } from "./useFieldStatus";
 import {
   CURRENT_AUTORE,
   FONTE_TIPI_IN_SCOPE,
@@ -971,6 +972,10 @@ function InlineTitle({
 }) {
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { status, onFocus, onBlur } = useFieldStatus<string>(
+    value,
+    (_prev, next) => onCommit(next),
+  );
 
   useEffect(() => {
     setDraft(value);
@@ -997,8 +1002,16 @@ function InlineTitle({
         <Input
           ref={inputRef}
           className="min-h-[56px] text-[1.65rem] font-semibold"
-          onBlur={() => onCommit(draft)}
+          onFocus={onFocus}
+          onBlur={() => onBlur(draft)}
           onKeyDown={handleKeyDown}
+          endContent={
+            <Check
+              className="h-4 w-4 transition-opacity duration-300"
+              aria-hidden="true"
+              style={{ opacity: status === "success" ? 1 : 0 }}
+            />
+          }
         />
       </TextField>
     );
