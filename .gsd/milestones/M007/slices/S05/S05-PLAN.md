@@ -77,7 +77,7 @@ Must-haves:
   - Files: `src/ui/workspace-home/ThemeSwitcher.tsx`
   - Verify: pnpm tsc --noEmit && pnpm test --run && rg -n 'aria-pressed' src/ui/workspace-home/ThemeSwitcher.tsx
 
-- [ ] **T04: Eliminare le 4 occorrenze di `transition-all` nei mockup (compliance AC slice)** `est:15m`
+- [x] **T04: Eliminare le 4 occorrenze di `transition-all` nei mockup (compliance AC slice)** `est:15m`
   L'AC S05 richiede `rg 'transition-all' src/ui/` → zero hit. Il research ha identificato 4 occorrenze residue nei file mockup:
 - `src/ui/mockups/CommitInteractionMockup.tsx:274` — `transition-all duration-200`
 - `src/ui/mockups/UnifiedEditorMockup.tsx:1895` — `transition-all duration-200`

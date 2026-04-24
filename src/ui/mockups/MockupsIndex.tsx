@@ -172,7 +172,7 @@ export function MockupsIndex() {
               <Link
                 key={m.slug}
                 to={`/dev/mockup-${m.slug}`}
-                className={`group relative bg-panel border rounded-xl p-5 no-underline hover:shadow-md transition-all ${borderClass}`}
+                className={`group relative bg-panel border rounded-xl p-5 no-underline hover:shadow-md transition-[opacity,transform] ${borderClass}`}
               >
                 {integration && (
                   <div className="absolute top-0 right-0 px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold text-white bg-gradient-to-br from-primary to-secondary rounded-bl-xl rounded-tr-xl inline-flex items-center gap-1 shadow-sm shadow-primary/25">
@@ -240,7 +240,7 @@ export function MockupsIndex() {
                 </div>
                 <ArrowRight
                   size={18}
-                  className="absolute right-5 bottom-5 text-ink-dim group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+                  className="absolute right-5 bottom-5 text-ink-dim group-hover:text-primary group-hover:translate-x-0.5 transition-[opacity,transform]"
                 />
               </Link>
             );
