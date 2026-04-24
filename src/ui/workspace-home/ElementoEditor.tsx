@@ -16,7 +16,6 @@ import {
   Label,
   Popover,
   TextField,
-  toast,
 } from "@heroui/react";
 import {
   AlertTriangle,
@@ -70,6 +69,7 @@ import {
   resolveBoardsForElement,
   resolveCollegamenti,
 } from "./display-helpers";
+import { notifyMutation } from "./notifications-store";
 import "../mockups/milkdown-iframe.css";
 
 type ValidationWarning = {
@@ -408,23 +408,16 @@ export function ElementoEditor({
         if (!options?.keepEditorOpen) {
           closeFieldEditor();
         }
-        // Blur-to-save + toast undo: every field mutation gets a rollback action
-        toast(label, {
-          timeout: 5_000,
-          variant: "default",
-          actionProps: {
-            children: "Annulla",
-            onPress: () => {
-              normalizeElementoInput(buildElementoInput(prevElement)).match(
-                (prevNormalized) => {
-                  commitNormalizedElement(prevElement.id as string, prevNormalized);
-                },
-                () => {
-                  // prevElement was already valid — this branch is a safeguard only
-                },
-              );
+        // Blur-to-save + undo: every field mutation gets a rollback action
+        notifyMutation("update", label, () => {
+          normalizeElementoInput(buildElementoInput(prevElement)).match(
+            (prevNormalized) => {
+              commitNormalizedElement(prevElement.id as string, prevNormalized);
             },
-          },
+            () => {
+              // prevElement was already valid — this branch is a safeguard only
+            },
+          );
         });
       },
       (error) => {
@@ -508,15 +501,9 @@ export function ElementoEditor({
     setFamilyTargetId("");
     setFamilySearch("");
     setSurfaceError(null);
-    toast("Collegamento famiglia aggiunto", {
-      timeout: 5_000,
-      variant: "default",
-      actionProps: {
-        children: "Annulla",
-        onPress: () =>
-          removeBidirectionalLink(element.id as string, capturedTargetId, "parentela"),
-      },
-    });
+    notifyMutation("create", "Collegamento famiglia aggiunto", () =>
+      removeBidirectionalLink(element.id as string, capturedTargetId, "parentela"),
+    );
   }
 
   function addGenericLink() {
@@ -531,30 +518,18 @@ export function ElementoEditor({
     setGenericTargetId("");
     setGenericSearch("");
     setSurfaceError(null);
-    toast("Collegamento aggiunto", {
-      timeout: 5_000,
-      variant: "default",
-      actionProps: {
-        children: "Annulla",
-        onPress: () =>
-          removeBidirectionalLink(element.id as string, capturedTargetId, capturedType),
-      },
-    });
+    notifyMutation("create", "Collegamento aggiunto", () =>
+      removeBidirectionalLink(element.id as string, capturedTargetId, capturedType),
+    );
   }
 
   function removeLink(targetId: string, tipo: string) {
     const linkToRemove = element.link.find((l) => l.targetId === targetId && l.tipo === tipo);
     const ruolo = linkToRemove?.ruolo;
     removeBidirectionalLink(element.id as string, targetId, tipo as TipoLink);
-    toast("Collegamento rimosso", {
-      timeout: 5_000,
-      variant: "default",
-      actionProps: {
-        children: "Annulla",
-        onPress: () =>
-          createBidirectionalLink(element.id as string, targetId, tipo as TipoLink, ruolo),
-      },
-    });
+    notifyMutation("delete", "Collegamento rimosso", () =>
+      createBidirectionalLink(element.id as string, targetId, tipo as TipoLink, ruolo),
+    );
   }
 
   function commitFonteAdd() {
@@ -572,16 +547,9 @@ export function ElementoEditor({
       () => {
         setSurfaceError(null);
         setFonteValoreDraft("");
-        toast("Fonte aggiunta", {
-          timeout: 5_000,
-          variant: "default",
-          actionProps: {
-            children: "Annulla",
-            onPress: () => {
-              const jazzMe = getJazzMe();
-              if (jazzMe) removeFonteFromElemento(jazzMe, elementId, capturedTipo, capturedValore);
-            },
-          },
+        notifyMutation("create", "Fonte aggiunta", () => {
+          const jazzMe = getJazzMe();
+          if (jazzMe) removeFonteFromElemento(jazzMe, elementId, capturedTipo, capturedValore);
         });
       },
       (error) => {
@@ -602,16 +570,9 @@ export function ElementoEditor({
     const result = removeFonteFromElemento(me, elementId, tipo, valore);
     result.match(
       () => {
-        toast("Fonte rimossa", {
-          timeout: 5_000,
-          variant: "default",
-          actionProps: {
-            children: "Annulla",
-            onPress: () => {
-              const jazzMe = getJazzMe();
-              if (jazzMe) addFonteToElemento(jazzMe, elementId, { tipo, valore });
-            },
-          },
+        notifyMutation("delete", "Fonte rimossa", () => {
+          const jazzMe = getJazzMe();
+          if (jazzMe) addFonteToElemento(jazzMe, elementId, { tipo, valore });
         });
       },
       () => {
@@ -932,7 +893,7 @@ function HeaderActionsMenu({ onDelete }: { onDelete?: () => void }) {
         <Dropdown.Menu
           onAction={(key) => {
             if (key === "duplicate") {
-              toast("Duplicazione rimandata a una fase successiva", { variant: "default" });
+              // not yet implemented
             }
             if (key === "delete") {
               onDelete?.();
@@ -1183,7 +1144,6 @@ function VitaChip({
     const nascita = parseDataStorica(nascitaAnno, nascitaEra);
     const morte = parseDataStorica(morteAnno, morteEra);
     if (nascita === INVALID_DATA || morte === INVALID_DATA) {
-      toast("Usa solo anni interi positivi", { variant: "default" });
       return;
     }
     onCommit(nascita, morte);

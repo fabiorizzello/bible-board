@@ -81,7 +81,7 @@ Verifica manuale (smoke): in devtools, chiamare `import('path').then(m => m.noti
   - Files: `src/ui/workspace-home/NotificationBell.tsx`, `src/ui/workspace-home/NotificationDrawer.tsx`, `src/ui/workspace-home/NavSidebar.tsx`
   - Verify: pnpm tsc --noEmit → clean. pnpm test --run → 141+ verdi (no regressions). rg -n 'NotificationBell' src/ui/workspace-home/NavSidebar.tsx → 1 hit nel footer row. rg 'width|height' src/ui/workspace-home/NotificationBell.tsx src/ui/workspace-home/NotificationDrawer.tsx | rg 'transition|animate' → 0 hit (solo opacity/transform). rg 'h-\[44px\]\s+w-\[44px\]' src/ui/workspace-home/NotificationBell.tsx → presente.
 
-- [ ] **T03: Rimpiazzare tutti i toast in ElementoEditor con notifyMutation; rimuovere toast non-mutation** `est:M`
+- [x] **T03: Rimpiazzare tutti i toast in ElementoEditor con notifyMutation; rimuovere toast non-mutation** `est:M`
   Migrare 6 siti di mutazione da `toast(...)` a `notifyMutation(tipo, label, undoFn)`. La logica di rollback esistente (già presente come `actionProps.onPress`) diventa l'argomento `undoFn` di notifyMutation — la closure è identica. Rimuovere 2 toast che non sono mutazioni.
 
 **Siti di UPDATE (tipo='update'):**

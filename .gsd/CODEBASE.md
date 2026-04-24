@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-04-24T10:26:08Z | Files: 77 | Described: 0/77
-<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T10:26:08Z","fingerprint":"de267f8458917d49de9028f84a00099a33140ece","fileCount":77,"truncated":false} -->
+Generated: 2026-04-24T10:30:04Z | Files: 79 | Described: 0/79
+<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T10:30:04Z","fingerprint":"c45a6e8e61495580a25cfe6569dee5bf02a6e5b9","fileCount":79,"truncated":false} -->
 
 ### (root)/
 - `.gitignore`
@@ -101,6 +101,8 @@ Generated: 2026-04-24T10:26:08Z | Files: 77 | Described: 0/77
 - `src/ui/workspace-home/FullscreenOverlay.tsx`
 - `src/ui/workspace-home/ListPane.tsx`
 - `src/ui/workspace-home/NavSidebar.tsx`
+- `src/ui/workspace-home/NotificationBell.tsx`
+- `src/ui/workspace-home/NotificationDrawer.tsx`
 - `src/ui/workspace-home/notifications-store.ts`
 - `src/ui/workspace-home/ThemeSwitcher.tsx`
 - `src/ui/workspace-home/useFieldStatus.ts`
