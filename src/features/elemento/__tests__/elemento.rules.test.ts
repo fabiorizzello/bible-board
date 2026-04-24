@@ -5,8 +5,10 @@ import {
   validateFonte,
   addFonte,
   removeFonte,
+  computeValidityWarnings,
 } from "@/features/elemento/elemento.rules";
 import type { NormalizedFonte } from "@/features/elemento/elemento.rules";
+import type { Elemento } from "@/features/elemento/elemento.model";
 import type { DataStorica } from "@/features/shared/value-objects";
 
 const DS = (anno: number, era: "aev" | "ev" = "aev"): DataStorica => ({
@@ -305,5 +307,96 @@ describe("removeFonte — pure helper", () => {
     const result = removeFonte(seed, "altro", "Genesi 1:1");
     expect(result.isErr()).toBe(true);
     if (result.isErr()) expect(result.error.type).toBe("fonte_non_trovata");
+  });
+});
+
+// --- computeValidityWarnings tests ---
+
+const makeElemento = (overrides: Partial<Omit<Elemento, 'id'>>): Elemento => ({
+  id: "test-id" as Elemento['id'],
+  titolo: "Test",
+  descrizione: "",
+  tags: [],
+  tipo: "annotazione",
+  link: [],
+  ...overrides,
+});
+
+const resolveAll = () => true;
+const resolveNone = () => false;
+
+describe("computeValidityWarnings", () => {
+  it("elemento minimale (solo titolo, annotazione) → nessun warning", () => {
+    const el = makeElemento({});
+    expect(computeValidityWarnings(el, resolveAll)).toHaveLength(0);
+  });
+
+  it("elemento con date puntuale valida → 0 warning", () => {
+    const el = makeElemento({ date: { kind: "puntuale", data: DS(2370) } });
+    expect(computeValidityWarnings(el, resolveAll)).toHaveLength(0);
+  });
+
+  it("elemento con date malformata → 1 warning field='date'", () => {
+    const el = makeElemento({ date: { kind: "puntuale", data: DS(0) } }); // anno=0 invalido
+    const warnings = computeValidityWarnings(el, resolveAll);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].field).toBe("date");
+  });
+
+  it("personaggio con nascita invalida → warning field='nascita'", () => {
+    const el = makeElemento({
+      tipo: "personaggio",
+      nascita: { anno: Number.NaN, era: "aev", precisione: "esatta" },
+    });
+    const warnings = computeValidityWarnings(el, resolveAll);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].field).toBe("nascita");
+  });
+
+  it("personaggio con morte invalida → warning field='morte'", () => {
+    const el = makeElemento({
+      tipo: "personaggio",
+      morte: { anno: -1, era: "aev", precisione: "esatta" },
+    });
+    const warnings = computeValidityWarnings(el, resolveAll);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].field).toBe("morte");
+  });
+
+  it("elemento con link a targetId risolto → 0 warning", () => {
+    const el = makeElemento({ link: [{ targetId: "abc", tipo: "correlato" }] });
+    expect(computeValidityWarnings(el, resolveAll)).toHaveLength(0);
+  });
+
+  it("elemento con link a targetId non risolto → 1 warning field='link' con targetId", () => {
+    const el = makeElemento({ link: [{ targetId: "missing-id", tipo: "correlato" }] });
+    const warnings = computeValidityWarnings(el, resolveNone);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].field).toBe("link");
+    expect(warnings[0].targetId).toBe("missing-id");
+  });
+
+  it("elemento con 2 link misti (1 ok, 1 broken) → esattamente 1 warning con targetId del broken link", () => {
+    const el = makeElemento({
+      link: [
+        { targetId: "good-id", tipo: "correlato" },
+        { targetId: "bad-id", tipo: "successione" },
+      ],
+    });
+    const warnings = computeValidityWarnings(el, (id) => id === "good-id");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].field).toBe("link");
+    expect(warnings[0].targetId).toBe("bad-id");
+  });
+
+  it("descrizione vuota, tags vuoti, ruoli vuoti, link vuoti NON producono warning (regression anti-completeness)", () => {
+    const el = makeElemento({
+      tipo: "personaggio",
+      descrizione: "",
+      tags: [],
+      ruoli: [],
+      link: [],
+    });
+    expect(computeValidityWarnings(el, resolveAll)).toHaveLength(0);
   });
 });

@@ -16,10 +16,10 @@
 
 ## Slices
 
-- [ ] **S01: S01** `risk:low` `depends:[]`
+- [x] **S01: S01** `risk:low` `depends:[]`
   > After this: App su iPad 1180x820 e 820x1180 non mostra più markdown/panel/toast/field; root/FullscreenOverlay/DetailPane 100% viewport senza scroll esterno
 
-- [ ] **S02: Warning reali (rimozione check di completezza)** `risk:low` `depends:[S01]`
+- [ ] **S02: S02** `risk:low` `depends:[]`
   > After this: Elemento minimale (solo titolo) non genera warning; data malformata o link a elemento soft-deleted genera warning inline
 
 - [ ] **S03: Hook useFieldStatus + inline success + fix toast no-op** `risk:medium` `depends:[S01]`
