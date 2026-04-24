@@ -1,11 +1,12 @@
 # Codebase Map
 
-Generated: 2026-04-24T11:56:29Z | Files: 79 | Described: 0/79
-<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T11:56:29Z","fingerprint":"c45a6e8e61495580a25cfe6569dee5bf02a6e5b9","fileCount":79,"truncated":false} -->
+Generated: 2026-04-24T12:27:46Z | Files: 80 | Described: 0/80
+<!-- gsd:codebase-meta {"generatedAt":"2026-04-24T12:27:46Z","fingerprint":"2d0ff2c71494f6e93af8cf09782f6a288c81f63c","fileCount":80,"truncated":false} -->
 
 ### (root)/
 - `.gitignore`
 - `.mcp.json`
+- `=4`
 - `AGENTS.md`
 - `CLAUDE.md`
 - `codex.md`

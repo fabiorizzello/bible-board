@@ -101,6 +101,18 @@ export function syncJazzState(
 ): void {
   _jazzMe = me;
   _jazzElementi = domainElementi;
+  if (typeof window !== "undefined") {
+    (window as any).__BB = {
+      me,
+      rawCoMaps,
+      domainElementi,
+      rootDefined: !!me?.root,
+      workspaceDefined: !!me?.root?.workspace,
+      elementiLen: me?.root?.workspace?.elementi?.length ?? -1,
+      workspaceNome: me?.root?.workspace?.nome ?? null,
+      accountId: me?.id ?? null,
+    };
+  }
 
   _fontiBacking.clear();
   for (const coMap of rawCoMaps) {
