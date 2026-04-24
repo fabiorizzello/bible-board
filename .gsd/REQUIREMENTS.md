@@ -2,6 +2,107 @@
 
 This file is the explicit capability and coverage contract for the project.
 
+## Active
+
+### R046 — Linguaggio UI di dominio — zero termini tecnici esposti (markdown, panel, toast, field)
+- Class: quality-attribute
+- Status: active
+- Description: Linguaggio UI di dominio — zero termini tecnici esposti (markdown, panel, toast, field)
+- Why it matters: Un'app iPad-nativa parla il linguaggio dell'utente, non dello sviluppatore. Termini tecnici rompono l'illusione di app finita.
+- Source: user
+- Primary owning slice: M007/S01
+- Validation: unmapped
+
+### R047 — Layout fullheight su iPad landscape 1180×820 e portrait — nessuno scroll esterno, content scroll interno
+- Class: quality-attribute
+- Status: active
+- Description: Layout fullheight su iPad landscape 1180×820 e portrait — nessuno scroll esterno, content scroll interno
+- Why it matters: App che non occupa 100% viewport si percepisce come sito web, non app nativa.
+- Source: user
+- Primary owning slice: M007/S01
+- Validation: unmapped
+
+### R048 — Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
+- Class: failure-visibility
+- Status: active
+- Description: Warning solo per validità reale (data invalida, referenza rotta). Mai per completezza (manca descrizione/tag/link).
+- Why it matters: Warning fasulli creano rumore e allenano l'utente a ignorare i segnali. Solo validità reale preserva la forza del warning.
+- Source: user
+- Primary owning slice: M007/S02
+- Validation: unmapped
+
+### R049 — Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
+- Class: quality-attribute
+- Status: active
+- Description: Commit feedback no-op: blur di un campo senza modifica effettiva non produce notifica
+- Why it matters: Notifica su no-op è spam. L'utente perde fiducia nel segnale e lo inizia a ignorare.
+- Source: user
+- Primary owning slice: M007/S03
+- Validation: unmapped
+
+### R050 — Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
+- Class: primary-user-loop
+- Status: active
+- Description: Inline success feedback su field con peso (descrizione, titolo, data, fonti) tramite hook useFieldStatus unico + presentazioni per tipo controllo
+- Why it matters: Feedback di successo dentro il field è meno invasivo del toast e più chiaro (lega visivamente il conferma al campo che ha appena cambiato).
+- Source: user
+- Primary owning slice: M007/S03
+- Validation: unmapped
+
+### R051 — Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
+- Class: primary-user-loop
+- Status: active
+- Description: Notification center iPad-native: bell icon in toolbar con badge pulse, drawer right con lista mutazioni, rollback inline su tutte le operazioni (create/update/delete di elementi/link/board/fonti). In-memory per sessione.
+- Why it matters: Sostituisce toast invasivo con pattern iOS Mail/Messages. Offre scorrimento di modifiche recenti e rollback esplicito.
+- Source: user
+- Primary owning slice: M007/S04
+- Validation: unmapped
+
+### R052 — Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
+- Class: constraint
+- Status: active
+- Description: Rimozione completa toast HeroUI — drawer assorbe tutti i casi d'uso (success, info, errori di mutazione, soft-delete-undo)
+- Why it matters: Coerenza: un solo canale di feedback per tutte le mutazioni. Elimina ambiguità "quando esce toast vs drawer".
+- Source: user
+- Primary owning slice: M007/S04
+- Validation: unmapped
+
+### R053 — A11y baseline: focus ring su tutti gli interattivi, keyboard nav sidebar→list→detail, aria-label su icon-only button, prefers-reduced-motion rispettato
+- Class: compliance/security
+- Status: active
+- Description: A11y baseline: focus ring su tutti gli interattivi, keyboard nav sidebar→list→detail, aria-label su icon-only button, prefers-reduced-motion rispettato
+- Why it matters: WCAG 2.1 AA è principio fondamentale (Principio III). M001 ha gap a11y lasciati su icon-only controls.
+- Source: user
+- Primary owning slice: M007/S05
+- Validation: unmapped
+
+### R054 — Density/spacing uniforme + feedback tattile &lt;100ms + transizioni solo opacity/transform su tutti i nuovi componenti
+- Class: quality-attribute
+- Status: active
+- Description: Density/spacing uniforme + feedback tattile &lt;100ms + transizioni solo opacity/transform su tutti i nuovi componenti
+- Why it matters: Principio IX performance + feel nativo. Previene regressioni future (transition-all su width/height).
+- Source: inferred
+- Primary owning slice: M007/S05
+- Validation: unmapped
+
+### R055 — Audit Jazz reale: 4 scenari browser documentati (reload persistenza, multi-tab CRDT propagation, offline→online resync, conferma intenzionalità sync:never per assenza API key)
+- Class: integration
+- Status: active
+- Description: Audit Jazz reale: 4 scenari browser documentati (reload persistenza, multi-tab CRDT propagation, offline→online resync, conferma intenzionalità sync:never per assenza API key)
+- Why it matters: Jazz già integrato in M001 ma mai stress-tested. M003 (cloud sync) partirà da basi note.
+- Source: user
+- Primary owning slice: M007/S06
+- Validation: unmapped
+
+### R056 — Quality gate pre-slice-complete: revisione skill ui-ux-pro-max obbligatoria su ogni slice UI di M007
+- Class: quality-attribute
+- Status: active
+- Description: Quality gate pre-slice-complete: revisione skill ui-ux-pro-max obbligatoria su ogni slice UI di M007
+- Why it matters: Polish milestone ha polish come output. Senza audit esterno sistematico i fix sono guidati solo da sensibilità del momento.
+- Source: user
+- Primary owning slice: M007/S07
+- Validation: unmapped
+
 ## Validated
 
 ### R001 — Layout 3-pane consolidato con dark mode e ThemeSwitcher FAB
@@ -101,6 +202,25 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: S07
 - Validation: S07 T01 PASS: all forbidden width/height animations replaced with transition-[opacity,transform]; touch targets ≥44px across NavSidebar, ListPane, FullscreenOverlay, ElementoEditor, ThemeSwitcher, Timeline popup button; prefers-reduced-motion in tokens.css confirmed. 126/126 tests pass, tsc clean. 2026-04-23.
 - Notes: Owner corretto: S07 (il file S06-PLAN.md aveva titolo "Polish" ma contenuto Timeline; R011 Polish+UAT è in S07).
+
+## Deferred
+
+### R057 — Notifiche persistite cross-sessione (sopravvivono al reload)
+- Class: admin/support
+- Status: deferred
+- Description: Notifiche persistite cross-sessione (sopravvivono al reload)
+- Why it matters: Potenzialmente utile per tracking storico mutazioni, ma aggiunge CoMap Notifica e complica schema Jazz. Rimandato.
+- Source: user
+- Validation: unmapped
+- Notes: Oggi in-memory per sessione corrente. Riconsiderare dopo M003 se multi-device sync lo rende più valorioso.
+
+### R058 — Inline success feedback esteso a field leggeri (toggle, switch, chip tag)
+- Class: admin/support
+- Status: deferred
+- Description: Inline success feedback esteso a field leggeri (toggle, switch, chip tag)
+- Why it matters: Field leggeri rischiano affollamento visivo. Valutare dopo aver osservato il pattern su field con peso.
+- Source: user
+- Validation: unmapped
 
 ## Out of Scope
 
@@ -261,10 +381,23 @@ This file is the explicit capability and coverage contract for the project.
 | R043 | ui | out-of-scope | S04 | none | unmapped |
 | R044 | ui-d3 | out-of-scope | S05 | none | unmapped |
 | R045 | ux | out-of-scope | S06 | none | unmapped |
+| R046 | quality-attribute | active | M007/S01 | none | unmapped |
+| R047 | quality-attribute | active | M007/S01 | none | unmapped |
+| R048 | failure-visibility | active | M007/S02 | none | unmapped |
+| R049 | quality-attribute | active | M007/S03 | none | unmapped |
+| R050 | primary-user-loop | active | M007/S03 | none | unmapped |
+| R051 | primary-user-loop | active | M007/S04 | none | unmapped |
+| R052 | constraint | active | M007/S04 | none | unmapped |
+| R053 | compliance/security | active | M007/S05 | none | unmapped |
+| R054 | quality-attribute | active | M007/S05 | none | unmapped |
+| R055 | integration | active | M007/S06 | none | unmapped |
+| R056 | quality-attribute | active | M007/S07 | none | unmapped |
+| R057 | admin/support | deferred | none | none | unmapped |
+| R058 | admin/support | deferred | none | none | unmapped |
 
 ## Coverage Summary
 
-- Active requirements: 0
-- Mapped to slices: 0
+- Active requirements: 11
+- Mapped to slices: 11
 - Validated: 11 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011)
 - Unmapped active requirements: 0

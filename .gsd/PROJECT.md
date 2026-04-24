@@ -58,7 +58,8 @@ See [`.gsd/REQUIREMENTS.md`](.gsd/REQUIREMENTS.md) for the explicit capability c
 ## Milestone Sequence
 
 - [x] M001: Prototipo completo su layout 3-pane consolidato — **COMPLETATO 2026-04-23** — S01✅ S02✅ S03✅ S04✅ S05✅ S06✅ S07✅ S08✅
-- [ ] M002: Backend Jazz cloud sync — sync server, sharing, gruppi, permessi
+- [ ] M007: Polish & Refinement — linguaggio dominio, fullheight, warning reali, notification center iPad-native, inline success, a11y, audit Jazz (esegue prima di M002 via depends_on)
+- [ ] M002: Backend Jazz cloud sync — sync server, auth reale, gruppi, permessi (depends: M007)
 - [ ] M003: Annotazione video JW.org — FonteTipo video, Mediator API, playback inline
 - [ ] M004: Sharing, permessi, action log — Jazz groups, ruoli, rollback, portrait tablet
 - [ ] M005: Media e immagini — upload, gallery, visualizzatore

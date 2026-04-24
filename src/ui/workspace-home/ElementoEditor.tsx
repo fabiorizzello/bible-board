@@ -197,7 +197,7 @@ function getWarnings(element: Elemento): ValidationWarning[] {
     warnings.push({
       field: "descrizione",
       label: "Descrizione",
-      message: "Manca una descrizione markdown. Aggiungila inline senza lasciare il detail pane.",
+      message: "Manca una descrizione. Aggiungila direttamente qui.",
     });
   }
 
@@ -205,7 +205,7 @@ function getWarnings(element: Elemento): ValidationWarning[] {
     warnings.push({
       field: "ruoli",
       label: "Ruoli",
-      message: "Nessun ruolo visibile. Il mockup canonico prevede chip modificabili per i ruoli principali.",
+      message: "Nessun ruolo definito.",
     });
   }
 
@@ -1062,7 +1062,7 @@ function ReviewDrawer({
             </Drawer.Header>
             <Drawer.Body className="space-y-3 px-5 py-4">
               {warnings.length === 0 && (
-                <p className="text-sm text-ink-md">Nessun warning bloccante. Il dettaglio e allineato al mockup.</p>
+                <p className="text-sm text-ink-md">Nessun avviso attivo.</p>
               )}
               {warnings.map((warning) => (
                 <button
